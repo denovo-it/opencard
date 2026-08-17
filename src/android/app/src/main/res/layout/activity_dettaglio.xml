@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/radice"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <!-- Il colore parte dall'arancione del marchio e viene rifatto col colore
+         della carta appena il core la restituisce: cosi' non lampeggia arancione
+         se la lettura tarda. -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/intestazione"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/brand"
+        app:elevation="0dp">
+
+        <!-- Il nome non e' il titolo della barra ma una vista dentro la barra:
+             quello di serie sta su una riga sola e i nomi lunghi finivano
+             tagliati. Cosi' va a capo una volta, e la barra si alza da sola
+             quando serve la seconda riga. -->
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/barra"
+            style="@style/Barra.OpenCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="?attr/actionBarSize">
+
+            <TextView
+                android:id="@+id/titolo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start|center_vertical"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:paddingVertical="4dp"
+                android:textAppearance="@style/TitoloCarta.OpenCard"
+                android:textColor="@color/on_brand" />
+        </com.google.android.material.appbar.MaterialToolbar>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/white"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <!-- Il numero sta attaccato al codice, non in fondo allo schermo: si
+             leggono insieme, e alla cassa serve confrontarli a colpo d'occhio. -->
+        <ImageView
+            android:id="@+id/immagine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/codice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:fontFamily="monospace"
+            android:letterSpacing="0.05"
+            android:textColor="@color/ink"
+            android:textSize="20sp" />
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

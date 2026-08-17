@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/backup"
+        android:icon="@drawable/ic_tre_punti"
+        android:title="@string/backup"
+        app:showAsAction="always">
+        <menu>
+            <item
+                android:id="@+id/ripristina"
+                android:icon="@drawable/ic_importa"
+                android:title="@string/importa" />
+            <item
+                android:id="@+id/esporta"
+                android:icon="@drawable/ic_esporta"
+                android:title="@string/esporta" />
+            <item
+                android:id="@+id/trasferisci"
+                android:icon="@drawable/ic_qrcode"
+                android:title="@string/trasferisci" />
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/esci"
+        android:icon="@drawable/ic_esci"
+        android:title="@string/esci"
+        app:showAsAction="always" />
+</menu>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>it_IT</string>
+	<key>CFBundleDisplayName</key>
+	<string>OpenCard</string>
+	<key>CFBundleExecutable</key>
+	<string>OpenCard</string>
+	<key>CFBundleIdentifier</key>
+	<string>srl.denovo.opencard</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>OpenCard</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>2026081705</string>
+	<!-- Nessuna crittografia: l'app non chiama niente di cifrato e non ha rete.
+	     Senza questa chiave App Store Connect ripete la domanda sulla conformita'
+	     all'esportazione a ogni caricamento. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>iPhoneOS</string>
+	</array>
+	<key>DTPlatformName</key>
+	<string>iphoneos</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>MinimumOSVersion</key>
+	<string>13.0</string>
+	<key>UIDeviceFamily</key>
+	<array>
+		<integer>1</integer>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+
+	<!-- Le ragioni per cui l'app chiede: le legge l'utente nel dialogo di
+	     sistema, quindi devono dire davvero a cosa serve il permesso. -->
+	<key>NSCameraUsageDescription</key>
+	<string>La fotocamera serve a leggere il codice della tessera, così non devi batterlo a mano.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Serve a leggere il codice da una foto della tessera che hai già scattato.</string>
+
+	<!-- Icone come file nel bundle. -->
+	<key>CFBundleIconFiles</key>
+	<array>
+		<string>AppIcon60</string>
+		<string>AppIcon120</string>
+		<string>AppIcon180</string>
+	</array>
+</dict>
+</plist>

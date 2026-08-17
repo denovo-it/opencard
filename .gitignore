@@ -1,0 +1,11 @@
+src/third-party/zint/
+src/android/.gradle/
+src/android/build/
+src/android/app/build/
+src/android/local.properties
+src/android/keystore.properties
+src/android/.cxx/
+src/android/app/.cxx/
+test/prova_store
+test/prova_codegen
+test/*.png

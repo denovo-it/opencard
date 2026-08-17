@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/radice"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/brand"
+        app:elevation="0dp">
+
+        <!-- Il marchio prende il posto della scritta "OpenCard": a 30dp risultava
+             schiacciato, quindi la barra e' piu' alta per contenerlo. -->
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/barra"
+            style="@style/Barra.OpenCard"
+            android:layout_width="match_parent"
+            android:layout_height="68dp">
+
+            <!-- Il logo da solo, centrato nella barra: senza la pastiglia del
+                 canale accanto non serve piu' il contenitore orizzontale, che
+                 spostava il marchio a sinistra per fare posto alla scritta. -->
+            <ImageView
+                android:id="@+id/marca"
+                android:layout_width="wrap_content"
+                android:layout_height="46dp"
+                android:layout_gravity="center"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/opencard_appbar" />
+        </com.google.android.material.appbar.MaterialToolbar>
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/schede"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/brand"
+            app:tabIndicatorColor="@color/on_brand"
+            app:tabSelectedTextColor="@color/on_brand"
+            app:tabTextColor="#CCFFFFFF">
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/scheda_carte" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/scheda_usa_e_getta" />
+        </com.google.android.material.tabs.TabLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Due pagine affiancate: si passa da una scheda all'altra anche
+         scorrendo con il dito, non solo toccando la scheda. -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/pagine"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+    <!-- Centrato e staccato dal fondo: sul bordo finiva contro i tasti virtuali. -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/aggiungi"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="28dp"
+        android:contentDescription="@string/aggiungi"
+        app:backgroundTint="@color/brand"
+        app:srcCompat="@drawable/ic_aggiungi"
+        app:tint="@color/on_brand" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

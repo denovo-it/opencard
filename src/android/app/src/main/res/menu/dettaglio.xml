@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!-- L'icona la decide la schermata: vuota se la carta non e' preferita,
+         piena se lo e'. -->
+    <item
+        android:id="@+id/preferita"
+        android:icon="@drawable/ic_stella_vuota"
+        android:title="@string/preferita"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/modifica"
+        android:title="@string/modifica"
+        app:showAsAction="ifRoom" />
+</menu>

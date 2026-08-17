@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenCard</string>
+    <string name="editore">Denovo srl</string>
+    <string name="sito_denovo">denovo.srl</string>
+
+    <string name="scheda_carte">Carte</string>
+    <string name="scheda_usa_e_getta">Usa &amp; getta</string>
+    <string name="nessuna_carta">Non hai ancora salvato nessuna carta.\nTocca il pulsante + per aggiungerne una.</string>
+    <string name="nessuna_usa_e_getta">Qui finiscono i buoni e i codici che si usano una volta sola.</string>
+
+    <string name="scheda_preferite">Preferite</string>
+    <string name="nessuna_preferita">Qui finiscono le carte con la stella.</string>
+    <string name="preferita">Preferita</string>
+    <string name="togli_preferita">Togli dalle preferite</string>
+    <string name="aggiunta_preferite">Aggiunta alle preferite.</string>
+    <string name="tolta_preferite">Tolta dalle preferite.</string>
+
+    <string name="aggiungi">Aggiungi</string>
+    <string name="aggiungi_codice">Aggiungi</string>
+    <string name="modifica_codice">Modifica</string>
+    <string name="modifica">Modifica</string>
+    <string name="elimina">Elimina</string>
+    <string name="annulla">Annulla</string>
+    <string name="salva">Salva</string>
+    <string name="chiudi">Chiudi</string>
+    <string name="condividi">Condividi</string>
+
+    <string name="elimina_titolo">Elimina codice</string>
+    <string name="elimina_domanda">Eliminare \"%1$s\"?</string>
+
+    <string name="esci">Esci</string>
+    <string name="esci_titolo">Uscire da OpenCard?</string>
+    <string name="esci_domanda">Vuoi chiudere l\'app?</string>
+
+    <string name="etichetta">Etichetta</string>
+    <string name="codice">Codice</string>
+    <string name="tipo_di_codice">Tipo di codice</string>
+    <string name="barcode">Barcode</string>
+    <string name="qrcode">QR code</string>
+    <string name="colore">Colore</string>
+    <string name="usa_e_getta">Usa &amp; getta</string>
+    <string name="usa_e_getta_spiega">Finisce nella seconda scheda, con il cestino per toglierla appena l\'hai usata.</string>
+    <string name="manca_etichetta">L\'etichetta e\' obbligatoria.</string>
+    <string name="manca_codice">Il codice e\' obbligatorio.</string>
+
+    <string name="da_fotocamera">Foto</string>
+    <string name="da_galleria">Galleria</string>
+    <string name="da_file">File</string>
+    <string name="inquadra_codice">Inquadra il codice</string>
+    <string name="scanner_tieni_fermo">Tieni fermo il telefono: il codice va letto tre volte uguale.</string>
+    <string name="fotocamera_negata">Senza fotocamera puoi scrivere il codice a mano, oppure leggerlo da una foto.</string>
+    <string name="fotocamera_non_disponibile">La fotocamera non e\' disponibile su questo telefono.</string>
+    <string name="nessun_codice_nell_immagine">Nell\'immagine non c\'e\' nessun codice leggibile.</string>
+    <string name="lettura_non_riuscita">Lettura non riuscita: %1$s</string>
+
+    <string name="backup">Backup</string>
+    <string name="esporta">Esporta su file</string>
+    <string name="ripristina">Ripristina un backup</string>
+    <string name="importa">Importa da file</string>
+    <string name="ripristina_titolo">Sostituire le carte?</string>
+    <string name="ripristina_avviso">Le carte che hai adesso vengono sostituite da quelle del backup.</string>
+    <string name="ripristina_conferma">Sostituisci</string>
+    <string name="backup_salvato">Carte esportate.</string>
+    <string name="backup_annullato">Esportazione annullata.</string>
+    <string name="backup_non_scritto">Esportazione non riuscita.</string>
+    <string name="backup_non_letto">Non sono riuscito a leggere il file.</string>
+    <string name="backup_troppo_grande">Il file è troppo grande per essere un backup di OpenCard.</string>
+    <string name="niente_da_esportare">Non c\'e\' ancora nessuna carta da esportare.</string>
+
+    <string name="trasferisci">Copia tra telefoni</string>
+    <string name="trasferimento_titolo">Copia tra telefoni</string>
+    <string name="trasferimento_spiega">Serve OpenCard su tutti e due i telefoni. Uno mostra i codici, l\'altro li inquadra. Non passa niente dalla rete.</string>
+    <string name="trasferimento_mostra">Mostra i codici</string>
+    <string name="trasferimento_ricevi">Inquadra i codici</string>
+    <string name="trasferimento_mostra_avviso">Metti lo schermo davanti alla fotocamera dell\'altro telefono. I codici girano da soli: lascia fare finche\' non ha finito.</string>
+    <string name="trasferimento_privacy">Il codice contiene i numeri delle tue tessere. Mostralo solo a chi le sta ricevendo.</string>
+    <string name="trasferimento_pezzo">Codice %1$d di %2$d</string>
+    <string name="trasferimento_pezzo_unico">Un codice solo</string>
+    <string name="trasferimento_niente_carte">Non hai ancora nessuna carta da passare.</string>
+    <string name="trasferimento_attesa">Inquadra il primo codice dell\'altro telefono.</string>
+    <string name="trasferimento_raccolta">Presi %1$d codici di %2$d</string>
+    <string name="trasferimento_scelta_titolo">Come mettere le carte arrivate</string>
+    <string name="trasferimento_scelta_domanda">Arrivano %1$d carte e tu ne hai %2$d.\n\nAggiungi le mette in fondo alle tue, doppioni compresi. Azzera e sostituisci cancella le tue e lascia solo quelle arrivate.</string>
+    <string name="trasferimento_aggiungi">Aggiungi</string>
+    <string name="trasferimento_sostituisci">Azzera e sostituisci</string>
+    <string name="trasferimento_sostituisci_titolo">Cancellare le tue carte?</string>
+    <string name="trasferimento_sostituisci_avviso">Le %1$d carte che hai adesso spariscono e restano solo le %2$d arrivate. Non si torna indietro.</string>
+    <string name="trasferimento_niente_ricevuto">Non e\' arrivata nessuna carta.</string>
+
+    <string name="un_regalo">Un regalo di Denovo</string>
+    <string name="informazioni">Informazioni</string>
+    <string name="legale">Legale</string>
+    <string name="versione_e_build">%1$s (build %2$d)</string>
+    <string name="versione_e_build_canale">%1$s (build %2$d) · %3$s</string>
+
+    <string name="perche_esiste">OpenCard e\' un gesto di solidarieta\' nei confronti delle persone che tengono alla loro privacy e hanno bisogno di strumenti semplici.\n\nStrumenti che fanno esattamente quello che ti aspetti, senza proporti di continuo servizi che non ti interessano.</string>
+    <string name="revisioni">Revisioni</string>
+    <string name="software_open_source">Software open source</string>
+    <string name="oss_intro">OpenCard sta in piedi grazie al lavoro di altri. Queste sono le librerie che contiene, con la licenza di ciascuna. Tocca un nome per aprirne la pagina.</string>
+    <string name="componenti_native">Componenti native</string>
+    <string name="librerie_android">Librerie Android</string>
+
+    <string name="licenza_uso_titolo">Licenza d\'uso</string>
+    <string name="licenza_uso">OpenCard e\' un regalo di Denovo srl.\n\nUso personale: libero.\nUso commerciale: scrivi a info@denovo.srl.\n\nIl programma e\' distribuito sotto licenza AGPL v3, in alternativa a una licenza commerciale. Il testo integrale della AGPL v3 e\' qui sotto.</string>
+    <string name="marchi_titolo">Marchi</string>
+    <string name="marchi">Denovo e OpenCard sono marchi di Denovo srl. Il nome Denovo, il nome OpenCard, i loghi e i segni distintivi che li accompagnano sono di proprieta\' riservata di Denovo srl.\n\nLa licenza AGPL v3 riguarda il codice sorgente e non concede alcun diritto sui marchi. Chi distribuisce una versione modificata deve rimuovere i marchi e i loghi di Denovo srl e darle un nome proprio.</string>
+    <string name="licenza_completa_titolo">Licenza completa (AGPL v3)</string>
+
+    <string name="errore_precedente_titolo">L\'avvio precedente si e\' chiuso male</string>
+    <string name="errore_precedente">Questo e\' il dettaglio, utile a chi sviluppa:\n\n%1$s</string>
+
+    <plurals name="carte_ricevute">
+        <item quantity="one">Ricevuta una carta.</item>
+        <item quantity="other">Ricevute %d carte.</item>
+    </plurals>
+
+    <plurals name="carte_ripristinate">
+        <item quantity="one">Ripristinata una carta.</item>
+        <item quantity="other">Ripristinate %d carte.</item>
+    </plurals>
+</resources>

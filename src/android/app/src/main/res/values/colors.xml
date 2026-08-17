@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- L'arancione del marchio: barra, pulsante di aggiunta, azioni principali. -->
+    <color name="brand">#E6642B</color>
+    <color name="on_brand">#FFFFFF</color>
+    <color name="danger">#E53935</color>
+    <color name="ink">#202124</color>
+    <color name="muted">#6B7280</color>
+    <color name="faint">#9AA0A6</color>
+    <color name="surface">#FFFFFF</color>
+</resources>

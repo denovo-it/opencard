@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Tema.OpenCard" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand</item>
+        <item name="colorOnPrimary">@color/on_brand</item>
+        <item name="colorSecondary">@color/brand</item>
+        <item name="colorOnSecondary">@color/on_brand</item>
+        <item name="android:statusBarColor" tools:targetApi="21">@color/brand</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
+    </style>
+
+    <!-- Barra arancione, titolo e icone bianchi: vale per tutte le schermate. -->
+    <style name="Barra.OpenCard" parent="Widget.Material3.Toolbar">
+        <item name="android:background">@color/brand</item>
+        <item name="titleTextColor">@color/on_brand</item>
+        <item name="subtitleTextColor">@color/on_brand</item>
+        <item name="android:theme">@style/ThemeOverlay.Material3.Dark.ActionBar</item>
+        <!-- Senza questo il menu a tendina eredita il tema scuro della barra e
+             scrive bianco su bianco. -->
+        <item name="popupTheme">@style/ThemeOverlay.Material3.Light</item>
+    </style>
+
+    <!-- Il nome della carta sta in mezzo alla barra, fra la freccia indietro e
+         le voci di destra: col corpo grande di serie (22sp) i nomi lunghi si
+         vedevano a meta'. A 17sp ce ne sta un terzo in piu'. -->
+    <style name="TitoloCarta.OpenCard" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textSize">17sp</item>
+    </style>
+</resources>
