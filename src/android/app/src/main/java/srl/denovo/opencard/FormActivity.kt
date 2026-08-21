@@ -7,7 +7,10 @@ package srl.denovo.opencard
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -75,6 +78,13 @@ class FormActivity : AppCompatActivity() {
 
         /** Lo legge la carta aperta: se e' stata cancellata deve chiudersi. */
         const val EXTRA_ELIMINATA = "eliminata"
+
+        /**
+         * Lato lungo sotto cui non si scende leggendo un'immagine dal telefono.
+         * Sopra questa misura ML Kit legge lo stesso, sotto comincia a perdere i
+         * barcode stretti.
+         */
+        private const val LATO_MINIMO = 1600
 
         fun intentNuova(contesto: Context, usaEGetta: Boolean) =
             Intent(contesto, FormActivity::class.java)
@@ -178,8 +188,14 @@ class FormActivity : AppCompatActivity() {
      */
     private fun leggiDaImmagine(immagine: Uri) {
         val lettore = BarcodeScanning.getClient()
+        val ridotta = decodificaRidotta(immagine)
         try {
-            lettore.process(InputImage.fromFilePath(this, immagine))
+            val ingresso = if (ridotta != null) {
+                InputImage.fromBitmap(ridotta, rotazione(immagine))
+            } else {
+                InputImage.fromFilePath(this, immagine)
+            }
+            lettore.process(ingresso)
                 .addOnSuccessListener { codici ->
                     val primo = codici.firstOrNull { !it.rawValue.isNullOrEmpty() }
                     if (primo == null) {
@@ -191,11 +207,69 @@ class FormActivity : AppCompatActivity() {
                 .addOnFailureListener { guasto ->
                     avvisa(getString(R.string.lettura_non_riuscita, guasto.message ?: ""))
                 }
-                .addOnCompleteListener { lettore.close() }
+                .addOnCompleteListener {
+                    lettore.close()
+                    ridotta?.recycle()
+                }
         } catch (guasto: Exception) {
             lettore.close()
+            ridotta?.recycle()
             avvisa(getString(R.string.lettura_non_riuscita, guasto.message ?: ""))
         }
+    }
+
+    /**
+     * Decodifica l'immagine gia' rimpicciolita.
+     *
+     * Una foto da 12 megapixel diventa una cinquantina di MB di bitmap, e il
+     * telefono li paga tutti in una volta: qui si legge il file a scala ridotta,
+     * senza mai scendere sotto [LATO_MINIMO] sul lato lungo. Le immagini gia'
+     * piccole restano come sono.
+     *
+     * Torna null se la lettura non riesce: in quel caso si legge il file com'e',
+     * che e' quello che faceva prima.
+     */
+    private fun decodificaRidotta(immagine: Uri): Bitmap? = try {
+        val misura = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        contentResolver.openInputStream(immagine)?.use {
+            BitmapFactory.decodeStream(it, null, misura)
+        }
+        val lato = maxOf(misura.outWidth, misura.outHeight)
+        if (lato <= 0) {
+            null
+        } else {
+            var scala = 1
+            while (lato / (scala * 2) >= LATO_MINIMO) scala *= 2
+            val opzioni = BitmapFactory.Options().apply { inSampleSize = scala }
+            contentResolver.openInputStream(immagine)?.use {
+                BitmapFactory.decodeStream(it, null, opzioni)
+            }
+        }
+    } catch (guasto: Exception) {
+        null
+    }
+
+    /**
+     * Di quanto e' girata la foto secondo l'EXIF.
+     *
+     * Leggendo il file da soli questo pezzo tocca a noi: [InputImage.fromFilePath]
+     * lo faceva per conto suo, e senza una foto in verticale si legge storta.
+     */
+    private fun rotazione(immagine: Uri): Int = try {
+        val orientamento = contentResolver.openInputStream(immagine)?.use {
+            ExifInterface(it).getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL,
+            )
+        }
+        when (orientamento) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> 90
+            ExifInterface.ORIENTATION_ROTATE_180 -> 180
+            ExifInterface.ORIENTATION_ROTATE_270 -> 270
+            else -> 0
+        }
+    } catch (guasto: Exception) {
+        0
     }
 
     /**

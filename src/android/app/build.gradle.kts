@@ -32,7 +32,7 @@ android {
 
         // Formato YYYYMMDDnn: nn e' il progressivo della giornata. Deve solo
         // crescere, e a colpo d'occhio dice quando e' stata costruita.
-        versionCode = 2026081705
+        versionCode = 2026081801
         versionName = "1.0.0"
 
         // Niente split per ABI: senza runtime da trascinarsi dietro l'APK e'
