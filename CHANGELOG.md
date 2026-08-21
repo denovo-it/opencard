@@ -6,3 +6,4 @@
 - Le carte passano da un telefono all'altro con dei QR, senza rete e senza account.
 - Le carte si esportano in un backup su file e si rimettono a posto da lì.
 - Nessun dato raccolto, niente pubblicità.
+- Nella schermata informazioni c'è l'indirizzo del codice sorgente: è pubblico su GitHub con licenza AGPL v3.

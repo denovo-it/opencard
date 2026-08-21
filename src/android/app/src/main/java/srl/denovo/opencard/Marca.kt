@@ -14,6 +14,9 @@ package srl.denovo.opencard
  */
 val CANALE: String? = null
 
+/** Dove sta il codice, pubblico dal 17 agosto 2026. Lo mostra la schermata informativa. */
+const val SORGENTE = "https://github.com/denovo-it/opencard"
+
 /** Software di altri incluso nell'app, con la licenza di ciascuno. */
 object Librerie {
 

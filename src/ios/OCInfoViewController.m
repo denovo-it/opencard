@@ -10,6 +10,12 @@
 
 static NSString *const OCSitoDenovo = @"https://denovo.srl";
 
+static NSString *const OCSorgente = @"https://github.com/denovo-it/opencard";
+
+static NSString *const OCIntroSorgente =
+    @"Il codice di OpenCard e' pubblico. Sta su GitHub con licenza AGPL v3: si legge, si "
+     "compila e si controlla che l'app faccia solo quello che dice.";
+
 static NSString *const OCPercheEsiste =
     @"OpenCard e' un gesto di solidarieta' nei confronti delle persone che tengono alla "
      "loro privacy e hanno bisogno di strumenti semplici.\n\n"
@@ -181,6 +187,13 @@ static NSString *const OCIntroOpenSource =
     [foglio loadViewIfNeeded];
 
     [foglio.colonna addArrangedSubview:[self paragrafo:OCPercheEsiste dimensione:15]];
+    [foglio.colonna addArrangedSubview:[self riga]];
+
+    [foglio.colonna addArrangedSubview:[self titolo:@"Codice sorgente"]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroSorgente dimensione:13]];
+    [self aggiungiLibrerie:@[
+        @[@"github.com/denovo-it/opencard", @"AGPL v3", OCSorgente],
+    ] a:foglio.colonna];
     [foglio.colonna addArrangedSubview:[self riga]];
 
     [foglio.colonna addArrangedSubview:[self titolo:@"Revisioni"]];

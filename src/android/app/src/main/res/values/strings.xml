@@ -95,6 +95,10 @@
     <string name="versione_e_build_canale">%1$s (build %2$d) · %3$s</string>
 
     <string name="perche_esiste">OpenCard e\' un gesto di solidarieta\' nei confronti delle persone che tengono alla loro privacy e hanno bisogno di strumenti semplici.\n\nStrumenti che fanno esattamente quello che ti aspetti, senza proporti di continuo servizi che non ti interessano.</string>
+    <string name="sorgente_titolo">Codice sorgente</string>
+    <string name="sorgente_intro">Il codice di OpenCard e\' pubblico. Sta su GitHub con licenza AGPL v3: si legge, si compila e si controlla che l\'app faccia solo quello che dice.</string>
+    <string name="sorgente_riga">github.com/denovo-it/opencard</string>
+    <string name="sorgente_licenza">AGPL v3</string>
     <string name="revisioni">Revisioni</string>
     <string name="software_open_source">Software open source</string>
     <string name="oss_intro">OpenCard sta in piedi grazie al lavoro di altri. Queste sono le librerie che contiene, con la licenza di ciascuna. Tocca un nome per aprirne la pagina.</string>

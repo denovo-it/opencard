@@ -83,6 +83,15 @@ class InfoActivity : AppCompatActivity() {
         contenuto.addView(paragrafo(getString(R.string.perche_esiste), 15f))
         contenuto.addView(riga())
 
+        contenuto.addView(titolo(getString(R.string.sorgente_titolo)))
+        contenuto.addView(paragrafo(getString(R.string.sorgente_intro), 13f, colore = R.color.muted))
+        contenuto.addView(
+            voceLibreria(
+                getString(R.string.sorgente_riga), getString(R.string.sorgente_licenza), SORGENTE
+            )
+        )
+        contenuto.addView(riga())
+
         contenuto.addView(titolo(getString(R.string.revisioni)))
         mostraChangelog(contenuto)
         contenuto.addView(riga())
