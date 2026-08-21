@@ -105,6 +105,11 @@
     <string name="componenti_native">Componenti native</string>
     <string name="librerie_android">Librerie Android</string>
 
+    <string name="privacy_titolo">Privacy</string>
+    <string name="privacy_intro">OpenCard non raccoglie niente e non ha nemmeno il permesso di collegarsi a internet: le carte restano nella memoria privata dell\'app. La pagina qui sotto lo dice per esteso, ed e\' quella dichiarata a Google e ad Apple.</string>
+    <string name="privacy_riga">denovo.srl/opencard-privacy</string>
+    <string name="privacy_apri">Apri</string>
+
     <string name="licenza_uso_titolo">Licenza d\'uso</string>
     <string name="licenza_uso">OpenCard e\' un regalo di Denovo srl.\n\nUso personale: libero.\nUso commerciale: scrivi a info@denovo.srl.\n\nIl programma e\' distribuito sotto licenza AGPL v3, in alternativa a una licenza commerciale. Il testo integrale della AGPL v3 e\' qui sotto.</string>
     <string name="marchi_titolo">Marchi</string>

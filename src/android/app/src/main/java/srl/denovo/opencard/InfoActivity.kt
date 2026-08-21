@@ -107,6 +107,15 @@ class InfoActivity : AppCompatActivity() {
     }
 
     private fun riempiLegale(contenuto: LinearLayout) {
+        contenuto.addView(titolo(getString(R.string.privacy_titolo)))
+        contenuto.addView(paragrafo(getString(R.string.privacy_intro), 14f))
+        contenuto.addView(
+            voceLibreria(
+                getString(R.string.privacy_riga), getString(R.string.privacy_apri), PRIVACY
+            )
+        )
+        contenuto.addView(riga())
+
         contenuto.addView(titolo(getString(R.string.licenza_uso_titolo)))
         contenuto.addView(paragrafo(getString(R.string.licenza_uso), 15f))
         contenuto.addView(riga())

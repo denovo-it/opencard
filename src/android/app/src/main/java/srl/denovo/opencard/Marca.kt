@@ -17,6 +17,9 @@ val CANALE: String? = null
 /** Dove sta il codice, pubblico dal 17 agosto 2026. Lo mostra la schermata informativa. */
 const val SORGENTE = "https://github.com/denovo-it/opencard"
 
+/** La privacy policy dell'app, la stessa dichiarata nelle schede dei due store. */
+const val PRIVACY = "https://denovo.srl/opencard-privacy/"
+
 /** Software di altri incluso nell'app, con la licenza di ciascuno. */
 object Librerie {
 

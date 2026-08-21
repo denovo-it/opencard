@@ -16,6 +16,13 @@ static NSString *const OCIntroSorgente =
     @"Il codice di OpenCard e' pubblico. Sta su GitHub con licenza AGPL v3: si legge, si "
      "compila e si controlla che l'app faccia solo quello che dice.";
 
+static NSString *const OCPrivacy = @"https://denovo.srl/opencard-privacy/";
+
+static NSString *const OCIntroPrivacy =
+    @"OpenCard non raccoglie niente e non esce dal telefono: le carte restano nella memoria "
+     "privata dell'app. La pagina qui sotto lo dice per esteso, ed e' quella dichiarata a "
+     "Google e ad Apple.";
+
 static NSString *const OCPercheEsiste =
     @"OpenCard e' un gesto di solidarieta' nei confronti delle persone che tengono alla "
      "loro privacy e hanno bisogno di strumenti semplici.\n\n"
@@ -225,6 +232,13 @@ static NSString *const OCIntroOpenSource =
 {
     OCFoglioViewController *foglio = [OCFoglioViewController new];
     [foglio loadViewIfNeeded];
+
+    [foglio.colonna addArrangedSubview:[self titolo:@"Privacy"]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroPrivacy dimensione:14]];
+    [self aggiungiLibrerie:@[
+        @[@"denovo.srl/opencard-privacy", @"Apri", OCPrivacy],
+    ] a:foglio.colonna];
+    [foglio.colonna addArrangedSubview:[self riga]];
 
     [foglio.colonna addArrangedSubview:[self titolo:@"Licenza d'uso"]];
     [foglio.colonna addArrangedSubview:[self paragrafo:OCLicenzaUso dimensione:15]];
