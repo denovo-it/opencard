@@ -29,6 +29,7 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import java.io.File
 
 /**
  * Aggiunta e modifica di una carta.
@@ -188,10 +189,11 @@ class FormActivity : AppCompatActivity() {
      */
     private fun leggiDaImmagine(immagine: Uri) {
         val lettore = BarcodeScanning.getClient()
-        val ridotta = decodificaRidotta(immagine)
+        val copia = copiaInCache(immagine)
+        val ridotta = copia?.let { decodificaRidotta(it) }
         try {
-            val ingresso = if (ridotta != null) {
-                InputImage.fromBitmap(ridotta, rotazione(immagine))
+            val ingresso = if (copia != null && ridotta != null) {
+                InputImage.fromBitmap(ridotta, rotazione(copia))
             } else {
                 InputImage.fromFilePath(this, immagine)
             }
@@ -215,25 +217,59 @@ class FormActivity : AppCompatActivity() {
             lettore.close()
             ridotta?.recycle()
             avvisa(getString(R.string.lettura_non_riuscita, guasto.message ?: ""))
+        } finally {
+            // La foto della tessera non resta in cache oltre la lettura: qui
+            // l'immagine e' gia' in memoria e il file non serve piu' a nessuno,
+            // nemmeno alla strada di scorta, che rilegge l'Uri di partenza.
+            copia?.delete()
         }
+    }
+
+    /**
+     * Il file dell'immagine, preso una volta sola.
+     *
+     * Sonda, decodifica e EXIF lavorano tutti su questa copia. L'immagine non
+     * arriva dal disco ma da un provider (la galleria di sistema, Google Foto,
+     * Drive), e ogni apertura dell'Uri puo' essere un nuovo scaricamento:
+     * aprirlo tre volte erano tre scaricamenti e tre punti dove fallire a
+     * meta'. Da un file in cache invece si rilegge quanto si vuole a costo
+     * zero.
+     *
+     * Si copia invece di tenere i byte in memoria perche' un file arbitrario
+     * scelto dall'utente non ha un tetto: un `ByteArray` grande quanto il file
+     * puo' finire in [OutOfMemoryError], che non e' una [Exception] e non
+     * verrebbe preso da nessun catch. Qui il travaso passa da un buffer di
+     * pochi kB e l'unica cosa grande che si alloca resta la bitmap ridotta.
+     *
+     * Torna null se la copia non riesce: si ricade su [InputImage.fromFilePath],
+     * che e' quello che faceva prima.
+     */
+    private fun copiaInCache(immagine: Uri): File? = try {
+        val copia = File.createTempFile("scansione", null, cacheDir)
+        val presa = contentResolver.openInputStream(immagine)?.use { sorgente ->
+            copia.outputStream().use { sorgente.copyTo(it) }
+        }
+        if (presa == null) {
+            copia.delete()
+            null
+        } else {
+            copia
+        }
+    } catch (guasto: Exception) {
+        null
     }
 
     /**
      * Decodifica l'immagine gia' rimpicciolita.
      *
      * Una foto da 12 megapixel diventa una cinquantina di MB di bitmap, e il
-     * telefono li paga tutti in una volta: qui si legge il file a scala ridotta,
+     * telefono li paga tutti in una volta: qui si decodifica a scala ridotta,
      * senza mai scendere sotto [LATO_MINIMO] sul lato lungo. Le immagini gia'
-     * piccole restano come sono.
-     *
-     * Torna null se la lettura non riesce: in quel caso si legge il file com'e',
-     * che e' quello che faceva prima.
+     * piccole restano come sono. Null se il file non e' un'immagine.
      */
-    private fun decodificaRidotta(immagine: Uri): Bitmap? = try {
+    private fun decodificaRidotta(copia: File): Bitmap? = try {
         val misura = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        contentResolver.openInputStream(immagine)?.use {
-            BitmapFactory.decodeStream(it, null, misura)
-        }
+        BitmapFactory.decodeFile(copia.path, misura)
         val lato = maxOf(misura.outWidth, misura.outHeight)
         if (lato <= 0) {
             null
@@ -241,9 +277,7 @@ class FormActivity : AppCompatActivity() {
             var scala = 1
             while (lato / (scala * 2) >= LATO_MINIMO) scala *= 2
             val opzioni = BitmapFactory.Options().apply { inSampleSize = scala }
-            contentResolver.openInputStream(immagine)?.use {
-                BitmapFactory.decodeStream(it, null, opzioni)
-            }
+            BitmapFactory.decodeFile(copia.path, opzioni)
         }
     } catch (guasto: Exception) {
         null
@@ -255,13 +289,11 @@ class FormActivity : AppCompatActivity() {
      * Leggendo il file da soli questo pezzo tocca a noi: [InputImage.fromFilePath]
      * lo faceva per conto suo, e senza una foto in verticale si legge storta.
      */
-    private fun rotazione(immagine: Uri): Int = try {
-        val orientamento = contentResolver.openInputStream(immagine)?.use {
-            ExifInterface(it).getAttributeInt(
-                ExifInterface.TAG_ORIENTATION,
-                ExifInterface.ORIENTATION_NORMAL,
-            )
-        }
+    private fun rotazione(copia: File): Int = try {
+        val orientamento = ExifInterface(copia.path).getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_NORMAL,
+        )
         when (orientamento) {
             ExifInterface.ORIENTATION_ROTATE_90 -> 90
             ExifInterface.ORIENTATION_ROTATE_180 -> 180

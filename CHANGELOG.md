@@ -2,7 +2,7 @@
 
 - Nella schermata informazioni c'è l'indirizzo del codice sorgente: OpenCard è pubblico su GitHub con licenza AGPL v3.
 - Sempre nella schermata informazioni, sotto Legale, c'è l'indirizzo della privacy policy: dice cosa fa l'app con la fotocamera e con i dati delle carte.
-- Le foto scelte dalla galleria vengono lette con meno memoria, così sui telefoni più piccoli l'app non viene chiusa dal sistema mentre legge un codice.
+- Su Android, le foto scelte dalla galleria vengono lette con meno memoria, così sui telefoni più piccoli l'app non viene chiusa dal sistema mentre legge un codice.
 
 ## 1.0.0
 

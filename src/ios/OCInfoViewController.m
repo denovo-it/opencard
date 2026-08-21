@@ -198,7 +198,7 @@ static NSString *const OCIntroOpenSource =
 
     [foglio.colonna addArrangedSubview:[self titolo:@"Codice sorgente"]];
     [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroSorgente dimensione:13]];
-    [self aggiungiLibrerie:@[
+    [self aggiungiCollegamenti:@[
         @[@"github.com/denovo-it/opencard", @"AGPL v3", OCSorgente],
     ] a:foglio.colonna];
     [foglio.colonna addArrangedSubview:[self riga]];
@@ -213,13 +213,13 @@ static NSString *const OCIntroOpenSource =
     [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroOpenSource dimensione:13]];
 
     [foglio.colonna addArrangedSubview:[self sottotitolo:@"Componenti native"]];
-    [self aggiungiLibrerie:@[
+    [self aggiungiCollegamenti:@[
         @[@"zint", @"BSD 3-Clause", @"https://www.zint.org.uk"],
         @[@"cJSON", @"MIT", @"https://github.com/DaveGamble/cJSON"],
     ] a:foglio.colonna];
 
     [foglio.colonna addArrangedSubview:[self sottotitolo:@"Componenti di sistema"]];
-    [self aggiungiLibrerie:@[
+    [self aggiungiCollegamenti:@[
         @[@"UIKit", @"Apple", @"https://developer.apple.com/documentation/uikit"],
         @[@"AVFoundation", @"Apple", @"https://developer.apple.com/documentation/avfoundation"],
         @[@"Vision", @"Apple", @"https://developer.apple.com/documentation/vision"],
@@ -235,7 +235,7 @@ static NSString *const OCIntroOpenSource =
 
     [foglio.colonna addArrangedSubview:[self titolo:@"Privacy"]];
     [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroPrivacy dimensione:14]];
-    [self aggiungiLibrerie:@[
+    [self aggiungiCollegamenti:@[
         @[@"denovo.srl/opencard-privacy", @"Apri", OCPrivacy],
     ] a:foglio.colonna];
     [foglio.colonna addArrangedSubview:[self riga]];
@@ -319,25 +319,25 @@ static NSString *const OCIntroOpenSource =
     }
 }
 
-- (void)aggiungiLibrerie:(NSArray<NSArray<NSString *> *> *)librerie a:(UIStackView *)colonna
+- (void)aggiungiCollegamenti:(NSArray<NSArray<NSString *> *> *)collegamenti a:(UIStackView *)colonna
 {
-    for (NSArray<NSString *> *libreria in librerie) {
+    for (NSArray<NSString *> *collegamento in collegamenti) {
         UILabel *nome = [UILabel new];
-        nome.text = libreria[0];
+        nome.text = collegamento[0];
         nome.font = [UIFont systemFontOfSize:14];
 
-        UILabel *licenza = [UILabel new];
-        licenza.text = libreria[1];
-        licenza.font = [UIFont systemFontOfSize:12];
-        licenza.textColor = [OCTema attenuato];
+        UILabel *etichetta = [UILabel new];
+        etichetta.text = collegamento[1];
+        etichetta.font = [UIFont systemFontOfSize:12];
+        etichetta.textColor = [OCTema attenuato];
 
-        UIStackView *riga = [[UIStackView alloc] initWithArrangedSubviews:@[nome, licenza]];
+        UIStackView *riga = [[UIStackView alloc] initWithArrangedSubviews:@[nome, etichetta]];
         riga.axis = UILayoutConstraintAxisHorizontal;
         riga.distribution = UIStackViewDistributionEqualSpacing;
-        riga.accessibilityHint = libreria[2];
+        riga.accessibilityHint = collegamento[2];
         riga.userInteractionEnabled = YES;
         [riga addGestureRecognizer:[[UITapGestureRecognizer alloc]
-            initWithTarget:self action:@selector(apriLibreria:)]];
+            initWithTarget:self action:@selector(apriCollegamento:)]];
 
         [colonna addArrangedSubview:riga];
     }
@@ -428,7 +428,7 @@ static NSString *const OCIntroOpenSource =
                              completionHandler:nil];
 }
 
-- (void)apriLibreria:(UITapGestureRecognizer *)tocco
+- (void)apriCollegamento:(UITapGestureRecognizer *)tocco
 {
     NSString *indirizzo = tocco.view.accessibilityHint;
     if (indirizzo.length > 0) {

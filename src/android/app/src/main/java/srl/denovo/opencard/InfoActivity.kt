@@ -86,7 +86,7 @@ class InfoActivity : AppCompatActivity() {
         contenuto.addView(titolo(getString(R.string.sorgente_titolo)))
         contenuto.addView(paragrafo(getString(R.string.sorgente_intro), 13f, colore = R.color.muted))
         contenuto.addView(
-            voceLibreria(
+            voceCollegamento(
                 getString(R.string.sorgente_riga), getString(R.string.sorgente_licenza), SORGENTE
             )
         )
@@ -100,17 +100,17 @@ class InfoActivity : AppCompatActivity() {
         contenuto.addView(paragrafo(getString(R.string.oss_intro), 13f, colore = R.color.muted))
 
         contenuto.addView(sottotitolo(getString(R.string.componenti_native)))
-        Librerie.NATIVE.forEach { contenuto.addView(voceLibreria(it.first, it.second, it.third)) }
+        Librerie.NATIVE.forEach { contenuto.addView(voceCollegamento(it.first, it.second, it.third)) }
 
         contenuto.addView(sottotitolo(getString(R.string.librerie_android)))
-        Librerie.ANDROID.forEach { contenuto.addView(voceLibreria(it.first, it.second, it.third)) }
+        Librerie.ANDROID.forEach { contenuto.addView(voceCollegamento(it.first, it.second, it.third)) }
     }
 
     private fun riempiLegale(contenuto: LinearLayout) {
         contenuto.addView(titolo(getString(R.string.privacy_titolo)))
         contenuto.addView(paragrafo(getString(R.string.privacy_intro), 14f))
         contenuto.addView(
-            voceLibreria(
+            voceCollegamento(
                 getString(R.string.privacy_riga), getString(R.string.privacy_apri), PRIVACY
             )
         )
@@ -243,8 +243,8 @@ class InfoActivity : AppCompatActivity() {
         alpha = 0.4f
     }
 
-    /** Nome a sinistra, licenza a destra: tocco per aprire la pagina. */
-    private fun voceLibreria(nome: String, licenza: String, url: String) = LinearLayout(this).apply {
+    /** Riga toccabile: nome a sinistra, etichetta a destra, tocco per aprire la pagina. */
+    private fun voceCollegamento(nome: String, etichetta: String, url: String) = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
         setPadding(0, dp(8), 0, dp(8))
@@ -260,7 +260,7 @@ class InfoActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         })
         addView(TextView(this@InfoActivity).apply {
-            text = licenza
+            text = etichetta
             textSize = 12f
             setTextColor(ContextCompat.getColor(this@InfoActivity, R.color.muted))
         })
