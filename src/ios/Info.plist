@@ -19,7 +19,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.1</string>
 	<key>CFBundleVersion</key>
-	<string>2026082103</string>
+	<string>2026082301</string>
 	<!-- Nessuna crittografia: l'app non chiama niente di cifrato e non ha rete.
 	     Senza questa chiave App Store Connect ripete la domanda sulla conformita'
 	     all'esportazione a ogni caricamento. -->
@@ -29,8 +29,26 @@
 	<array>
 		<string>iPhoneOS</string>
 	</array>
+	<!-- Con quale SDK è stato costruito il bundle. App Store Connect legge
+	     queste chiavi e senza risponde ITMS-90562, «Invalid Bundle». Devono
+	     corrispondere all'SDK con cui si compila: quando l'SDK cambia, vanno
+	     aggiornate. -->
 	<key>DTPlatformName</key>
 	<string>iphoneos</string>
+	<key>DTPlatformVersion</key>
+	<string>26.5</string>
+	<key>DTPlatformBuild</key>
+	<string>23F81a</string>
+	<key>DTSDKName</key>
+	<string>iphoneos26.5</string>
+	<key>DTSDKBuild</key>
+	<string>23F81a</string>
+	<key>DTXcode</key>
+	<string>2660</string>
+	<key>DTXcodeBuild</key>
+	<string>17F113</string>
+	<key>DTCompiler</key>
+	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>MinimumOSVersion</key>
@@ -57,12 +75,33 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Serve a leggere il codice da una foto della tessera che hai già scattato.</string>
 
-	<!-- Icone come file nel bundle. -->
+	<!-- Icone. Le tre png sciolte restano: sono quelle che il telefono usa
+	     quando si compila con le immagini segnaposto, ed e' come l'app ha
+	     girato fino alla 1.0.1. -->
 	<key>CFBundleIconFiles</key>
 	<array>
 		<string>AppIcon60</string>
 		<string>AppIcon120</string>
 		<string>AppIcon180</string>
 	</array>
+
+	<!-- Per lo store non bastano. Il caricamento pretende un asset catalog
+	     compilato con dentro l'icona 1024 (altrimenti ITMS-90704) e la chiave
+	     CFBundleIconName (altrimenti ITMS-90713). L'asset catalog è il file
+	     Assets.car che sta nel bundle accanto ad AppIcon60x60@2x.png. -->
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon60x60</string>
+			</array>
+			<key>CFBundleIconName</key>
+			<string>AppIcon</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
