@@ -3,6 +3,12 @@
 Tutte le tue tessere fedeltà e codici usa-e-getta sul telefono, senza account, senza
 pubblicità e funzionante offline.
 
+## Requisiti
+
+- **Android 7.0** (API 24) o successivo. L'app è compilata contro l'API 36 e
+  contiene il codice nativo per `arm64-v8a` e `armeabi-v7a`.
+- **iOS 13.0** o successivo, solo iPhone.
+
 ## Struttura
 
 ```
