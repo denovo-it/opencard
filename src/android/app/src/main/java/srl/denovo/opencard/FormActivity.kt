@@ -186,24 +186,33 @@ class FormActivity : AppCompatActivity() {
      * Legge il codice da un'immagine già esistente invece che dal vivo.
      * ML Kit lavora sul file, quindi va bene qualunque immagine il telefono
      * sappia aprire.
+     *
+     * Si legge prima l'immagine rimpicciolita, che costa poca memoria. Se non
+     * trova niente si riprova una volta sola con [senzaRidurre], perché su una
+     * tessera fotografata da lontano la riduzione porta le barre a due pixel e
+     * il lettore si ferma.
      */
-    private fun leggiDaImmagine(immagine: Uri) {
+    private fun leggiDaImmagine(immagine: Uri, senzaRidurre: Boolean = false) {
         val lettore = BarcodeScanning.getClient()
         val copia = copiaInCache(immagine)
-        val ridotta = copia?.let { decodificaRidotta(it) }
+        val bitmap = copia?.let {
+            if (senzaRidurre) decodificaPiena(it) else decodificaRidotta(it)
+        }
         try {
-            val ingresso = if (copia != null && ridotta != null) {
-                InputImage.fromBitmap(ridotta, rotazione(copia))
+            val ingresso = if (copia != null && bitmap != null) {
+                InputImage.fromBitmap(bitmap, rotazione(copia))
             } else {
                 InputImage.fromFilePath(this, immagine)
             }
             lettore.process(ingresso)
                 .addOnSuccessListener { codici ->
                     val primo = codici.firstOrNull { !it.rawValue.isNullOrEmpty() }
-                    if (primo == null) {
-                        avvisa(getString(R.string.nessun_codice_nell_immagine))
-                    } else {
+                    if (primo != null) {
                         accetta(primo.rawValue!!, primo.format == Barcode.FORMAT_QR_CODE)
+                    } else if (!senzaRidurre && copia != null && bitmap != null) {
+                        leggiDaImmagine(immagine, senzaRidurre = true)
+                    } else {
+                        avvisa(getString(R.string.nessun_codice_nell_immagine))
                     }
                 }
                 .addOnFailureListener { guasto ->
@@ -211,11 +220,11 @@ class FormActivity : AppCompatActivity() {
                 }
                 .addOnCompleteListener {
                     lettore.close()
-                    ridotta?.recycle()
+                    bitmap?.recycle()
                 }
         } catch (guasto: Exception) {
             lettore.close()
-            ridotta?.recycle()
+            bitmap?.recycle()
             avvisa(getString(R.string.lettura_non_riuscita, guasto.message ?: ""))
         } finally {
             // La foto della tessera non resta in cache oltre la lettura: qui
@@ -279,6 +288,20 @@ class FormActivity : AppCompatActivity() {
             val opzioni = BitmapFactory.Options().apply { inSampleSize = scala }
             BitmapFactory.decodeFile(copia.path, opzioni)
         }
+    } catch (guasto: Exception) {
+        null
+    }
+
+    /**
+     * L'immagine senza riduzione, per il secondo tentativo.
+     *
+     * `inSampleSize` a 1 è esplicito e non è di forma: il controllo di
+     * `verifica-aab.sh` vuole un [BitmapFactory.Options] su ogni decodifica, e
+     * Play segnala le decodifiche che non ce l'hanno.
+     */
+    private fun decodificaPiena(copia: File): Bitmap? = try {
+        val opzioni = BitmapFactory.Options().apply { inSampleSize = 1 }
+        BitmapFactory.decodeFile(copia.path, opzioni)
     } catch (guasto: Exception) {
         null
     }

@@ -1,6 +1,7 @@
 ## 1.0.2
 
 - I testi dell'app usano le lettere accentate: si legge «è» dove prima c'era «e'».
+- Se il codice di una foto non viene letto, l'app riprova con l'immagine intera: le tessere fotografate da lontano adesso passano.
 
 ## 1.0.1
 
