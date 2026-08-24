@@ -75,7 +75,7 @@ int opencard_grouped_code(const char *code, char *out, size_t out_size)
     }
 
     if (tutto_cifre(s, n)) {
-        /* Da destra: il primo blocco e' il resto della divisione per tre. */
+        /* Da destra: il primo blocco è il resto della divisione per tre. */
         size_t testa = n % 3;
         if (testa == 0) {
             testa = 3;
@@ -180,7 +180,7 @@ int opencard_render_bitmap(const char *code, opencard_tipo tipo,
     }
 
     /* Il bitmap di zint vive dentro il simbolo e muore con lui: se ne fa una
-     * copia, cosi' chi chiama non deve tenersi il simbolo. */
+     * copia, così chi chiama non deve tenersi il simbolo. */
     byte = (size_t)simbolo->bitmap_width * (size_t)simbolo->bitmap_height * 3;
     *pixel = (unsigned char *)malloc(byte);
     if (*pixel == NULL) {

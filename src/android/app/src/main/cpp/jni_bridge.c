@@ -4,9 +4,9 @@
  *
  * Ponte fra il core in C e Kotlin.
  *
- * Qui dentro non c'e' logica: si traducono soltanto stringhe, array e oggetti.
- * Ogni funzione che puo' fallire lancia OpenCardException con il messaggio gia'
- * pronto per l'utente, cosi' il lato Kotlin non deve conoscere i codici.
+ * Qui dentro non c'è logica: si traducono soltanto stringhe, array e oggetti.
+ * Ogni funzione che può fallire lancia OpenCardException con il messaggio già
+ * pronto per l'utente, così il lato Kotlin non deve conoscere i codici.
  */
 
 #include <jni.h>
@@ -25,8 +25,8 @@
 /* Una stringa del core come jstring.
  *
  * Non si usa NewStringUTF: quella vuole il modified UTF-8 di Java, e sui
- * caratteri da quattro byte (le emoji) il comportamento non e' definito.
- * Si passa dall'UTF-16, che e' quello che Java usa davvero. Il core
+ * caratteri da quattro byte (le emoji) il comportamento non è definito.
+ * Si passa dall'UTF-16, che è quello che Java usa davvero. Il core
  * garantisce UTF-8 valido (opencard_utf8_ripara), ma se un byte storto
  * arriva lo stesso diventa '?', non un salto nel buio. */
 static jstring stringa_verso_java(JNIEnv *env, const char *utf8)
@@ -37,7 +37,7 @@ static jstring stringa_verso_java(JNIEnv *env, const char *utf8)
     size_t scritti = 0, i = 0;
     jstring risultato;
 
-    /* Un carattere UTF-8 diventa al piu' una coppia UTF-16: n unita' bastano. */
+    /* Un carattere UTF-8 diventa al più una coppia UTF-16: n unita' bastano. */
     sedici = (jchar *)malloc((n > 0 ? n : 1) * sizeof(jchar));
     if (sedici == NULL) {
         return NULL;
@@ -91,9 +91,9 @@ static void lancia(JNIEnv *env, const opencard_errore *errore)
         strcpy(messaggio, "Errore imprevisto.");
     }
     if (classe == NULL) {
-        return;     /* FindClass ha gia' messo in coda il suo errore */
+        return;     /* FindClass ha già messo in coda il suo errore */
     }
-    /* Non si passa da ThrowNew, che vuole il modified UTF-8: il messaggio puo'
+    /* Non si passa da ThrowNew, che vuole il modified UTF-8: il messaggio può
      * contenere il nome di una carta, emoji comprese. */
     costruttore = (*env)->GetMethodID(env, classe, "<init>", "(Ljava/lang/String;)V");
     testo = costruttore != NULL ? stringa_verso_java(env, messaggio) : NULL;
@@ -132,7 +132,7 @@ static int stringa(JNIEnv *env, jstring sorgente, char *dest, size_t dest_size)
     /* GetStringUTFChars consegna il modified UTF-8 di Java: le emoji arrivano
      * come coppie surrogate da sei byte, che fuori da Java non legge nessuno.
      * Si ricodificano in UTF-8 vero prima che finiscano nel file, e un taglio
-     * a meta' carattere fatto dalla strncpy sparisce con loro. */
+     * a metà carattere fatto dalla strncpy sparisce con loro. */
     opencard_utf8_ripara(dest);
     return 1;
 }
@@ -147,12 +147,12 @@ static jobject carta_a_java(JNIEnv *env, jclass classe, jmethodID costruttore,
     opencard_card_color(card, colore, sizeof(colore));
 
     /* Nome e codice possono avere caratteri fuori dall'ASCII: si convertono
-     * per la strada dell'UTF-16. Il colore e' sempre "#RRGGBB". */
+     * per la strada dell'UTF-16. Il colore è sempre "#RRGGBB". */
     label = stringa_verso_java(env, card->label);
     code = stringa_verso_java(env, card->code);
     color = (*env)->NewStringUTF(env, colore);
 
-    /* `coloreScelto` dice se il colore e' stato deciso dall'utente: serve al
+    /* `coloreScelto` dice se il colore è stato deciso dall'utente: serve al
      * form, che altrimenti non saprebbe se mostrare la scelta o il predefinito. */
     oggetto = (*env)->NewObject(env, classe, costruttore,
                                 (jint)card->id, label, code,
@@ -437,11 +437,11 @@ Java_srl_denovo_opencard_Core_renderCode(JNIEnv *env, jclass classe, jstring cod
     long totale, i;
 
     (void)classe;
-    /* Il testo si prende com'e', senza copiarlo in un buffer di lunghezza
+    /* Il testo si prende com'è, senza copiarlo in un buffer di lunghezza
      * fissa: i QR del passaggio fra due telefoni arrivano a 1425 caratteri,
      * quasi tre volte OPENCARD_CODE_MAX, e tagliarli qui darebbe un QR che chi
      * riceve scarta in silenzio. Il codice di una tessera resta corto lo
-     * stesso, il limite lo mette gia' il form. La copia serve per riparare il
+     * stesso, il limite lo mette già il form. La copia serve per riparare il
      * modified UTF-8 di Java: senza, un QR con un'emoji nel testo verrebbe
      * disegnato con byte che nessun altro lettore riconosce. */
     if (code == NULL) {
@@ -485,7 +485,7 @@ Java_srl_denovo_opencard_Core_renderCode(JNIEnv *env, jclass classe, jstring cod
         lancia_memoria(env);
         return NULL;
     }
-    /* Da RGB a ARGB, che e' il formato che si aspetta Bitmap. */
+    /* Da RGB a ARGB, che è il formato che si aspetta Bitmap. */
     for (i = 0; i < totale; i++) {
         unsigned char r = pixel[i * 3];
         unsigned char g = pixel[i * 3 + 1];
@@ -544,9 +544,9 @@ Java_srl_denovo_opencard_Core_backupNome(JNIEnv *env, jclass classe, jstring ogg
     return (*env)->NewStringUTF(env, nome);
 }
 
-/* Legge un backup e lo applica. Le due cose stanno insieme perche' fra la
- * lettura e la scrittura non c'e' niente da decidere: se il file e' valido si
- * ripristina, altrimenti si e' gia' alzata l'eccezione col motivo. */
+/* Legge un backup e lo applica. Le due cose stanno insieme perché fra la
+ * lettura e la scrittura non c'è niente da decidere: se il file è valido si
+ * ripristina, altrimenti si è già alzata l'eccezione col motivo. */
 JNIEXPORT jint JNICALL
 Java_srl_denovo_opencard_Core_backupRipristina(JNIEnv *env, jclass classe, jbyteArray dati)
 {
@@ -674,8 +674,8 @@ Java_srl_denovo_opencard_Core_trasfPrepara(JNIEnv *env, jclass classe)
 }
 
 /* Quanti pezzi sono arrivati e quanti ne servono: {ricevuti, totale}.
- * Totale a 0 vuol dire che fra i codici letti non ce n'e' ancora uno di
- * OpenCard, che non e' un errore: la fotocamera inquadra di tutto. */
+ * Totale a 0 vuol dire che fra i codici letti non ce n'è ancora uno di
+ * OpenCard, che non è un errore: la fotocamera inquadra di tutto. */
 JNIEXPORT jintArray JNICALL
 Java_srl_denovo_opencard_Core_trasfStato(JNIEnv *env, jclass classe, jobjectArray letti)
 {

@@ -11,7 +11,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface OCListaViewController : UIViewController
 
-/// Rilegge tutte e due le schede: una modifica puo' spostare una carta di gruppo.
+/// Rilegge tutte e due le schede: una modifica può spostare una carta di gruppo.
 - (void)ricaricaTutto;
 
 @end

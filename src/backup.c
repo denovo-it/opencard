@@ -94,7 +94,7 @@ opencard_esito opencard_backup_leggi(const char *testo, size_t lunghezza,
 
     /* Con lunghezza a zero si conta col terminatore: va bene solo per le
      * stringhe C. Un buffer letto da un file passa sempre la lunghezza vera,
-     * perche' qui nessuno garantisce che dopo l'ultimo byte ci sia uno zero. */
+     * perché qui nessuno garantisce che dopo l'ultimo byte ci sia uno zero. */
     if (lunghezza == 0) {
         lunghezza = strlen(testo);
     }

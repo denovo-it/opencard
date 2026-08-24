@@ -30,7 +30,7 @@
                 android:contentDescription="@null"
                 app:tint="@android:color/white" />
 
-            <!-- Solo il nome: il numero della carta si legge aprendola, cosi' non
+            <!-- Solo il nome: il numero della carta si legge aprendola, così non
                  resta esposto a chi guarda lo schermo dell'elenco. -->
             <TextView
                 android:id="@+id/nome"

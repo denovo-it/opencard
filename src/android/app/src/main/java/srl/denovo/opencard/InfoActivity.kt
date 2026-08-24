@@ -25,7 +25,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 /**
  * Logo, sito e versione fissi in testa, poi due schede.
  *
- * "Informazioni": perche' l'app esiste, lo storico delle revisioni e il software
+ * "Informazioni": perché l'app esiste, lo storico delle revisioni e il software
  * open source che contiene. "Legale": licenza d'uso, marchi e testo integrale
  * della AGPL v3.
  */
@@ -134,7 +134,7 @@ class InfoActivity : AppCompatActivity() {
      * Lo storico, con titoli e punti elenco al posto delle marcature.
      *
      * Ogni voce diventa una riga con il pallino a sinistra e il testo rientrato:
-     * su piu' righe il testo resta allineato sotto se stesso, non sotto il
+     * su più righe il testo resta allineato sotto se stesso, non sotto il
      * pallino.
      */
     private fun mostraChangelog(contenuto: LinearLayout) {
@@ -172,7 +172,7 @@ class InfoActivity : AppCompatActivity() {
         orientation = LinearLayout.HORIZONTAL
         setPadding(0, dp(3), 0, dp(3))
         // Larghezza piena: aggiunta senza parametri la riga nascerebbe
-        // WRAP_CONTENT, e li' dentro il peso del testo non si comporta come
+        // WRAP_CONTENT, e lì dentro il peso del testo non si comporta come
         // deve, sfondando il margine della colonna.
         layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
@@ -206,7 +206,7 @@ class InfoActivity : AppCompatActivity() {
         layoutParams = larghezzaPiena()
     }
 
-    /// Tutti i blocchi occupano la colonna intera, cosi' vanno a capo allo
+    /// Tutti i blocchi occupano la colonna intera, così vanno a capo allo
     /// stesso punto e il margine resta uno solo.
     private fun larghezzaPiena() = LinearLayout.LayoutParams(
         LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
@@ -270,7 +270,7 @@ class InfoActivity : AppCompatActivity() {
         try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (e: Exception) {
-            // Nessun browser installato: non c'e' niente di utile da dire.
+            // Nessun browser installato: non c'è niente di utile da dire.
         }
     }
 

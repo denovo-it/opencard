@@ -12,7 +12,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// Canale di rilascio: finche' e' valorizzato l'app lo dichiara.
+/// Canale di rilascio: finché è valorizzato l'app lo dichiara.
 extern NSString *_Nullable const OCCanale;
 
 @interface OCTema : NSObject

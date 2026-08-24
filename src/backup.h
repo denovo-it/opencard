@@ -4,10 +4,10 @@
  *
  * Esportazione e lettura dei backup.
  *
- * Il backup ha lo stesso formato del file dei dati, con due campi in piu'
+ * Il backup ha lo stesso formato del file dei dati, con due campi in più
  * (`app` e `exported_at`) per riconoscerlo a colpo d'occhio quando lo si apre.
  *
- * Il core produce e consuma byte: chi sceglie dove salvare e cosa aprire e' il
+ * Il core produce e consuma byte: chi sceglie dove salvare e cosa aprire è il
  * selettore di file di sistema, che sta nella parte nativa.
  */
 
@@ -23,12 +23,12 @@ extern "C" {
 #endif
 
 /* Nome proposto per il file, tipo "opencard-20260811.json".
- * `oggi` e' la data in formato YYYYMMDD: la sa la piattaforma, che conosce il
+ * `oggi` è la data in formato YYYYMMDD: la sa la piattaforma, che conosce il
  * fuso orario dell'utente. */
 void opencard_backup_nome(const char *oggi, char *out, size_t out_size);
 
 /* Contenuto del file di backup, come testo UTF-8 terminato da NUL.
- * `esportato_il` e' l'istante in formato ISO 8601, dato dalla piattaforma.
+ * `esportato_il` è l'istante in formato ISO 8601, dato dalla piattaforma.
  *
  * Gli id restano quelli che hanno: il colore di una carta che non ne ha uno
  * scelto a mano si calcola dall'id, e rinumerare cambierebbe quei colori.

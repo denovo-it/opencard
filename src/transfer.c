@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Denovo srl <info@denovo.srl>
  * Parte di OpenCard. Rilasciato sotto AGPL v3; licenza commerciale su richiesta.
  *
- * Passaggio delle carte fra due telefoni con dei QR. Il perche' delle scelte
+ * Passaggio delle carte fra due telefoni con dei QR. Il perché delle scelte
  * sta in transfer.h.
  */
 
@@ -303,7 +303,7 @@ static opencard_esito leggi_carte(const unsigned char *dati, size_t n,
         }
         memcpy(card->label, dati + posizione, etichetta);
         card->label[etichetta] = '\0';
-        /* I byte arrivano dall'altro telefono: quello che non e' UTF-8 valido
+        /* I byte arrivano dall'altro telefono: quello che non è UTF-8 valido
          * si ripara subito, prima che tocchi i ponti verso Java e NSString. */
         opencard_utf8_ripara(card->label);
         posizione += etichetta;
@@ -510,8 +510,8 @@ opencard_esito opencard_trasf_prepara(opencard_trasf_pezzi *out,
 
 /* ------------------------------------------------------- la raccolta ------ */
 
-/* I pezzi letti, rimessi in fila. `dati` e' NULL finche' non arriva il primo
- * pezzo buono, perche' solo lui dice quanti sono. */
+/* I pezzi letti, rimessi in fila. `dati` è NULL finché non arriva il primo
+ * pezzo buono, perché solo lui dice quanti sono. */
 typedef struct {
     int totale;
     unsigned long crc;
@@ -531,7 +531,7 @@ static void raccolta_free(raccolta *r)
 
 /* Mette insieme i pezzi letti. I testi che non sono di OpenCard si saltano in
  * silenzio: la fotocamera inquadra di tutto, e un codice a barre di un
- * pacchetto di biscotti non e' un errore da mostrare. */
+ * pacchetto di biscotti non è un errore da mostrare. */
 static opencard_esito raccogli(const char *const *letti, size_t n,
                                raccolta *r, opencard_errore *errore)
 {
@@ -584,7 +584,7 @@ static opencard_esito raccogli(const char *const *letti, size_t n,
             }
         } else if (r->crc != crc || r->totale != totale) {
             /* Pezzo di un altro passaggio: dirlo, altrimenti chi riceve
-             * aspetta all'infinito un codice che non arrivera' mai. */
+             * aspetta all'infinito un codice che non arriverà mai. */
             raccolta_free(r);
             return segnala(errore, OPENCARD_ERR_ALTRO_TRASF);
         }

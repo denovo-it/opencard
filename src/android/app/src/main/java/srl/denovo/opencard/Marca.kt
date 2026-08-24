@@ -7,7 +7,7 @@ package srl.denovo.opencard
 /**
  * Canale di rilascio.
  *
- * Finche' e' valorizzato, l'app lo dichiara nella barra e nella schermata
+ * Finche' è valorizzato, l'app lo dichiara nella barra e nella schermata
  * informativa: chi prova una versione deve sapere che la sta provando.
  * Alla prima versione di produzione si mette a null e la pastiglia sparisce
  * da sola.

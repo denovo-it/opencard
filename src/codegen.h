@@ -22,11 +22,11 @@ typedef enum {
  *
  * Da che parte si conta dipende da cosa si legge:
  *   - tutto cifre: da destra, come le migliaia.  "8001234567897" -> "9 998 601 028 602"
- *   - alfanumerico: da sinistra, perche' si legge in avanti.  "A1B2C3D4" -> "YKS 4W4 9Q"
- * Chi ha gia' una sua punteggiatura (trattini, spazi, URL) resta com'e'.
+ *   - alfanumerico: da sinistra, perché si legge in avanti.  "A1B2C3D4" -> "YKS 4W4 9Q"
+ * Chi ha già una sua punteggiatura (trattini, spazi, URL) resta com'è.
  *
  * Scrive in out, terminato da NUL. Ritorna la lunghezza scritta, oppure -1 se
- * out e' troppo piccolo. Serve al massimo len + len/3 + 2 byte.
+ * out è troppo piccolo. Serve al massimo len + len/3 + 2 byte.
  */
 int opencard_grouped_code(const char *code, char *out, size_t out_size);
 
@@ -34,7 +34,7 @@ int opencard_grouped_code(const char *code, char *out, size_t out_size);
  * lunghezza giusta, altrimenti Code128. Per i QR ritorna sempre BARCODE_QRCODE.
  *
  * Le tessere dei supermercati sono quasi sempre EAN/UPC, e renderizzarle con la
- * loro simbologia da' le barre di guardia e i moduli piu' larghi che i lettori
+ * loro simbologia dà le barre di guardia e i moduli più larghi che i lettori
  * laser da cassa leggono meglio.
  *
  * Ritorna una costante BARCODE_* di zint.
@@ -48,7 +48,7 @@ int opencard_symbology(const char *code, opencard_tipo tipo);
  * file PNG, e libpng non esiste nell'NDK.
  *
  * Chi chiama libera il buffer con opencard_free_bitmap().
- * Ritorna 0 se e' andata, altrimenti il codice di errore di zint.
+ * Ritorna 0 se è andata, altrimenti il codice di errore di zint.
  */
 int opencard_render_bitmap(const char *code, opencard_tipo tipo,
                            unsigned char **pixel, int *larghezza, int *altezza,
@@ -59,9 +59,9 @@ void opencard_free_bitmap(unsigned char *pixel);
 /* Genera il codice e scrive un PNG nel percorso indicato.
  *
  * Serve al banco di prova su host, dove il PNG si rilegge con zxing-cpp.
- * Richiede uno zint compilato con libpng, quindi non e' disponibile nelle
+ * Richiede uno zint compilato con libpng, quindi non è disponibile nelle
  * build per Android.
- * Ritorna 0 se e' andata, altrimenti il codice di errore di zint.
+ * Ritorna 0 se è andata, altrimenti il codice di errore di zint.
  * In caso di errore, se errore_len > 0, ci mette il messaggio di zint.
  */
 int opencard_write_png(const char *code, opencard_tipo tipo, const char *percorso,

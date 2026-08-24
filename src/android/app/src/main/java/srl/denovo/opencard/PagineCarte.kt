@@ -13,13 +13,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 /**
- * Le schede come pagine affiancate, cosi' si passa dall'una all'altra anche
+ * Le schede come pagine affiancate, così si passa dall'una all'altra anche
  * scorrendo con il dito.
  *
  * Le prime due ci sono sempre: carte e usa e getta. La terza, quella con la
- * stella, compare solo quando c'e' almeno una carta preferita e sparisce
- * quando si spegne l'ultima stella: una scheda vuota che non si puo' riempire
- * da li' dentro non serve a niente.
+ * stella, compare solo quando c'è almeno una carta preferita e sparisce
+ * quando si spegne l'ultima stella: una scheda vuota che non si può riempire
+ * da lì dentro non serve a niente.
  *
  * Ogni pagina ha la sua lista e il suo adattatore: tenerne una sola e
  * ricaricarla a ogni cambio farebbe vedere le carte sbagliate durante lo
@@ -35,7 +35,7 @@ class PagineCarte(
     /** Gli adattatori delle pagine: 0 carte, 1 usa e getta, 2 preferite. */
     private val adattatori = HashMap<Int, CarteAdapter>()
 
-    /** La scheda con la stella si mostra solo se c'e' qualcosa dentro. */
+    /** La scheda con la stella si mostra solo se c'è qualcosa dentro. */
     var conPreferite = false
         private set
 
@@ -48,8 +48,8 @@ class PagineCarte(
     /**
      * Che cosa mostra una posizione adesso.
      *
-     * Le preferite stanno per prime, cosi' aprendo l'app si vedono subito le
-     * carte che si usano di piu'. Le posizioni cambiano quando la scheda con la
+     * Le preferite stanno per prime, così aprendo l'app si vedono subito le
+     * carte che si usano di più. Le posizioni cambiano quando la scheda con la
      * stella compare o sparisce, e per questo nessuno deve ragionare per numero
      * di pagina: si ragiona per tipo.
      */
@@ -59,7 +59,7 @@ class PagineCarte(
         else -> if (posizione == 0) CARTE else USA_E_GETTA
     }
 
-    /** Dove sta adesso un tipo di scheda, -1 se non c'e'. */
+    /** Dove sta adesso un tipo di scheda, -1 se non c'è. */
     fun posizioneDi(tipo: Int): Int = when (tipo) {
         PREFERITE -> if (conPreferite) 0 else -1
         CARTE -> if (conPreferite) 1 else 0
@@ -73,7 +73,7 @@ class PagineCarte(
         /**
          * Uno solo per pagina. Attaccarne uno nuovo a ogni rebind, senza staccare
          * il vecchio, ne lascia in giro tanti quante sono le ricariche: allora la
-         * pressione prolungata prende la carta con piu' di un helper, uno solo
+         * pressione prolungata prende la carta con più di un helper, uno solo
          * riceve il rilascio, e gli altri lasciano la carta alzata sullo schermo.
          */
         var presa: ItemTouchHelper? = null
@@ -146,6 +146,6 @@ class PagineCarte(
         )
     }
 
-    /** Rilegge tutte e due le pagine: una modifica puo' spostare una carta di gruppo. */
+    /** Rilegge tutte e due le pagine: una modifica può spostare una carta di gruppo. */
     fun ricarica() = notifyDataSetChanged()
 }

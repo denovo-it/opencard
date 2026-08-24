@@ -25,9 +25,9 @@ import com.google.android.material.tabs.TabLayoutMediator
 
 /**
  * Le carte, divise in schede: quelle di tutti i giorni, le usa e getta e, se
- * ce n'e' almeno una, le preferite sotto la stella.
+ * ce n'è almeno una, le preferite sotto la stella.
  *
- * Tocco su una carta: la apre. Pressione prolungata: la trascina su o giu' e
+ * Tocco su una carta: la apre. Pressione prolungata: la trascina su o giù e
  * prende il posto di quella che scavalca.
  */
 class MainActivity : AppCompatActivity() {
@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var carte: PagineCarte
     private lateinit var schede: TabLayout
 
-    /** Scheda aperta: vero se e' quella delle usa e getta. */
+    /** Scheda aperta: vero se è quella delle usa e getta. */
     private val usaEGetta: Boolean
         get() = carte.tipoDi(pagine.currentItem) == PagineCarte.USA_E_GETTA
 
@@ -45,8 +45,8 @@ class MainActivity : AppCompatActivity() {
      *
      * Serve a distinguere l'avvio dal ritorno da un'altra schermata: all'avvio
      * si sceglie la scheda da mostrare, tornando indietro si resta dov'era
-     * l'utente. Girando il telefono l'activity si ricrea ma lo stato c'e',
-     * quindi non e' un'apertura e la scheda non si sposta.
+     * l'utente. Girando il telefono l'activity si ricrea ma lo stato c'è,
+     * quindi non è un'apertura e la scheda non si sposta.
      */
     private var primaApertura = true
 
@@ -79,15 +79,15 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.barra))
         supportActionBar?.apply {
-            // Il titolo e' il marchio, messo dentro la barra nel layout.
+            // Il titolo è il marchio, messo dentro la barra nel layout.
             setDisplayShowTitleEnabled(false)
-            // A sinistra le informazioni, dove di solito c'e' il "torna indietro":
-            // dalla lista non si torna da nessuna parte, quindi il posto e' libero.
+            // A sinistra le informazioni, dove di solito c'è il "torna indietro":
+            // dalla lista non si torna da nessuna parte, quindi il posto è libero.
             setDisplayHomeAsUpEnabled(true)
             setHomeAsUpIndicator(R.drawable.ic_info)
         }
 
-        // La pastiglia del canale non sta piu' nella barra: il canale si legge
+        // La pastiglia del canale non sta più nella barra: il canale si legge
         // nelle informazioni e nella schermata di avvio, e in cima resta il
         // solo logo, centrato.
 
@@ -106,14 +106,14 @@ class MainActivity : AppCompatActivity() {
         // scheda la pagina scorre, scorrendo la pagina la scheda si sposta.
         TabLayoutMediator(schede, pagine) { scheda, posizione ->
             when (carte.tipoDi(posizione)) {
-                // Una stella e basta: dice da se' cosa contiene, e una parola in
-                // piu' stringerebbe le altre due.
+                // Una stella e basta: dice da sé cosa contiene, e una parola in
+                // più stringerebbe le altre due.
                 //
                 // Va messa come vista propria e non con setIcon(): in una fila
                 // dove le altre schede hanno del testo, l'icona da sola resta
-                // schiacciata in basso e si vede a meta'. La tinta e' quella
-                // del testo, cosi' la stella si accende quando la scheda e'
-                // scelta e si smorza quando non lo e'.
+                // schiacciata in basso e si vede a metà. La tinta è quella
+                // del testo, così la stella si accende quando la scheda è
+                // scelta e si smorza quando non lo è.
                 PagineCarte.PREFERITE -> scheda.customView = ImageView(this).apply {
                     setImageResource(R.drawable.ic_stella_piena)
                     imageTintList = schede.tabTextColors
@@ -143,8 +143,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Se l'avvio precedente si e' chiuso male, lo dice e propone di mandare il
-     * dettaglio: e' l'unico modo per sapere cosa e' successo senza collegare il
+     * Se l'avvio precedente si è chiuso male, lo dice e propone di mandare il
+     * dettaglio: è l'unico modo per sapere cosa è successo senza collegare il
      * telefono a un computer.
      */
     private fun mostraUltimoErrore() {
@@ -173,7 +173,7 @@ class MainActivity : AppCompatActivity() {
      * Quando la scheda compare o sparisce le altre si spostano di posto: chi
      * stava guardando una scheda deve restare su quella, non trovarsi
      * all'improvviso su un'altra. Per questo ci si segna il tipo prima e si
-     * ritorna li' dopo.
+     * ritorna lì dopo.
      */
     private fun ricarica() {
         Dati.chiedi(
@@ -193,7 +193,7 @@ class MainActivity : AppCompatActivity() {
                 apriSullaStella(ce)
             },
             {
-                // Se la lettura fallisce lo dice gia' la pagina che si ricarica:
+                // Se la lettura fallisce lo dice già la pagina che si ricarica:
                 // qui si lascia le schede come stanno e si va avanti.
                 carte.ricarica()
                 primaApertura = false
@@ -202,12 +202,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * All'apertura si parte dalla stella, quando c'e'.
+     * All'apertura si parte dalla stella, quando c'è.
      *
-     * Sono le carte che si usano di piu': se la scheda esiste e' quella che
-     * serve per prima, e senza questo si aprirebbe sempre su "Carte", perche'
+     * Sono le carte che si usano di più: se la scheda esiste è quella che
+     * serve per prima, e senza questo si aprirebbe sempre su "Carte", perché
      * la scheda con la stella compare solo dopo la prima lettura, quando la
-     * pagina scelta e' gia' quella di partenza.
+     * pagina scelta è già quella di partenza.
      */
     private fun apriSullaStella(cePreferite: Boolean) {
         if (!primaApertura) return
@@ -245,7 +245,7 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("RestrictedApi")
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.principale, menu)
-        // Nei menu a tendina Android nasconde le icone: qui servono, perche'
+        // Nei menu a tendina Android nasconde le icone: qui servono, perché
         // esporta e importa si distinguono a colpo d'occhio dal verso freccia.
         (menu as? MenuBuilder)?.setOptionalIconsVisible(true)
         return true
@@ -320,7 +320,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun ripristina(sorgente: Uri) {
-        // Lettura e ripristino insieme sul thread dei dati: il file puo' stare
+        // Lettura e ripristino insieme sul thread dei dati: il file può stare
         // su un provider lento (Drive) e sul thread dell'interfaccia sarebbe
         // un ANR. Il tetto tiene fuori il file sbagliato scelto per errore: un
         // backup vero pesa qualche decina di kilobyte.

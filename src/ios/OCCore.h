@@ -4,8 +4,8 @@
 //
 // Ponte fra il core in C e Objective-C.
 //
-// Qui dentro non c'e' logica: si traducono soltanto stringhe, array e strutture.
-// Il formato dei dati e dei backup e' deciso dal core, quindi un backup fatto su
+// Qui dentro non c'è logica: si traducono soltanto stringhe, array e strutture.
+// Il formato dei dati e dei backup è deciso dal core, quindi un backup fatto su
 // Android si rilegge qui senza conversioni, e viceversa.
 
 #import <Foundation/Foundation.h>
@@ -44,7 +44,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// allora la scheda con la stella non si mostra.
 + (nullable NSArray<OCCarta *> *)cartePreferite:(NSError **)errore;
 
-/// Accende o spegne la stella, lasciando il resto della carta com'e'.
+/// Accende o spegne la stella, lasciando il resto della carta com'è.
 + (BOOL)impostaPreferita:(NSInteger)identificativo
                  accesa:(BOOL)accesa
                  errore:(NSError **)errore;
@@ -67,7 +67,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (BOOL)elimina:(NSInteger)identificativo errore:(NSError **)errore;
 
-/// Riscrive l'ordine di un gruppo lasciando l'altro dov'e'.
+/// Riscrive l'ordine di un gruppo lasciando l'altro dov'è.
 + (BOOL)riordina:(BOOL)usaEGetta identificativi:(NSArray<NSNumber *> *)ids errore:(NSError **)errore;
 
 /// Colore che spetta a un id, quando l'utente non ne sceglie uno.
@@ -96,9 +96,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Come sono fatti sta in src/transfer.h.
 + (nullable NSArray<NSString *> *)codiciDaMostrare:(NSError **)errore;
 
-/// A che punto e' la raccolta, dati i QR letti finora: `ricevuti` e `totale`.
-/// Totale a 0 vuol dire che fra i codici letti non ce n'e' ancora uno di
-/// OpenCard, e non e' un errore: la fotocamera inquadra di tutto.
+/// A che punto è la raccolta, dati i QR letti finora: `ricevuti` e `totale`.
+/// Totale a 0 vuol dire che fra i codici letti non ce n'è ancora uno di
+/// OpenCard, e non è un errore: la fotocamera inquadra di tutto.
 + (BOOL)statoRaccolta:(NSArray<NSString *> *)letti
              ricevuti:(NSInteger *)ricevuti
                totale:(NSInteger *)totale

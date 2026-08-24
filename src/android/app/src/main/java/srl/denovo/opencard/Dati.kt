@@ -21,7 +21,7 @@ object Dati {
     private val principale = Handler(Looper.getMainLooper())
 
     /**
-     * Valorizzato se l'apertura del file delle carte e' fallita all'avvio.
+     * Valorizzato se l'apertura del file delle carte è fallita all'avvio.
      * Le schermate lo mostrano invece di comportarsi come se non fosse successo
      * niente: una lista vuota farebbe pensare che le carte siano sparite.
      */
@@ -30,7 +30,7 @@ object Dati {
     /**
      * Va chiamata una volta all'avvio.
      *
-     * `filesDir` e' la directory privata dell'app: nessuna altra app la legge e
+     * `filesDir` è la directory privata dell'app: nessuna altra app la legge e
      * non serve nessun permesso.
      */
     fun apri(contesto: Context) {
@@ -39,14 +39,14 @@ object Dati {
     }
 
     /**
-     * Recupera il file delle carte se e' rimasto in una posizione usata da
+     * Recupera il file delle carte se è rimasto in una posizione usata da
      * un'installazione precedente.
      *
-     * Aggiornando l'app il sistema conserva il container, quindi il file c'e'
+     * Aggiornando l'app il sistema conserva il container, quindi il file c'è
      * ancora ma sotto un'altra directory: senza questo l'utente aprirebbe l'app
      * e la troverebbe vuota, con le carte ancora sul telefono ma invisibili.
      *
-     * Si copia, non si sposta: se qualcosa va storto l'originale resta dov'e'.
+     * Si copia, non si sposta: se qualcosa va storto l'originale resta dov'è.
      */
     private fun recuperaDatiEsistenti(contesto: Context) {
         val attuale = File(contesto.filesDir, "opencard.json")
@@ -69,7 +69,7 @@ object Dati {
     /**
      * Esegue [operazione] sul thread dei dati e riporta il risultato su quello
      * dell'interfaccia. Se il core solleva un errore, arriva a [suErrore] col
-     * messaggio gia' scritto per l'utente.
+     * messaggio già scritto per l'utente.
      */
     fun <T> chiedi(
         operazione: () -> T,

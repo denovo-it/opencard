@@ -14,7 +14,7 @@
         app:elevation="0dp">
 
         <!-- Il marchio prende il posto della scritta "OpenCard": a 30dp risultava
-             schiacciato, quindi la barra e' piu' alta per contenerlo. -->
+             schiacciato, quindi la barra è più alta per contenerlo. -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/barra"
             style="@style/Barra.OpenCard"
@@ -22,7 +22,7 @@
             android:layout_height="68dp">
 
             <!-- Il logo da solo, centrato nella barra: senza la pastiglia del
-                 canale accanto non serve piu' il contenitore orizzontale, che
+                 canale accanto non serve più il contenitore orizzontale, che
                  spostava il marchio a sinistra per fare posto alla scritta. -->
             <ImageView
                 android:id="@+id/marca"

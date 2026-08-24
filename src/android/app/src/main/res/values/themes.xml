@@ -22,7 +22,7 @@
 
     <!-- Il nome della carta sta in mezzo alla barra, fra la freccia indietro e
          le voci di destra: col corpo grande di serie (22sp) i nomi lunghi si
-         vedevano a meta'. A 17sp ce ne sta un terzo in piu'. -->
+         vedevano a metà. A 17sp ce ne sta un terzo in più. -->
     <style name="TitoloCarta.OpenCard" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:textSize">17sp</item>
     </style>

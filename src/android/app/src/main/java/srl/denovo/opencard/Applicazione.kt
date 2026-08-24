@@ -10,14 +10,14 @@ import android.util.Log
 /**
  * Apre il file dei dati prima di qualunque schermata.
  *
- * Va fatto qui e non nella prima activity: il sistema puo' far ripartire l'app
+ * Va fatto qui e non nella prima activity: il sistema può far ripartire l'app
  * da una schermata qualunque, per esempio dopo averla chiusa per memoria.
  */
 class Applicazione : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // Per primo, cosi' raccoglie anche gli errori dell'avvio.
+        // Per primo, così raccoglie anche gli errori dell'avvio.
         Diagnostica.installa(this)
 
         // Un problema qui non deve chiudere l'app senza dire niente: le

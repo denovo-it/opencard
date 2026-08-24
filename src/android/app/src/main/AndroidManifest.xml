@@ -7,11 +7,11 @@
 
     <!-- L'app non ha niente da mandare da nessuna parte, e la scheda dello store
          lo dice. Queste due arrivano dal merge del manifest, non da qui: le
-         aggiunge com.google.android.datatransport:transport-backend-cct, che e'
+         aggiunge com.google.android.datatransport:transport-backend-cct, che è
          il pezzo con cui ML Kit manda la telemetria a Google. Il modello di
-         lettura sta dentro l'app e la scansione e' offline, quindi togliendole
+         lettura sta dentro l'app e la scansione è offline, quindi togliendole
          non manca niente all'utente. Chi apre le autorizzazioni su Play non
-         legge piu' "accesso completo a Internet". -->
+         legge più "accesso completo a Internet". -->
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 

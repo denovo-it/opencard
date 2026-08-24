@@ -4,7 +4,7 @@
 //
 // Il poco Markdown che serve allo storico delle revisioni.
 //
-// Non e' un interprete completo e non deve diventarlo: il changelog usa titoli,
+// Non è un interprete completo e non deve diventarlo: il changelog usa titoli,
 // punti elenco, grassetto e qualche nota, e basta riconoscere quelli.
 
 #import <UIKit/UIKit.h>

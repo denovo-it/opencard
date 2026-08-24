@@ -69,7 +69,7 @@ static const NSTimeInterval OCDurataBenvenuto = 3.0;
 {
     [super viewDidAppear:animato];
 
-    // Il conteggio parte quando la schermata e' davvero a video: partendo dalla
+    // Il conteggio parte quando la schermata è davvero a video: partendo dalla
     // costruzione, il tempo di disegno finirebbe dentro i tre secondi.
     self.conteggio = [NSTimer scheduledTimerWithTimeInterval:OCDurataBenvenuto
                                                      repeats:NO

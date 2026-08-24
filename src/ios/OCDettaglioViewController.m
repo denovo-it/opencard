@@ -42,7 +42,7 @@
     self.view.backgroundColor = [OCTema superficie];
 
     // Il nome della carta divide la barra con "Modifica" e la stella, e il
-    // titolo di serie sta su una riga sola: i nomi lunghi si vedevano a meta'.
+    // titolo di serie sta su una riga sola: i nomi lunghi si vedevano a metà.
     // Al suo posto una vista con due righe, come su Android. La centratura la
     // decide la barra e resta quella di sistema: su iOS un titolo allineato a
     // sinistra si vede solo coi titoli grandi, che qui non servono.
@@ -104,7 +104,7 @@
     [super viewWillAppear:animato];
     [self carica];
 
-    // Lo schermo va al massimo finche' la carta e' aperta: i lettori laser e le
+    // Lo schermo va al massimo finché la carta è aperta: i lettori laser e le
     // fotocamere delle casse leggono male uno schermo scuro.
     self.luminositaPrecedente = [UIScreen mainScreen].brightness;
     [UIScreen mainScreen].brightness = 1.0;
@@ -141,7 +141,7 @@
     self.immagine.image = disegno;
 }
 
-/// Stella vuota se la carta non e' preferita, piena se lo e'.
+/// Stella vuota se la carta non è preferita, piena se lo è.
 - (void)disegnaStella
 {
     NSString *nome = self.preferita ? @"star.fill" : @"star";
@@ -154,8 +154,8 @@
     }
 }
 
-/// Accende o spegne la stella. La lista si ricarica da se' quando si torna
-/// indietro, e li' la scheda con la stella compare o sparisce.
+/// Accende o spegne la stella. La lista si ricarica da sé quando si torna
+/// indietro, e lì la scheda con la stella compare o sparisce.
 - (void)cambiaStella
 {
     NSError *errore = nil;
@@ -174,7 +174,7 @@
     OCFormViewController *form = [[OCFormViewController alloc]
                                   initPerModificaConId:self.identificativo];
 
-    // Cancellata da li', questa schermata non ha piu' niente da mostrare.
+    // Cancellata da lì, questa schermata non ha più niente da mostrare.
     __weak typeof(self) debole = self;
     form.suEliminazione = ^{
         [debole.navigationController popViewControllerAnimated:YES];

@@ -34,7 +34,7 @@ static const NSUInteger OCLimiteCodice = 500;
 @property (nonatomic, strong) UISegmentedControl *tipo;
 @property (nonatomic, strong) UISwitch *interruttore;
 /// La stella si accende anche da qui, oltre che dalla carta aperta: chi sta
-/// gia' modificando non deve uscire e rientrare.
+/// già modificando non deve uscire e rientrare.
 @property (nonatomic, strong) UISwitch *stella;
 @property (nonatomic, strong) UIStackView *tavolozza;
 @property (nonatomic, strong) UILabel *errore;
@@ -209,7 +209,7 @@ static const NSUInteger OCLimiteCodice = 500;
     self.errore.numberOfLines = 0;
 
     // In fondo e lontano da Salva: si vede solo modificando una carta che
-    // esiste gia', e chiede conferma prima di cancellare.
+    // esiste già, e chiede conferma prima di cancellare.
     self.elimina = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.elimina setTitle:@"Elimina" forState:UIControlStateNormal];
     [self.elimina setImage:[UIImage systemImageNamed:@"trash"] forState:UIControlStateNormal];
@@ -264,8 +264,8 @@ static const NSUInteger OCLimiteCodice = 500;
 
 #pragma mark - Colori
 
-/// Il primo colore e' quello che spetta alla carta: lasciandolo com'e' non si
-/// scrive niente nel file, ed e' il caso normale.
+/// Il primo colore è quello che spetta alla carta: lasciandolo com'è non si
+/// scrive niente nel file, ed è il caso normale.
 - (void)aggiornaTavolozza
 {
     for (UIView *vecchia in self.tavolozza.arrangedSubviews) {
@@ -337,11 +337,11 @@ static const NSUInteger OCLimiteCodice = 500;
                         [NSCharacterSet whitespaceAndNewlineCharacterSet]] ?: @"";
 
     if (etichetta.length == 0) {
-        self.errore.text = @"L'etichetta e' obbligatoria.";
+        self.errore.text = @"L'etichetta è obbligatoria.";
         return;
     }
     if (valore.length == 0) {
-        self.errore.text = @"Il codice e' obbligatorio.";
+        self.errore.text = @"Il codice è obbligatorio.";
         return;
     }
 
@@ -367,8 +367,8 @@ static const NSUInteger OCLimiteCodice = 500;
         return;
     }
 
-    // La stella si scrive a parte, perche' non passa da inserisci e aggiorna:
-    // quelle due lasciano stare il campo apposta, cosi' modificare una carta
+    // La stella si scrive a parte, perché non passa da inserisci e aggiorna:
+    // quelle due lasciano stare il campo apposta, così modificare una carta
     // non le toglie la preferenza.
     if (![OCCore impostaPreferita:quale accesa:self.stella.isOn errore:&errore]) {
         self.errore.text = errore.localizedDescription;
@@ -377,7 +377,7 @@ static const NSUInteger OCLimiteCodice = 500;
     [self chiudi];
 }
 
-/// La domanda e' la stessa del cestino nell'elenco, con lo stesso titolo e lo
+/// La domanda è la stessa del cestino nell'elenco, con lo stesso titolo e lo
 /// stesso nome fra virgolette: chi cancella deve leggere la stessa cosa da
 /// qualunque parte sia arrivato.
 - (void)confermaEliminazione
@@ -491,7 +491,7 @@ static const NSUInteger OCLimiteCodice = 500;
     [self leggiDaImmagine:immagine];
 }
 
-/// Legge il codice da un'immagine gia' esistente. Vision e' di sistema e
+/// Legge il codice da un'immagine già esistente. Vision è di sistema e
 /// riconosce gli stessi formati della fotocamera.
 - (void)leggiDaImmagine:(UIImage *)immagine
 {
@@ -517,7 +517,7 @@ static const NSUInteger OCLimiteCodice = 500;
                 [self accetta:trovato.payloadStringValue qrcode:qrcode];
                 return;
             }
-            self.errore.text = @"Nell'immagine non c'e' nessun codice leggibile.";
+            self.errore.text = @"Nell'immagine non c'è nessun codice leggibile.";
         });
     }];
 

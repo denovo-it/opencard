@@ -31,7 +31,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 
 #pragma mark - Errori
 
-/// Trasforma un errore del core in un NSError col messaggio gia' pronto.
+/// Trasforma un errore del core in un NSError col messaggio già pronto.
 + (NSError *)erroreDa:(const opencard_errore *)errore
 {
     char messaggio[512];
@@ -73,7 +73,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     return directory;
 }
 
-/// Recupera il file delle carte se e' rimasto in una posizione usata da
+/// Recupera il file delle carte se è rimasto in una posizione usata da
 /// un'installazione precedente: aggiornando l'app il sistema conserva i dati,
 /// ma sotto un'altra directory, e senza questo l'app partirebbe vuota.
 + (void)recuperaDatiEsistentiIn:(NSString *)directory
@@ -404,7 +404,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 
     /* Un file vuoto ha bytes a NULL e lunghezza zero: al core arriverebbe il
      * segnale "conta col terminatore" su un buffer che non ce l'ha. Si ferma
-     * qui, con lo stesso messaggio di un file che non e' un backup. */
+     * qui, con lo stesso messaggio di un file che non è un backup. */
     if (dati.length == 0 || dati.bytes == NULL) {
         opencard_errore vuoto = {OPENCARD_ERR_JSON, 0, {0}, 0};
         [self riporta:errore da:&vuoto];

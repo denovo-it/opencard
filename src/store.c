@@ -60,13 +60,13 @@ static void copia(char *dest, size_t dest_size, const char *sorgente)
     }
     n = strlen(sorgente);
     if (n >= dest_size) {
-        /* Non si taglia a meta' un carattere multibyte: si torna indietro fino
-         * al suo primo byte e si taglia li'. Un pezzo di carattere non e' UTF-8
+        /* Non si taglia a metà un carattere multibyte: si torna indietro fino
+         * al suo primo byte e si taglia lì. Un pezzo di carattere non è UTF-8
          * valido e i ponti verso Java e NSString non lo digeriscono. */
         n = dest_size - 1;
-        /* Il byte in posizione n e' il primo che non entra. Se e' un byte di
+        /* Il byte in posizione n è il primo che non entra. Se è un byte di
          * coda, il carattere a cui appartiene resta spezzato: si arretra fino
-         * al suo byte di testa e si taglia li', testa compresa. */
+         * al suo byte di testa e si taglia lì, testa compresa. */
         while (n > 0 && ((unsigned char)sorgente[n] & 0xC0) == 0x80) {
             n--;
         }
@@ -128,7 +128,7 @@ void opencard_utf8_ripara(char *s)
             src++;
             continue;
         }
-        /* Sequenze piu' lunghe del necessario e fuori dal piano Unicode. */
+        /* Sequenze più lunghe del necessario e fuori dal piano Unicode. */
         if ((lunghezza == 2 && cp < 0x80) || (lunghezza == 3 && cp < 0x800) ||
             (lunghezza == 4 && (cp < 0x10000 || cp > 0x10FFFF))) {
             *dst++ = '?';
@@ -136,9 +136,9 @@ void opencard_utf8_ripara(char *s)
             continue;
         }
         if (cp >= 0xD800 && cp <= 0xDFFF) {
-            /* Un surrogato da solo non e' un carattere. In coppia e' il
+            /* Un surrogato da solo non è un carattere. In coppia è il
              * modified UTF-8 di Java, sei byte per un'emoji: si ricodifica in
-             * UTF-8 vero da quattro, che e' quello che leggono tutti. */
+             * UTF-8 vero da quattro, che è quello che leggono tutti. */
             unsigned int basso = 0;
             if (cp <= 0xDBFF && (src[3] & 0xF0) == 0xE0 &&
                 (src[4] & 0xC0) == 0x80 && (src[5] & 0xC0) == 0x80) {
@@ -272,7 +272,7 @@ static int lista_aggiungi(opencard_lista *lista, const opencard_card *card)
 }
 
 /* Legge il file e ne restituisce il JSON. NULL con errore valorizzato se il
- * file c'e' ma non si legge: non si parte da vuoto, altrimenti la scrittura
+ * file c'è ma non si legge: non si parte da vuoto, altrimenti la scrittura
  * successiva sovrascriverebbe le carte dell'utente. */
 static cJSON *leggi_file(int *mancante, opencard_errore *errore)
 {
@@ -347,7 +347,7 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione,
         label->valuestring[0] == '\0') {
         return segnala(errore, OPENCARD_ERR_CARTA);
     }
-    /* Da qui in poi il nome c'e': finisce nei messaggi per far capire di quale
+    /* Da qui in poi il nome c'è: finisce nei messaggi per far capire di quale
      * carta si parla. */
     if (errore != NULL) {
         copia(errore->dettaglio, sizeof(errore->dettaglio), label->valuestring);
@@ -378,13 +378,13 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione,
         copia(out->color, sizeof(out->color), color->valuestring);
     }
     /* Il file arriva anche da fuori (backup, vecchie versioni Android che
-     * scrivevano il modified UTF-8 di Java): quello che non e' UTF-8 valido
+     * scrivevano il modified UTF-8 di Java): quello che non è UTF-8 valido
      * si ripara qui, prima che arrivi ai ponti verso Java e NSString. */
     opencard_utf8_ripara(out->label);
     opencard_utf8_ripara(out->code);
     opencard_utf8_ripara(out->color);
     out->disposable = cJSON_IsTrue(disposable) ? 1 : 0;
-    /* Campo assente vuol dire "non preferita": e' cosi' che i file scritti
+    /* Campo assente vuol dire "non preferita": è così che i file scritti
      * dalle versioni precedenti restano validi senza convertire niente. */
     out->favorite = cJSON_IsTrue(favorite) ? 1 : 0;
 
@@ -459,7 +459,7 @@ void *opencard_carte_a_json(const opencard_lista *lista, const char *esportato_i
         return NULL;
     }
     /* Ogni aggiunta si controlla: una che fallisce a memoria esaurita
-     * lascerebbe un file senza un campo, che al giro dopo non si legge piu'.
+     * lascerebbe un file senza un campo, che al giro dopo non si legge più.
      * Meglio non scrivere niente che scrivere un file monco. */
     if (esportato_il != NULL &&
         cJSON_AddStringToObject(radice, "app", "OpenCard") == NULL) {
@@ -498,8 +498,8 @@ void *opencard_carte_a_json(const opencard_lista *lista, const char *esportato_i
         }
 
         /* I campi facoltativi si scrivono solo quando dicono qualcosa: il
-         * colore se e' diverso da quello che l'id assegna da se', l'usa e getta
-         * solo se e' acceso. Cosi' una carta normale ha esattamente i campi che
+         * colore se è diverso da quello che l'id assegna da sé, l'usa e getta
+         * solo se è acceso. Cosi' una carta normale ha esattamente i campi che
          * le servono e il file resta leggibile. */
         opencard_color_for_id(card->id, colore_id, sizeof(colore_id));
         if (card->color[0] != '\0' && strcmp(card->color, colore_id) != 0 &&
@@ -521,8 +521,8 @@ fallito:
 }
 
 /* Id assenti o ripetuti: si rinumera tutto. Due carte sullo stesso id si
- * perdono a vicenda, perche' aprire, modificare o cancellare passa da li'.
- * Serve ai file gia' scritti dalla 1.0.2, che dopo un "azzera e sostituisci"
+ * perdono a vicenda, perché aprire, modificare o cancellare passa da lì.
+ * Serve ai file già scritti dalla 1.0.2, che dopo un "azzera e sostituisci"
  * dai QR aveva lasciato tutte le carte con l'id a zero. */
 static void rinumera_se_serve(opencard_lista *lista)
 {
@@ -562,7 +562,7 @@ static opencard_esito carica(opencard_lista *out, opencard_errore *errore)
 
     radice = leggi_file(&mancante, errore);
     if (radice == NULL) {
-        /* File assente: si parte da vuoto, e' il primo avvio. */
+        /* File assente: si parte da vuoto, è il primo avvio. */
         return mancante ? OPENCARD_OK : (errore != NULL ? errore->codice : OPENCARD_ERR_IO);
     }
     esito = opencard_carte_da_json(radice, 0, out, errore);
@@ -574,7 +574,7 @@ static opencard_esito carica(opencard_lista *out, opencard_errore *errore)
 }
 
 /* Scrittura atomica: file temporaneo, fsync, rename. Se il sistema uccide
- * l'app a meta', il file vecchio resta intatto. */
+ * l'app a metà, il file vecchio resta intatto. */
 static opencard_esito salva(const opencard_lista *lista, opencard_errore *errore)
 {
     char temporaneo[1100];
@@ -787,7 +787,7 @@ int opencard_next_id(void)
 }
 
 /* Riempie una carta dai valori del form. Il colore si tiene solo se dice
- * qualcosa, cioe' se e' diverso da quello che l'id assegna da se'. */
+ * qualcosa, cioè se è diverso da quello che l'id assegna da sé. */
 static void componi(opencard_card *card, int id, const char *label, const char *code,
                     int is_qrcode, const char *color, int disposable, int favorite)
 {
@@ -950,8 +950,8 @@ opencard_esito opencard_reorder(int disposable, const int *ids, size_t n,
     }
 
     /* Le carte dei due gruppi stanno mescolate in una lista sola: le nuove
-     * prendono, nell'ordine, le posizioni che il gruppo occupava gia', cosi'
-     * spostare una carta fedelta' non muove le usa e getta. */
+     * prendono, nell'ordine, le posizioni che il gruppo occupava già, così
+     * spostare una carta fedeltà non muove le usa e getta. */
     for (i = 0; i < tutte.n; i++) {
         if (tutte.carte[i].disposable != gruppo) {
             continue;
@@ -1041,10 +1041,10 @@ void opencard_errore_testo(const opencard_errore *errore, char *out, size_t out_
         break;
     case OPENCARD_ERR_JSON:
         copia(out, out_size,
-              "Il file non e' leggibile: non contiene un backup di OpenCard.");
+              "Il file non è leggibile: non contiene un backup di OpenCard.");
         break;
     case OPENCARD_ERR_FORMATO:
-        copia(out, out_size, "Il file non e' un backup di OpenCard.");
+        copia(out, out_size, "Il file non è un backup di OpenCard.");
         break;
     case OPENCARD_ERR_SCHEMA:
         snprintf(out, out_size,
@@ -1065,7 +1065,7 @@ void opencard_errore_testo(const opencard_errore *errore, char *out, size_t out_
         copia(out, out_size, "Memoria esaurita.");
         break;
     case OPENCARD_ERR_NON_TROVATA:
-        copia(out, out_size, "La carta non esiste piu'.");
+        copia(out, out_size, "La carta non esiste più.");
         break;
     case OPENCARD_ERR_ALTRO_TRASF:
         copia(out, out_size,
@@ -1081,7 +1081,7 @@ void opencard_errore_testo(const opencard_errore *errore, char *out, size_t out_
         break;
     case OPENCARD_ERR_TRASF_VERSIONE:
         snprintf(out, out_size,
-                 "Il codice arriva da una versione piu' recente di OpenCard "
+                 "Il codice arriva da una versione più recente di OpenCard "
                  "(formato %d). Aggiorna l'app su questo telefono.",
                  errore->schema_trovato);
         break;

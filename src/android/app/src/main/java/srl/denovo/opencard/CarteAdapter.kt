@@ -17,10 +17,10 @@ import com.google.android.material.card.MaterialCardView
  * Le carte come schede colorate.
  *
  * Il colore lo decide il core: quello scelto dall'utente, altrimenti quello che
- * spetta all'id. Il glifo dice che tipo di codice si trovera' dentro, prima di
+ * spetta all'id. Il glifo dice che tipo di codice si troverà dentro, prima di
  * aprirlo.
  *
- * Il numero della carta nella lista non c'e': chi guarda lo schermo da sopra la
+ * Il numero della carta nella lista non c'è: chi guarda lo schermo da sopra la
  * spalla lo leggerebbe senza toccare niente. Si vede solo aprendo la carta.
  */
 class CarteAdapter(

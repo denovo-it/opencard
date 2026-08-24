@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initConUsaEGetta:(BOOL)usaEGetta;
 
 /// Le carte con la stella, dei due gruppi insieme. Qui non si riordina e non
-/// c'e' il cestino: l'ordine e' quello dei gruppi di provenienza.
+/// c'è il cestino: l'ordine è quello dei gruppi di provenienza.
 - (instancetype)initPreferite;
 
 @property (nonatomic, readonly) BOOL usaEGetta;

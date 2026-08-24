@@ -24,13 +24,13 @@ import com.google.android.material.snackbar.Snackbar
 /**
  * Passaggio delle carte fra due telefoni con dei QR.
  *
- * Chi cede mostra i codici, chi riceve li inquadra. Non c'e' rete di mezzo, non
- * c'e' un file da passare, non serve un account. Come sono fatti i codici sta
+ * Chi cede mostra i codici, chi riceve li inquadra. Non c'è rete di mezzo, non
+ * c'è un file da passare, non serve un account. Come sono fatti i codici sta
  * in `src/transfer.h`.
  *
- * Non c'e' cifratura: il passaggio e' pensato dentro la famiglia, coi due
+ * Non c'è cifratura: il passaggio è pensato dentro la famiglia, coi due
  * telefoni uno davanti all'altro. Chi legge lo schermo legge le tessere, e su
- * questa schermata c'e' scritto.
+ * questa schermata c'è scritto.
  */
 class TrasferimentoActivity : AppCompatActivity() {
 
@@ -45,7 +45,7 @@ class TrasferimentoActivity : AppCompatActivity() {
     /**
      * Un codice ogni 400 ms.
      *
-     * Piu' veloce e la fotocamera dell'altro telefono ne perde la meta': ML Kit
+     * Piu' veloce e la fotocamera dell'altro telefono ne perde la metà: ML Kit
      * lavora su un fotogramma alla volta e vuole il codice fermo per qualche
      * decimo di secondo. Piu' lento e un passaggio da tre codici diventa lungo
      * da stare fermi con la mano.
@@ -94,7 +94,7 @@ class TrasferimentoActivity : AppCompatActivity() {
     }
 
     /**
-     * Lo schermo al massimo della luminosita' mentre i codici girano.
+     * Lo schermo al massimo della luminosità mentre i codici girano.
      *
      * E' la stessa ragione della schermata di una carta: la fotocamera
      * dell'altro telefono legge male uno schermo scuro, e qui i codici sono

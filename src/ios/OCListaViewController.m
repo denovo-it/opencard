@@ -19,7 +19,7 @@
 @property (nonatomic, strong) NSArray<OCGruppoViewController *> *gruppi;
 @property (nonatomic, strong) UIButton *aggiungi;
 @property (nonatomic, strong) UIView *schedeSfondo;
-/// Vero quando la scheda con la stella e' in mezzo alle altre.
+/// Vero quando la scheda con la stella è in mezzo alle altre.
 @property (nonatomic, assign) BOOL conPreferite;
 /// Vero fino alla prima comparsa: serve a distinguere l'apertura dell'app dal
 /// ritorno da una carta, dove la scheda aperta va lasciata dov'era.
@@ -53,11 +53,11 @@
     [self apriSullaStella];
 }
 
-/// All'apertura si parte dalla stella, quando c'e'.
+/// All'apertura si parte dalla stella, quando c'è.
 ///
-/// Sono le carte che si usano di piu': se la scheda esiste e' quella che serve
+/// Sono le carte che si usano di più: se la scheda esiste è quella che serve
 /// per prima. La scheda compare solo dopo la prima lettura, quando la pagina
-/// mostrata e' gia' quella delle carte, quindi va spostata qui.
+/// mostrata è già quella delle carte, quindi va spostata qui.
 - (void)apriSullaStella
 {
     if (!self.primaApertura) {
@@ -93,7 +93,7 @@
     }
 
     // A sinistra le informazioni: dalla lista non si torna da nessuna parte,
-    // quindi quel posto e' libero.
+    // quindi quel posto è libero.
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
         initWithImage:[UIImage systemImageNamed:@"info.circle"]
                 style:UIBarButtonItemStylePlain
@@ -101,7 +101,7 @@
                action:@selector(apriInformazioni)];
 
     // A destra il menu di backup. Niente icona di uscita: Apple non consente a
-    // un'app di chiudersi da sola, e un pulsante che non fa niente e' peggio di
+    // un'app di chiudersi da sola, e un pulsante che non fa niente è peggio di
     // un pulsante assente.
     UIBarButtonItem *backup = [[UIBarButtonItem alloc]
         initWithImage:[UIImage systemImageNamed:@"ellipsis.circle"]
@@ -113,7 +113,7 @@
     // Sotto resta il foglio di azioni, che le icone non le fa vedere.
     //
     // Le frecce seguono la versione Android e non l'abitudine di iOS: importa
-    // in su, esporta in giu'. Chi usa tutte e due le app deve trovare la stessa
+    // in su, esporta in giù. Chi usa tutte e due le app deve trovare la stessa
     // icona per la stessa cosa.
     if (@available(iOS 14.0, *)) {
         __weak typeof(self) debole = self;
@@ -179,7 +179,7 @@
     __weak typeof(self) debole = self;
 
     // Tre schermate sempre pronte: la terza, le preferite, si mostra solo
-    // quando c'e' qualcosa dentro, ma tenerla viva evita di ricostruirla ogni
+    // quando c'è qualcosa dentro, ma tenerla viva evita di ricostruirla ogni
     // volta che l'ultima stella si accende o si spegne.
     NSMutableArray<OCGruppoViewController *> *gruppi = [NSMutableArray array];
     for (NSInteger indice = 0; indice < 3; indice++) {
@@ -248,8 +248,8 @@
 
 /// Le schede nell'ordine in cui stanno adesso.
 ///
-/// Le preferite per prime, cosi' aprendo l'app si vedono subito le carte che si
-/// usano di piu'. Quando non ce ne sono la scheda non c'e' e le altre due
+/// Le preferite per prime, così aprendo l'app si vedono subito le carte che si
+/// usano di più. Quando non ce ne sono la scheda non c'è e le altre due
 /// tornano al loro posto: per questo nessuno deve ragionare per numero, ma
 /// sempre passando di qui.
 - (NSArray<OCGruppoViewController *> *)ordine
@@ -326,8 +326,8 @@
 
 /// Mette o toglie la scheda con la stella.
 ///
-/// L'ordine conta: se la scheda sparisce mentre e' quella aperta, la pagina va
-/// spostata prima, altrimenti resta visibile una schermata che non ha piu' una
+/// L'ordine conta: se la scheda sparisce mentre è quella aperta, la pagina va
+/// spostata prima, altrimenti resta visibile una schermata che non ha più una
 /// scheda sua.
 - (void)aggiornaSchedaPreferite
 {
@@ -339,8 +339,8 @@
     }
     self.conPreferite = servono;
 
-    // La scheda con la stella e' la prima: aggiungerla e toglierla sposta le
-    // altre, quindi la pagina visibile va rimessa dov'e' finita.
+    // La scheda con la stella è la prima: aggiungerla e toglierla sposta le
+    // altre, quindi la pagina visibile va rimessa dov'è finita.
     if (servono) {
         UIImage *stella = [UIImage systemImageNamed:@"star.fill"];
         if (stella != nil) {
@@ -448,7 +448,7 @@
         return;
     }
     if (tutte.count == 0) {
-        [self avvisa:@"Non c'e' ancora nessuna carta da esportare."];
+        [self avvisa:@"Non c'è ancora nessuna carta da esportare."];
         return;
     }
 
@@ -507,7 +507,7 @@
         if (protetto) {
             [scelto stopAccessingSecurityScopedResource];
         }
-        [self avvisa:@"Il file e' troppo grande per essere un backup di OpenCard."];
+        [self avvisa:@"Il file è troppo grande per essere un backup di OpenCard."];
         return;
     }
 

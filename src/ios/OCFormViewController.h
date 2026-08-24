@@ -16,8 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initPerNuovaConUsaEGetta:(BOOL)usaEGetta;
 - (instancetype)initPerModificaConId:(NSInteger)identificativo;
 
-/// Chiamato quando la carta e' stata cancellata da qui: chi ha aperto la
-/// modifica dalla carta aperta non ha piu' niente da mostrare e si chiude.
+/// Chiamato quando la carta è stata cancellata da qui: chi ha aperto la
+/// modifica dalla carta aperta non ha più niente da mostrare e si chiude.
 @property (nonatomic, copy, nullable) void (^suEliminazione)(void);
 
 @end

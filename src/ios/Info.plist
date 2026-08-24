@@ -76,7 +76,7 @@
 	<string>Serve a leggere il codice da una foto della tessera che hai già scattato.</string>
 
 	<!-- Icone. Le tre png sciolte restano: sono quelle che il telefono usa
-	     quando si compila con le immagini segnaposto, ed e' come l'app ha
+	     quando si compila con le immagini segnaposto, ed è come l'app ha
 	     girato fino alla 1.0.1. -->
 	<key>CFBundleIconFiles</key>
 	<array>

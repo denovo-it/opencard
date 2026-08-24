@@ -18,7 +18,7 @@ import java.util.Locale
  *
  * Senza questo, di un arresto resta solo il messaggio di sistema, che non dice
  * niente di utile. Il file finisce in una cartella raggiungibile con un gestore
- * di file, cosi' si puo' mandare a chi sviluppa senza collegare il telefono a un
+ * di file, così si può mandare a chi sviluppa senza collegare il telefono a un
  * computer.
  */
 object Diagnostica {
@@ -58,14 +58,14 @@ object Diagnostica {
                 file.parentFile?.mkdirs()
                 file.writeText(testo)
             } catch (e: Throwable) {
-                // La prossima destinazione puo' andare meglio.
+                // La prossima destinazione può andare meglio.
             }
         }
     }
 
     /**
      * Due posizioni: quella esterna si apre con un gestore di file senza
-     * permessi, quella interna resta come riserva se la prima non c'e'.
+     * permessi, quella interna resta come riserva se la prima non c'è.
      */
     private fun destinazioni(contesto: Context): List<File> = listOfNotNull(
         contesto.getExternalFilesDir(null)?.let { File(it, NOME_FILE) },
@@ -87,7 +87,7 @@ object Diagnostica {
             try {
                 it.delete()
             } catch (e: Throwable) {
-                // Se resta, al massimo lo si rivede una volta di piu'.
+                // Se resta, al massimo lo si rivede una volta di più.
             }
         }
     }

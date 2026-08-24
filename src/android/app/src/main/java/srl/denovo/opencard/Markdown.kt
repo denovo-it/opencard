@@ -13,14 +13,14 @@ import android.graphics.Typeface
 /**
  * Il poco Markdown che serve allo storico delle revisioni.
  *
- * Non e' un interprete completo e non deve diventarlo: il changelog usa titoli,
+ * Non è un interprete completo e non deve diventarlo: il changelog usa titoli,
  * punti elenco, grassetto e qualche nota, e basta riconoscere quelli. Mostrarlo
  * come testo grezzo lascerebbe i trattini e gli asterischi sotto gli occhi di
  * chi legge.
  */
 object Markdown {
 
-    /** Un pezzo di documento, gia' deciso come va mostrato. */
+    /** Un pezzo di documento, già deciso come va mostrato. */
     sealed class Blocco {
         data class Titolo(val testo: CharSequence) : Blocco()
         data class Punto(val testo: CharSequence) : Blocco()
@@ -53,8 +53,8 @@ object Markdown {
      * Grassetto fra doppi asterischi e codice fra apici inversi.
      *
      * Si scorre una volta sola, tenendo da parte dove ogni pezzo comincia:
-     * cosi' non serve nessuna espressione regolare e le marcature spaiate
-     * restano testo, invece di far sparire meta' riga.
+     * così non serve nessuna espressione regolare e le marcature spaiate
+     * restano testo, invece di far sparire metà riga.
      */
     fun inline(testo: String): CharSequence {
         val uscita = SpannableStringBuilder()

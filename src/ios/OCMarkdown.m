@@ -48,8 +48,8 @@
 
 /// Grassetto fra doppi asterischi e codice fra apici inversi.
 ///
-/// Si scorre una volta sola: cosi' non serve nessuna espressione regolare e le
-/// marcature spaiate restano testo, invece di far sparire meta' riga.
+/// Si scorre una volta sola: così non serve nessuna espressione regolare e le
+/// marcature spaiate restano testo, invece di far sparire metà riga.
 + (NSAttributedString *)inline:(NSString *)testo
 {
     NSMutableAttributedString *uscita = [NSMutableAttributedString new];

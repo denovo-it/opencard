@@ -36,7 +36,7 @@ import java.io.File
  *
  * Il codice si prende in tre modi, con lo stesso peso: dal vivo con la
  * fotocamera, da una foto della galleria, da un file. Le due strade
- * dall'immagine servono quando la tessera e' gia' fotografata, o quando e'
+ * dall'immagine servono quando la tessera è già fotografata, o quando è
  * arrivata per messaggio.
  */
 class FormActivity : AppCompatActivity() {
@@ -77,7 +77,7 @@ class FormActivity : AppCompatActivity() {
         private const val EXTRA_ID = "id"
         private const val EXTRA_USA_E_GETTA = "usaEGetta"
 
-        /** Lo legge la carta aperta: se e' stata cancellata deve chiudersi. */
+        /** Lo legge la carta aperta: se è stata cancellata deve chiudersi. */
         const val EXTRA_ELIMINATA = "eliminata"
 
         /**
@@ -138,7 +138,7 @@ class FormActivity : AppCompatActivity() {
         } else {
             title = getString(R.string.aggiungi_codice)
             casella.isChecked = usaEGetta
-            // Il colore proposto e' quello che la carta prenderebbe da se': chi
+            // Il colore proposto è quello che la carta prenderebbe da sé: chi
             // non ci bada trova la stessa app di prima, chi ci bada lo cambia.
             Dati.chiedi({ Core.nextId() }, { prossimo ->
                 coloreProposto = Core.colorForId(prossimo)
@@ -183,7 +183,7 @@ class FormActivity : AppCompatActivity() {
     }
 
     /**
-     * Legge il codice da un'immagine gia' esistente invece che dal vivo.
+     * Legge il codice da un'immagine già esistente invece che dal vivo.
      * ML Kit lavora sul file, quindi va bene qualunque immagine il telefono
      * sappia aprire.
      */
@@ -219,7 +219,7 @@ class FormActivity : AppCompatActivity() {
             avvisa(getString(R.string.lettura_non_riuscita, guasto.message ?: ""))
         } finally {
             // La foto della tessera non resta in cache oltre la lettura: qui
-            // l'immagine e' gia' in memoria e il file non serve piu' a nessuno,
+            // l'immagine è già in memoria e il file non serve più a nessuno,
             // nemmeno alla strada di scorta, che rilegge l'Uri di partenza.
             copia?.delete()
         }
@@ -230,19 +230,19 @@ class FormActivity : AppCompatActivity() {
      *
      * Sonda, decodifica e EXIF lavorano tutti su questa copia. L'immagine non
      * arriva dal disco ma da un provider (la galleria di sistema, Google Foto,
-     * Drive), e ogni apertura dell'Uri puo' essere un nuovo scaricamento:
+     * Drive), e ogni apertura dell'Uri può essere un nuovo scaricamento:
      * aprirlo tre volte erano tre scaricamenti e tre punti dove fallire a
-     * meta'. Da un file in cache invece si rilegge quanto si vuole a costo
+     * metà. Da un file in cache invece si rilegge quanto si vuole a costo
      * zero.
      *
-     * Si copia invece di tenere i byte in memoria perche' un file arbitrario
+     * Si copia invece di tenere i byte in memoria perché un file arbitrario
      * scelto dall'utente non ha un tetto: un `ByteArray` grande quanto il file
-     * puo' finire in [OutOfMemoryError], che non e' una [Exception] e non
+     * può finire in [OutOfMemoryError], che non è una [Exception] e non
      * verrebbe preso da nessun catch. Qui il travaso passa da un buffer di
      * pochi kB e l'unica cosa grande che si alloca resta la bitmap ridotta.
      *
      * Torna null se la copia non riesce: si ricade su [InputImage.fromFilePath],
-     * che e' quello che faceva prima.
+     * che è quello che faceva prima.
      */
     private fun copiaInCache(immagine: Uri): File? = try {
         val copia = File.createTempFile("scansione", null, cacheDir)
@@ -260,12 +260,12 @@ class FormActivity : AppCompatActivity() {
     }
 
     /**
-     * Decodifica l'immagine gia' rimpicciolita.
+     * Decodifica l'immagine già rimpicciolita.
      *
      * Una foto da 12 megapixel diventa una cinquantina di MB di bitmap, e il
      * telefono li paga tutti in una volta: qui si decodifica a scala ridotta,
-     * senza mai scendere sotto [LATO_MINIMO] sul lato lungo. Le immagini gia'
-     * piccole restano come sono. Null se il file non e' un'immagine.
+     * senza mai scendere sotto [LATO_MINIMO] sul lato lungo. Le immagini già
+     * piccole restano come sono. Null se il file non è un'immagine.
      */
     private fun decodificaRidotta(copia: File): Bitmap? = try {
         val misura = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -284,7 +284,7 @@ class FormActivity : AppCompatActivity() {
     }
 
     /**
-     * Di quanto e' girata la foto secondo l'EXIF.
+     * Di quanto è girata la foto secondo l'EXIF.
      *
      * Leggendo il file da soli questo pezzo tocca a noi: [InputImage.fromFilePath]
      * lo faceva per conto suo, e senza una foto in verticale si legge storta.
@@ -305,8 +305,8 @@ class FormActivity : AppCompatActivity() {
     }
 
     /**
-     * I colori fra cui scegliere. Il primo e' quello che spetta alla carta:
-     * lasciandolo com'e' non si scrive niente nel file, ed e' il caso normale.
+     * I colori fra cui scegliere. Il primo è quello che spetta alla carta:
+     * lasciandolo com'è non si scrive niente nel file, ed è il caso normale.
      */
     private fun costruisciTavolozza() {
         val colori = (listOf(coloreProposto) + COLORI).distinct()
@@ -346,8 +346,8 @@ class FormActivity : AppCompatActivity() {
 
         Dati.fai(
             {
-                // La stella si scrive a parte, perche' non passa da insert e
-                // update: quelle due lasciano stare il campo apposta, cosi'
+                // La stella si scrive a parte, perché non passa da insert e
+                // update: quelle due lasciano stare il campo apposta, così
                 // modificare una carta non le toglie la preferenza.
                 val quale = if (id == 0) {
                     Core.insert(etichetta, valore, isQr, colore, disposable)
@@ -368,7 +368,7 @@ class FormActivity : AppCompatActivity() {
     /**
      * Cancella la carta che si sta modificando.
      *
-     * La domanda e' la stessa del cestino nell'elenco, con lo stesso titolo e
+     * La domanda è la stessa del cestino nell'elenco, con lo stesso titolo e
      * lo stesso nome fra virgolette: chi cancella deve leggere la stessa cosa
      * da qualunque parte sia arrivato.
      */

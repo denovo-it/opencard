@@ -9,8 +9,8 @@
 # registrar e ML Kit le istanzia con Class.forName(...).newInstance(). Le regole
 # che la libreria si porta dietro tengono il nome della classe ma non il
 # costruttore, e R8 di AGP 9 lo toglie: il registro resta vuoto, il fornitore
-# del lettore non c'e', e l'app muore nel costruttore di ScannerActivity con un
-# NullPointerException su getClass(), che e' il controllo di null che R8 inietta.
+# del lettore non c'è, e l'app muore nel costruttore di ScannerActivity con un
+# NullPointerException su getClass(), che è il controllo di null che R8 inietta.
 # Verificato dentro l'APK con dexdump: senza questa regola BarcodeRegistrar non
 # ha metodi diretti.
 -keep class * implements com.google.firebase.components.ComponentRegistrar {

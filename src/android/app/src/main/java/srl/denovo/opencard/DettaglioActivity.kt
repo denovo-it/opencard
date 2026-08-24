@@ -22,7 +22,7 @@ import com.google.android.material.snackbar.Snackbar
 /**
  * La carta a schermo intero, davanti al lettore della cassa.
  *
- * Lo schermo va al massimo della luminosita' finche' la schermata e' aperta:
+ * Lo schermo va al massimo della luminosità finché la schermata è aperta:
  * i lettori laser e le fotocamere delle casse leggono male uno schermo scuro.
  * Si tocca solo la finestra di questa schermata, non l'impostazione di sistema,
  * quindi uscendo torna tutto com'era senza dover rimettere niente a posto.
@@ -36,8 +36,8 @@ class DettaglioActivity : AppCompatActivity() {
     private var vocePreferita: MenuItem? = null
 
     /**
-     * La modifica torna qui, e se la carta e' stata cancellata da li' questa
-     * schermata non ha piu' niente da mostrare: si chiude e si torna all'elenco.
+     * La modifica torna qui, e se la carta è stata cancellata da lì questa
+     * schermata non ha più niente da mostrare: si chiude e si torna all'elenco.
      */
     private val apriModifica = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -60,7 +60,7 @@ class DettaglioActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.barra))
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         // Il nome lo scrive la vista dentro la barra, non il titolo di serie.
-        // L'`title` dell'activity resta quello della carta: e' quello che legge
+        // L'`title` dell'activity resta quello della carta: è quello che legge
         // chi usa il lettore di schermo.
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
@@ -101,7 +101,7 @@ class DettaglioActivity : AppCompatActivity() {
      * La banda in alto prende il colore della carta aperta.
      *
      * Vanno colorate tutte e due: la barra ha un fondo suo che arriva dallo stile
-     * comune, e sotto la barra di sistema si vede l'AppBarLayout, perche' e' lui
+     * comune, e sotto la barra di sistema si vede l'AppBarLayout, perché è lui
      * a coprire lo spazio del margine alto.
      */
     private fun tinta(carta: Carta) {
@@ -128,11 +128,11 @@ class DettaglioActivity : AppCompatActivity() {
     }
 
     /**
-     * Stella vuota se la carta non e' preferita, piena se lo e'.
+     * Stella vuota se la carta non è preferita, piena se lo è.
      *
      * Si chiama sia quando arriva la carta sia quando il menu viene creato:
      * chi dei due arriva per ultimo trova l'altro pronto, e l'ordine fra
-     * lettura dal file e creazione del menu non e' garantito.
+     * lettura dal file e creazione del menu non è garantito.
      */
     private fun disegnaStella() {
         val preferita = carta?.preferita ?: false

@@ -4,7 +4,7 @@
 //
 // Lettura di un codice con la fotocamera.
 //
-// Usa AVFoundation, che e' di sistema: niente librerie esterne, e quindi niente
+// Usa AVFoundation, che è di sistema: niente librerie esterne, e quindi niente
 // dei problemi che danno i binari precompilati quando cambia l'architettura.
 
 #import <UIKit/UIKit.h>
@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) void (^suLettura)(NSString *codice, BOOL qrcode);
 
 /// Acceso, la schermata non si chiude al primo codice: mette insieme i pezzi
-/// di un passaggio di carte, che possono essere piu' d'uno e arrivare in
+/// di un passaggio di carte, che possono essere più d'uno e arrivare in
 /// qualsiasi ordine. Chiude quando il core dice che ci sono tutti.
 @property (nonatomic, assign) BOOL raccolta;
 

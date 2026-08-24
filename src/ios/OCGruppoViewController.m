@@ -143,8 +143,8 @@ static NSString *const OCRiusoCella = @"carta";
     return cella;
 }
 
-/// La scheda cresce col nome, come su Android, dove l'altezza e' wrap_content:
-/// un nome lungo va a capo invece di sparire. Lo spazio tolto al nome e' quello
+/// La scheda cresce col nome, come su Android, dove l'altezza è wrap_content:
+/// un nome lungo va a capo invece di sparire. Lo spazio tolto al nome è quello
 /// che occupano i margini della scheda, il glifo e il cestino.
 - (CGSize)collectionView:(UICollectionView *)griglia
                   layout:(UICollectionViewLayout *)disposizione
@@ -161,7 +161,7 @@ static NSString *const OCRiusoCella = @"carta";
                                             context:nil];
 
     // 32 sono i margini interni della scheda, 12 quelli fra una scheda e
-    // l'altra; il glifo e' alto 28 e da solo tiene aperta la riga.
+    // l'altra; il glifo è alto 28 e da solo tiene aperta la riga.
     CGFloat altezza = MAX(ceil(CGRectGetHeight(misura)), 28) + 32 + 12;
     return CGSizeMake(larghezza, altezza);
 }

@@ -13,7 +13,7 @@
 @property (nonatomic, strong) AVCaptureSession *sessione;
 @property (nonatomic, strong) AVCaptureVideoPreviewLayer *anteprima;
 @property (nonatomic, strong) UILabel *avviso;
-/// Una lettura sola: senza questo si tornerebbe indietro piu' volte.
+/// Una lettura sola: senza questo si tornerebbe indietro più volte.
 @property (nonatomic, assign) BOOL giaLetto;
 /// I testi letti finora, senza doppioni e nell'ordine in cui sono arrivati.
 @property (nonatomic, strong) NSMutableArray<NSString *> *pezzi;
@@ -24,10 +24,10 @@
 /// Il codice che sta accumulando conferme, e la sua simbologia.
 @property (nonatomic, copy, nullable) NSString *candidato;
 @property (nonatomic, copy, nullable) NSString *candidatoTipo;
-/// Quante volte di fila e' arrivato uguale, e quando e' comparso la prima.
+/// Quante volte di fila è arrivato uguale, e quando è comparso la prima.
 @property (nonatomic, assign) NSInteger conferme;
 @property (nonatomic, assign) NSTimeInterval primaLettura;
-/// Quando e' partita la scansione, per l'avviso a chi non conclude.
+/// Quando è partita la scansione, per l'avviso a chi non conclude.
 @property (nonatomic, assign) NSTimeInterval inizioScansione;
 @end
 
@@ -40,7 +40,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 
 @implementation OCScannerViewController
 
-/// Tutti i formati che una tessera puo' avere. Sono gli stessi che riconosce
+/// Tutti i formati che una tessera può avere. Sono gli stessi che riconosce
 /// la versione Android.
 + (NSArray<AVMetadataObjectType> *)formati
 {
@@ -162,7 +162,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 {
     AVCaptureDevice *fotocamera = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     if (fotocamera == nil) {
-        self.avviso.text = @"La fotocamera non e' disponibile su questo dispositivo.";
+        self.avviso.text = @"La fotocamera non è disponibile su questo dispositivo.";
         self.avviso.hidden = NO;
         return;
     }
@@ -178,7 +178,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 
     self.sessione = [AVCaptureSession new];
     if (![self.sessione canAddInput:ingresso]) {
-        self.avviso.text = @"La fotocamera non e' disponibile su questo dispositivo.";
+        self.avviso.text = @"La fotocamera non è disponibile su questo dispositivo.";
         self.avviso.hidden = NO;
         return;
     }
@@ -186,7 +186,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 
     AVCaptureMetadataOutput *uscita = [AVCaptureMetadataOutput new];
     if (![self.sessione canAddOutput:uscita]) {
-        self.avviso.text = @"La fotocamera non e' disponibile su questo dispositivo.";
+        self.avviso.text = @"La fotocamera non è disponibile su questo dispositivo.";
         self.avviso.hidden = NO;
         return;
     }
@@ -194,7 +194,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
     [uscita setMetadataObjectsDelegate:self queue:dispatch_get_main_queue()];
 
     // I formati vanno impostati dopo aver aggiunto l'uscita alla sessione:
-    // prima, l'elenco di quelli disponibili e' vuoto e l'assegnazione fallisce.
+    // prima, l'elenco di quelli disponibili è vuoto e l'assegnazione fallisce.
     NSMutableArray<AVMetadataObjectType> *accettati = [NSMutableArray array];
     for (AVMetadataObjectType tipo in [OCScannerViewController formati]) {
         if ([uscita.availableMetadataObjectTypes containsObject:tipo]) {
@@ -265,19 +265,19 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 ///
 /// I 300 ms non sono un'attesa aggiunta, sono un pavimento: senza, tre
 /// fotogrammi dello stesso istante di sfocatura passerebbero il controllo,
-/// perche' sono lo stesso errore contato tre volte. Col codice fermo la
-/// conferma arriva in poco piu' di quel terzo di secondo.
+/// perché sono lo stesso errore contato tre volte. Col codice fermo la
+/// conferma arriva in poco più di quel terzo di secondo.
 ///
-/// Stessa taratura della versione Android: se cambia di la', cambia anche qui.
+/// Stessa taratura della versione Android: se cambia di là, cambia anche qui.
 - (void)conferma:(AVMetadataMachineReadableCodeObject *)codice
 {
-    // systemUptime e non CACurrentMediaTime: sta in Foundation, che e' gia'
+    // systemUptime e non CACurrentMediaTime: sta in Foundation, che è già
     // collegata, mentre l'altra vorrebbe QuartzCore in tutti e quattro gli
-    // script di build. Serve un orologio che non torni indietro, e questo lo e'.
+    // script di build. Serve un orologio che non torni indietro, e questo lo è.
     NSTimeInterval adesso = [[NSProcessInfo processInfo] systemUptime];
 
     // L'avviso prima di tutto: serve proprio quando le letture continuano a
-    // cambiare e non si conferma niente, cioe' quando da qui si esce subito.
+    // cambiare e non si conferma niente, cioè quando da qui si esce subito.
     if (self.inizioScansione == 0) {
         self.inizioScansione = adesso;
     } else if (adesso - self.inizioScansione >= OCScannerAvviso) {
@@ -319,7 +319,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 /// Un giro di codici letti dal fotogramma.
 ///
 /// Chi mostra fa girare i codici da solo, quindi qui si accumula e basta: i
-/// doppioni li scarta il confronto, e quello che non e' di OpenCard lo ignora
+/// doppioni li scarta il confronto, e quello che non è di OpenCard lo ignora
 /// il core senza dire niente. Il conteggio lo tiene il core, l'unico a sapere
 /// quanti pezzi ha il passaggio.
 - (void)raccogli:(NSArray<__kindof AVMetadataObject *> *)oggetti
@@ -364,8 +364,8 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
     self.progresso.text = [NSString stringWithFormat:@"Presi %ld codici di %ld",
                                                      (long)ricevuti, (long)totale];
 
-    // Si tocca l'interfaccia senza cambiare coda: l'uscita dei metadati e'
-    // gia' consegnata sulla coda principale, vedi preparaFotocamera.
+    // Si tocca l'interfaccia senza cambiare coda: l'uscita dei metadati è
+    // già consegnata sulla coda principale, vedi preparaFotocamera.
     // Qui non si chiude da sola: chiude chi ha aperto, che subito dopo deve
     // fare una domanda. Presentare una domanda mentre una schermata si sta
     // chiudendo la fa sparire senza dire niente.

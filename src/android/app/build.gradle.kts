@@ -4,12 +4,12 @@ plugins {
     id("com.android.application")
 }
 
-// Firma di release: se il file delle proprieta' non c'e' si compila comunque,
+// Firma di release: se il file delle proprietà non c'è si compila comunque,
 // firmato debug. Il file non sta nel repository.
 //
-// Due chiavi, e non e' un capriccio: l'APK che va sul sito continua a essere
-// firmato con la chiave della beta, altrimenti chi ce l'ha non puo' aggiornare;
-// il bundle per Play vuole una chiave vera, perche' Play rifiuta i certificati
+// Due chiavi, e non è un capriccio: l'APK che va sul sito continua a essere
+// firmato con la chiave della beta, altrimenti chi ce l'ha non può aggiornare;
+// il bundle per Play vuole una chiave vera, perché Play rifiuta i certificati
 // di debug. Si sceglie con -PkeystoreProps=keystore-upload.properties.
 val keystoreProps = Properties().apply {
     val nome = (project.findProperty("keystoreProps") as String?) ?: "keystore.properties"
@@ -21,7 +21,7 @@ android {
     namespace = "srl.denovo.opencard"
     compileSdk = 36
 
-    // Fissato: AGP 9 sceglierebbe da se' il suo predefinito, e un NDK diverso
+    // Fissato: AGP 9 sceglierebbe da sé il suo predefinito, e un NDK diverso
     // da quello provato qui vuol dire ricompilare zint e il core al buio.
     ndkVersion = "28.2.13676358"
 
@@ -30,12 +30,12 @@ android {
         minSdk = 24
         targetSdk = 36
 
-        // Formato YYYYMMDDnn: nn e' il progressivo della giornata. Deve solo
-        // crescere, e a colpo d'occhio dice quando e' stata costruita.
+        // Formato YYYYMMDDnn: nn è il progressivo della giornata. Deve solo
+        // crescere, e a colpo d'occhio dice quando è stata costruita.
         versionCode = 2026082301
         versionName = "1.0.1"
 
-        // Niente split per ABI: senza runtime da trascinarsi dietro l'APK e'
+        // Niente split per ABI: senza runtime da trascinarsi dietro l'APK è
         // piccolo, e un file solo si distribuisce meglio.
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
@@ -94,14 +94,14 @@ android {
 // Il changelog viaggia dentro l'app e la schermata informazioni lo mostra. Si
 // copia dalla radice a ogni build invece di tenerne una copia a mano nelle
 // assets: la copia a mano resta indietro e l'app racconta le note della
-// versione precedente senza che il build dica niente. Su iOS lo fanno gia' i
+// versione precedente senza che il build dica niente. Su iOS lo fanno già i
 // suoi script.
 //
-// Da AGP 9 una cartella generata non si aggancia piu' con
+// Da AGP 9 una cartella generata non si aggancia più con
 // sourceSets["main"].assets.srcDir(...): l'API delle sorgenti rifiuta i
-// Provider, perche' da fuori non si distingue una cartella generata da una
+// Provider, perché da fuori non si distingue una cartella generata da una
 // scritta a mano. Si passa dalla Variant API, che oltre a funzionare porta con
-// se' la dipendenza dal task senza doverla appendere a preBuild.
+// sé la dipendenza dal task senza doverla appendere a preBuild.
 abstract class CopiaChangelog : DefaultTask() {
     @get:InputFile
     abstract val sorgente: RegularFileProperty
@@ -130,11 +130,11 @@ androidComponents {
     }
 }
 
-// L'APK non si costruisce piu': dal 14 agosto 2026 si distribuisce solo dal Play
-// Store, e l'artefatto e' il bundle. Un APK accanto al
+// L'APK non si costruisce più: dal 14 agosto 2026 si distribuisce solo dal Play
+// Store, e l'artefatto è il bundle. Un APK accanto al
 // bundle serve solo a far caricare in console qualcosa di diverso da quello che
-// e' stato provato. Chi lancia assembleRelease a mano se lo ritrova comunque,
-// perche' e' un task di serie di AGP, ma non lo usa nessuno script.
+// è stato provato. Chi lancia assembleRelease a mano se lo ritrova comunque,
+// perché è un task di serie di AGP, ma non lo usa nessuno script.
 dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")

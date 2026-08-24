@@ -38,7 +38,7 @@ fun coloreCarta(esadecimale: String): Int = try {
     Color.parseColor("#1E88E5")
 }
 
-/** Errore del core, col messaggio gia' pronto da mostrare. */
+/** Errore del core, col messaggio già pronto da mostrare. */
 class OpenCardException(messaggio: String) : Exception(messaggio)
 
 /**
@@ -62,7 +62,7 @@ object Core {
     /** Le carte con la stella, dei due gruppi insieme. */
     @JvmStatic external fun getPreferite(): Array<Carta>
 
-    /** Accende o spegne la stella, lasciando il resto della carta com'e'. */
+    /** Accende o spegne la stella, lasciando il resto della carta com'è. */
     @JvmStatic external fun setPreferita(id: Int, preferita: Boolean)
     @JvmStatic external fun get(id: Int): Carta
     @JvmStatic external fun nextId(): Int
@@ -93,15 +93,15 @@ object Core {
     /** Legge un backup e lo applica. Restituisce quante carte sono entrate. */
     @JvmStatic external fun backupRipristina(dati: ByteArray): Int
 
-    /* Passaggio delle carte fra due telefoni con i QR. Il formato e il perche'
+    /* Passaggio delle carte fra due telefoni con i QR. Il formato e il perché
      * delle scelte stanno in src/transfer.h. */
 
     /** I testi dei QR da mostrare, in ordine, con dentro tutte le carte. */
     @JvmStatic external fun trasfPrepara(): Array<String>
 
     /** Quanti pezzi sono arrivati e quanti ne servono: `[ricevuti, totale]`.
-     *  Totale a 0 vuol dire che fra i codici letti non ce n'e' ancora uno di
-     *  OpenCard, che non e' un errore: la fotocamera inquadra di tutto. */
+     *  Totale a 0 vuol dire che fra i codici letti non ce n'è ancora uno di
+     *  OpenCard, che non è un errore: la fotocamera inquadra di tutto. */
     @JvmStatic external fun trasfStato(letti: Array<String>): IntArray
 
     /** Le carte contenute nei QR letti, senza scrivere niente. */

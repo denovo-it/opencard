@@ -13,32 +13,32 @@ static NSString *const OCSitoDenovo = @"https://denovo.srl";
 static NSString *const OCSorgente = @"https://github.com/denovo-it/opencard";
 
 static NSString *const OCIntroSorgente =
-    @"Il codice di OpenCard e' pubblico. Sta su GitHub con licenza AGPL v3: si legge, si "
+    @"Il codice di OpenCard è pubblico. È disponibile su GitHub con licenza AGPL v3: si legge, si "
      "compila e si controlla che l'app faccia solo quello che dice.";
 
 static NSString *const OCPrivacy = @"https://denovo.srl/opencard-privacy/";
 
 static NSString *const OCIntroPrivacy =
     @"OpenCard non raccoglie niente e non esce dal telefono: le carte restano nella memoria "
-     "privata dell'app. La pagina qui sotto lo dice per esteso, ed e' quella dichiarata a "
+     "privata dell'app. La pagina qui sotto lo dice per esteso, ed è quella dichiarata a "
      "Google e ad Apple.";
 
 static NSString *const OCPercheEsiste =
-    @"OpenCard e' un gesto di solidarieta' nei confronti delle persone che tengono alla "
+    @"OpenCard è un gesto di solidarietà nei confronti delle persone che tengono alla "
      "loro privacy e hanno bisogno di strumenti semplici.\n\n"
      "Strumenti che fanno esattamente quello che ti aspetti, senza proporti di continuo "
      "servizi che non ti interessano.";
 
 static NSString *const OCLicenzaUso =
-    @"OpenCard e' un regalo di Denovo srl.\n\n"
+    @"OpenCard è un regalo di Denovo srl.\n\n"
      "Uso personale: libero.\n"
      "Uso commerciale: scrivi a info@denovo.srl.\n\n"
-     "Il programma e' distribuito sotto licenza AGPL v3, in alternativa a una licenza "
-     "commerciale. Il testo integrale della AGPL v3 e' qui sotto.";
+     "Il programma è distribuito sotto licenza AGPL v3, in alternativa a una licenza "
+     "commerciale. Il testo integrale della AGPL v3 è qui sotto.";
 
 static NSString *const OCMarchi =
     @"Denovo e OpenCard sono marchi di Denovo srl. Il nome Denovo, il nome OpenCard, i "
-     "loghi e i segni distintivi che li accompagnano sono di proprieta' riservata di "
+     "loghi e i segni distintivi che li accompagnano sono di proprietà riservata di "
      "Denovo srl.\n\n"
      "La licenza AGPL v3 riguarda il codice sorgente e non concede alcun diritto sui "
      "marchi. Chi distribuisce una versione modificata deve rimuovere i marchi e i loghi "

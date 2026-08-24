@@ -31,7 +31,7 @@
     _scheda.translatesAutoresizingMaskIntoConstraints = NO;
     [self.contentView addSubview:_scheda];
 
-    // Il glifo dice che tipo di codice si trovera' dentro, prima di aprirlo.
+    // Il glifo dice che tipo di codice si troverà dentro, prima di aprirlo.
     _glifo = [UIImageView new];
     _glifo.contentMode = UIViewContentModeScaleAspectFit;
     _glifo.tintColor = [OCTema sopraMarca];
@@ -39,7 +39,7 @@
     _glifo.translatesAutoresizingMaskIntoConstraints = NO;
     [_scheda addSubview:_glifo];
 
-    // Solo il nome: il numero della carta si legge aprendola, cosi' non resta
+    // Solo il nome: il numero della carta si legge aprendola, così non resta
     // esposto a chi guarda lo schermo dell'elenco.
     _nome = [UILabel new];
     _nome.font = [UIFont boldSystemFontOfSize:18];

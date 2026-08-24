@@ -8,7 +8,7 @@
     android:fitsSystemWindows="true">
 
     <!-- Il colore parte dall'arancione del marchio e viene rifatto col colore
-         della carta appena il core la restituisce: cosi' non lampeggia arancione
+         della carta appena il core la restituisce: così non lampeggia arancione
          se la lettura tarda. -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/intestazione"
@@ -17,7 +17,7 @@
         android:background="@color/brand"
         app:elevation="0dp">
 
-        <!-- Il nome non e' il titolo della barra ma una vista dentro la barra:
+        <!-- Il nome non è il titolo della barra ma una vista dentro la barra:
              quello di serie sta su una riga sola e i nomi lunghi finivano
              tagliati. Cosi' va a capo una volta, e la barra si alza da sola
              quando serve la seconda riga. -->

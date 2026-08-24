@@ -4,13 +4,13 @@
 //
 // Passaggio delle carte fra due telefoni con dei QR.
 //
-// Chi cede mostra i codici, chi riceve li inquadra. Non c'e' rete di mezzo, non
-// c'e' un file da passare, non serve un account. Come sono fatti i codici sta
+// Chi cede mostra i codici, chi riceve li inquadra. Non c'è rete di mezzo, non
+// c'è un file da passare, non serve un account. Come sono fatti i codici sta
 // in src/transfer.h.
 //
-// Non c'e' cifratura: il passaggio e' pensato dentro la famiglia, coi due
+// Non c'è cifratura: il passaggio è pensato dentro la famiglia, coi due
 // telefoni uno davanti all'altro. Chi legge lo schermo legge le tessere, e su
-// questa schermata c'e' scritto.
+// questa schermata c'è scritto.
 
 #import <UIKit/UIKit.h>
 

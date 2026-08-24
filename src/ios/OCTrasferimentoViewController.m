@@ -109,7 +109,7 @@
 
     UILabel *avviso = [UILabel new];
     avviso.text = @"Metti lo schermo davanti alla fotocamera dell'altro telefono. "
-                  @"I codici girano da soli: lascia fare finche' non ha finito.";
+                  @"I codici girano da soli: lascia fare finché non ha finito.";
     avviso.numberOfLines = 0;
     avviso.textAlignment = NSTextAlignmentCenter;
     avviso.font = [UIFont systemFontOfSize:14];
@@ -178,8 +178,8 @@
 
     [self disegnaCodice];
 
-    // Un codice ogni 400 ms: piu' in fretta e la fotocamera dell'altro telefono
-    // ne perde la meta', piu' piano e stare fermi diventa lungo.
+    // Un codice ogni 400 ms: più in fretta e la fotocamera dell'altro telefono
+    // ne perde la metà, più piano e stare fermi diventa lungo.
     if (self.immagini.count > 1) {
         self.giostra = [NSTimer scheduledTimerWithTimeInterval:0.4
                                                         target:self
@@ -242,7 +242,7 @@
         return;
     }
     if (arrivate.count == 0) {
-        [self avvisa:@"Non e' arrivata nessuna carta."];
+        [self avvisa:@"Non è arrivata nessuna carta."];
         return;
     }
 

@@ -29,11 +29,11 @@ import java.util.concurrent.Executors
  * Lettura di codici con la fotocamera, in due modi.
  *
  * Normale: chiude appena riconosce qualcosa e restituisce il codice a chi
- * l'ha aperta, insieme al tipo, cosi' il form non deve indovinare se e' un QR
+ * l'ha aperta, insieme al tipo, così il form non deve indovinare se è un QR
  * o un barcode.
  *
  * Raccolta: resta aperta e mette insieme i codici di un passaggio di carte,
- * che possono essere piu' d'uno e arrivare in qualsiasi ordine. Chiude quando
+ * che possono essere più d'uno e arrivare in qualsiasi ordine. Chiude quando
  * il core dice che ci sono tutti.
  */
 class ScannerActivity : AppCompatActivity() {
@@ -41,7 +41,7 @@ class ScannerActivity : AppCompatActivity() {
     private val analizzatore = Executors.newSingleThreadExecutor()
     private val lettore = BarcodeScanning.getClient()
 
-    /** Una lettura sola: senza questo si tornerebbe indietro piu' volte. */
+    /** Una lettura sola: senza questo si tornerebbe indietro più volte. */
     private var giaLetto = false
 
     /** Vero quando si raccolgono i pezzi di un passaggio di carte. */
@@ -50,7 +50,7 @@ class ScannerActivity : AppCompatActivity() {
     /** I testi letti finora, senza doppioni e nell'ordine in cui sono arrivati. */
     private val pezzi = LinkedHashSet<String>()
 
-    /** Una verifica alla volta: i fotogrammi arrivano molto piu' in fretta. */
+    /** Una verifica alla volta: i fotogrammi arrivano molto più in fretta. */
     private var inCorso = false
 
     /** L'ultimo messaggio mostrato, per non ripeterlo a ogni fotogramma. */
@@ -60,11 +60,11 @@ class ScannerActivity : AppCompatActivity() {
     private var candidato: String? = null
     private var candidatoFormato = 0
 
-    /** Quante volte di fila e' arrivato uguale, e quando e' comparso la prima. */
+    /** Quante volte di fila è arrivato uguale, e quando è comparso la prima. */
     private var conferme = 0
     private var primaLettura = 0L
 
-    /** Quando e' partita la scansione, per l'avviso a chi non conclude. */
+    /** Quando è partita la scansione, per l'avviso a chi non conclude. */
     private var inizioScansione = 0L
 
     private val chiediPermesso = registerForActivityResult(
@@ -200,9 +200,9 @@ class ScannerActivity : AppCompatActivity() {
      *
      * I 300 ms non sono un'attesa aggiunta: sono un pavimento. Senza, tre
      * fotogrammi dello stesso istante di sfocatura passerebbero il controllo,
-     * perche' sono lo stesso errore contato tre volte. Col codice fermo il
+     * perché sono lo stesso errore contato tre volte. Col codice fermo il
      * lettore ne consegna una trentina al secondo, quindi la conferma arriva
-     * in poco piu' di quel terzo di secondo.
+     * in poco più di quel terzo di secondo.
      *
      * Un fotogramma senza codici non azzera niente: capita al buio o mentre si
      * mette a fuoco, e non contraddice le letture precedenti. Azzera solo un
@@ -212,9 +212,9 @@ class ScannerActivity : AppCompatActivity() {
         val valore = codice.rawValue ?: return
         val adesso = android.os.SystemClock.elapsedRealtime()
 
-        // L'avviso prima di tutto: il caso in cui serve davvero e' proprio
+        // L'avviso prima di tutto: il caso in cui serve davvero è proprio
         // quello in cui le letture continuano a cambiare e non si conferma
-        // niente, cioe' quando da qui si esce subito.
+        // niente, cioè quando da qui si esce subito.
         if (inizioScansione == 0L) {
             inizioScansione = adesso
         } else if (adesso - inizioScansione >= AVVISO_MS) {
@@ -250,9 +250,9 @@ class ScannerActivity : AppCompatActivity() {
      * Un giro di codici letti dal fotogramma.
      *
      * Chi dei due telefoni sta mostrando fa girare i codici da solo, quindi qui
-     * si accumula e basta: i doppioni li scarta il Set, e quello che non e' di
+     * si accumula e basta: i doppioni li scarta il Set, e quello che non è di
      * OpenCard lo ignora il core senza dire niente. Il conteggio lo tiene il
-     * core, che e' l'unico a sapere quanti pezzi ha il passaggio.
+     * core, che è l'unico a sapere quanti pezzi ha il passaggio.
      */
     private fun raccogli(letti: List<String>) {
         if (giaLetto || inCorso) return

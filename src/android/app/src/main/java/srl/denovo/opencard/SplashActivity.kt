@@ -16,7 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
  * Schermata di benvenuto: marchio, nome e versione.
  *
  * Compare al primo avvio e basta. Si rivede quando si vuole, toccando il logo
- * nella schermata informativa: e' l'unico posto da cui si puo' richiamare.
+ * nella schermata informativa: è l'unico posto da cui si può richiamare.
  */
 class SplashActivity : AppCompatActivity() {
 
@@ -73,7 +73,7 @@ class SplashActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Il conteggio parte quando la schermata e' davvero a video: partendo
+        // Il conteggio parte quando la schermata è davvero a video: partendo
         // dalla costruzione, il tempo di disegno finirebbe dentro i tre secondi.
         prosegui?.let { principale.postDelayed(it, DURATA_MS) }
     }

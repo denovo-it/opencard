@@ -41,8 +41,8 @@
     <string name="colore">Colore</string>
     <string name="usa_e_getta">Usa &amp; getta</string>
     <string name="usa_e_getta_spiega">Finisce nella seconda scheda, con il cestino per toglierla appena l\'hai usata.</string>
-    <string name="manca_etichetta">L\'etichetta e\' obbligatoria.</string>
-    <string name="manca_codice">Il codice e\' obbligatorio.</string>
+    <string name="manca_etichetta">L\'etichetta è obbligatoria.</string>
+    <string name="manca_codice">Il codice è obbligatorio.</string>
 
     <string name="da_fotocamera">Foto</string>
     <string name="da_galleria">Galleria</string>
@@ -50,8 +50,8 @@
     <string name="inquadra_codice">Inquadra il codice</string>
     <string name="scanner_tieni_fermo">Tieni fermo il telefono: il codice va letto tre volte uguale.</string>
     <string name="fotocamera_negata">Senza fotocamera puoi scrivere il codice a mano, oppure leggerlo da una foto.</string>
-    <string name="fotocamera_non_disponibile">La fotocamera non e\' disponibile su questo telefono.</string>
-    <string name="nessun_codice_nell_immagine">Nell\'immagine non c\'e\' nessun codice leggibile.</string>
+    <string name="fotocamera_non_disponibile">La fotocamera non è disponibile su questo telefono.</string>
+    <string name="nessun_codice_nell_immagine">Nell\'immagine non c\'è nessun codice leggibile.</string>
     <string name="lettura_non_riuscita">Lettura non riuscita: %1$s</string>
 
     <string name="backup">Backup</string>
@@ -66,14 +66,14 @@
     <string name="backup_non_scritto">Esportazione non riuscita.</string>
     <string name="backup_non_letto">Non sono riuscito a leggere il file.</string>
     <string name="backup_troppo_grande">Il file è troppo grande per essere un backup di OpenCard.</string>
-    <string name="niente_da_esportare">Non c\'e\' ancora nessuna carta da esportare.</string>
+    <string name="niente_da_esportare">Non c\'è ancora nessuna carta da esportare.</string>
 
     <string name="trasferisci">Copia tra telefoni</string>
     <string name="trasferimento_titolo">Copia tra telefoni</string>
     <string name="trasferimento_spiega">Serve OpenCard su tutti e due i telefoni. Uno mostra i codici, l\'altro li inquadra. Non passa niente dalla rete.</string>
     <string name="trasferimento_mostra">Mostra i codici</string>
     <string name="trasferimento_ricevi">Inquadra i codici</string>
-    <string name="trasferimento_mostra_avviso">Metti lo schermo davanti alla fotocamera dell\'altro telefono. I codici girano da soli: lascia fare finche\' non ha finito.</string>
+    <string name="trasferimento_mostra_avviso">Metti lo schermo davanti alla fotocamera dell\'altro telefono. I codici girano da soli: lascia fare finché non ha finito.</string>
     <string name="trasferimento_privacy">Il codice contiene i numeri delle tue tessere. Mostralo solo a chi le sta ricevendo.</string>
     <string name="trasferimento_pezzo">Codice %1$d di %2$d</string>
     <string name="trasferimento_pezzo_unico">Un codice solo</string>
@@ -86,7 +86,7 @@
     <string name="trasferimento_sostituisci">Azzera e sostituisci</string>
     <string name="trasferimento_sostituisci_titolo">Cancellare le tue carte?</string>
     <string name="trasferimento_sostituisci_avviso">Le %1$d carte che hai adesso spariscono e restano solo le %2$d arrivate. Non si torna indietro.</string>
-    <string name="trasferimento_niente_ricevuto">Non e\' arrivata nessuna carta.</string>
+    <string name="trasferimento_niente_ricevuto">Non è arrivata nessuna carta.</string>
 
     <string name="un_regalo">Un regalo di Denovo</string>
     <string name="informazioni">Informazioni</string>
@@ -94,9 +94,9 @@
     <string name="versione_e_build">%1$s (build %2$d)</string>
     <string name="versione_e_build_canale">%1$s (build %2$d) · %3$s</string>
 
-    <string name="perche_esiste">OpenCard e\' un gesto di solidarieta\' nei confronti delle persone che tengono alla loro privacy e hanno bisogno di strumenti semplici.\n\nStrumenti che fanno esattamente quello che ti aspetti, senza proporti di continuo servizi che non ti interessano.</string>
+    <string name="perche_esiste">OpenCard è un gesto di solidarietà nei confronti delle persone che tengono alla loro privacy e hanno bisogno di strumenti semplici.\n\nStrumenti che fanno esattamente quello che ti aspetti, senza proporti di continuo servizi che non ti interessano.</string>
     <string name="sorgente_titolo">Codice sorgente</string>
-    <string name="sorgente_intro">Il codice di OpenCard e\' pubblico. Sta su GitHub con licenza AGPL v3: si legge, si compila e si controlla che l\'app faccia solo quello che dice.</string>
+    <string name="sorgente_intro">Il codice di OpenCard è pubblico. È disponibile su GitHub con licenza AGPL v3: si legge, si compila e si controlla che l\'app faccia solo quello che dice.</string>
     <string name="sorgente_riga">github.com/denovo-it/opencard</string>
     <string name="sorgente_licenza">AGPL v3</string>
     <string name="revisioni">Revisioni</string>
@@ -106,18 +106,18 @@
     <string name="librerie_android">Librerie Android</string>
 
     <string name="privacy_titolo">Privacy</string>
-    <string name="privacy_intro">OpenCard non raccoglie niente e non ha nemmeno il permesso di collegarsi a internet: le carte restano nella memoria privata dell\'app. La pagina qui sotto lo dice per esteso, ed e\' quella dichiarata a Google e ad Apple.</string>
+    <string name="privacy_intro">OpenCard non raccoglie niente e non ha nemmeno il permesso di collegarsi a internet: le carte restano nella memoria privata dell\'app. La pagina qui sotto lo dice per esteso, ed è quella dichiarata a Google e ad Apple.</string>
     <string name="privacy_riga">denovo.srl/opencard-privacy</string>
     <string name="privacy_apri">Apri</string>
 
     <string name="licenza_uso_titolo">Licenza d\'uso</string>
-    <string name="licenza_uso">OpenCard e\' un regalo di Denovo srl.\n\nUso personale: libero.\nUso commerciale: scrivi a info@denovo.srl.\n\nIl programma e\' distribuito sotto licenza AGPL v3, in alternativa a una licenza commerciale. Il testo integrale della AGPL v3 e\' qui sotto.</string>
+    <string name="licenza_uso">OpenCard è un regalo di Denovo srl.\n\nUso personale: libero.\nUso commerciale: scrivi a info@denovo.srl.\n\nIl programma è distribuito sotto licenza AGPL v3, in alternativa a una licenza commerciale. Il testo integrale della AGPL v3 è qui sotto.</string>
     <string name="marchi_titolo">Marchi</string>
-    <string name="marchi">Denovo e OpenCard sono marchi di Denovo srl. Il nome Denovo, il nome OpenCard, i loghi e i segni distintivi che li accompagnano sono di proprieta\' riservata di Denovo srl.\n\nLa licenza AGPL v3 riguarda il codice sorgente e non concede alcun diritto sui marchi. Chi distribuisce una versione modificata deve rimuovere i marchi e i loghi di Denovo srl e darle un nome proprio.</string>
+    <string name="marchi">Denovo e OpenCard sono marchi di Denovo srl. Il nome Denovo, il nome OpenCard, i loghi e i segni distintivi che li accompagnano sono di proprietà riservata di Denovo srl.\n\nLa licenza AGPL v3 riguarda il codice sorgente e non concede alcun diritto sui marchi. Chi distribuisce una versione modificata deve rimuovere i marchi e i loghi di Denovo srl e darle un nome proprio.</string>
     <string name="licenza_completa_titolo">Licenza completa (AGPL v3)</string>
 
-    <string name="errore_precedente_titolo">L\'avvio precedente si e\' chiuso male</string>
-    <string name="errore_precedente">Questo e\' il dettaglio, utile a chi sviluppa:\n\n%1$s</string>
+    <string name="errore_precedente_titolo">L\'avvio precedente si è chiuso male</string>
+    <string name="errore_precedente">Questo è il dettaglio, utile a chi sviluppa:\n\n%1$s</string>
 
     <plurals name="carte_ricevute">
         <item quantity="one">Ricevuta una carta.</item>

@@ -182,7 +182,7 @@
                 android:textSize="13sp" />
 
             <!-- La stella si accende anche da qui, oltre che dalla carta
-                 aperta: chi sta gia' modificando non deve uscire e rientrare. -->
+                 aperta: chi sta già modificando non deve uscire e rientrare. -->
             <com.google.android.material.checkbox.MaterialCheckBox
                 android:id="@+id/preferita"
                 android:layout_width="match_parent"
@@ -190,7 +190,7 @@
                 android:text="@string/preferita" />
 
             <!-- In fondo e staccato da Salva: si vede solo modificando una carta
-                 che esiste gia', e chiede conferma prima di cancellare. Rosso in
+                 che esiste già, e chiede conferma prima di cancellare. Rosso in
                  tutte le sue parti, contorno, scritta, cestino e tocco: col
                  colore di serie prenderebbe l'arancione del marchio, che qui
                  direbbe la cosa sbagliata. -->

@@ -6,7 +6,7 @@
 	     usa una delle API a motivazione obbligatoria: senza, il caricamento su
 	     App Store Connect risponde ITMS-91053, «Missing API declaration».
 
-	     Va nella radice del bundle, accanto a Info.plist, ed e' un file di
+	     Va nella radice del bundle, accanto a Info.plist, ed è un file di
 	     testo: viene copiato nel bundle a ogni compilazione. -->
 
 	<!-- Niente tracciamento e nessun dato raccolto: l'app non ha il permesso di
@@ -24,11 +24,11 @@
 	<array>
 		<!-- L'unica API a motivazione obbligatoria che tocchiamo: systemUptime,
 		     in OCScannerViewController.m. Serve a misurare quanto tempo passa
-		     fra due letture uguali del codice, cioe' a decidere quando una
-		     lettura e' confermata. Motivazione 35F9.1: misurare il tempo
+		     fra due letture uguali del codice, cioè a decidere quando una
+		     lettura è confermata. Motivazione 35F9.1: misurare il tempo
 		     trascorso fra eventi avvenuti dentro l'app.
 
-		     Nel resto del codice non c'e' altro: niente NSUserDefaults, niente
+		     Nel resto del codice non c'è altro: niente NSUserDefaults, niente
 		     date dei file, niente spazio su disco, niente sysctl. Se un giorno
 		     entra una di quelle, va aggiunta qui. -->
 		<dict>
