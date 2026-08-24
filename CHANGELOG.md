@@ -1,3 +1,7 @@
+## 1.0.2
+
+- I testi dell'app usano le lettere accentate: si legge «è» dove prima c'era «e'».
+
 ## 1.0.1
 
 - Nella schermata informazioni c'è l'indirizzo del codice sorgente: OpenCard è pubblico su GitHub con licenza AGPL v3.
