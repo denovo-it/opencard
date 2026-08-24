@@ -45,7 +45,7 @@ static NSString *const OCMarchi =
      "di Denovo srl e darle un nome proprio.";
 
 static NSString *const OCIntroOpenSource =
-    @"OpenCard sta in piedi grazie al lavoro di altri. Queste sono le librerie che "
+    @"OpenCard è stato realizzato anche grazie al lavoro di altri. Queste sono le librerie che "
      "contiene, con la licenza di ciascuna. Tocca un nome per aprirne la pagina.";
 
 @interface OCInfoViewController () <UIPageViewControllerDataSource, UIPageViewControllerDelegate>
