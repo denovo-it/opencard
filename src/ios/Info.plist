@@ -19,7 +19,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.2</string>
 	<key>CFBundleVersion</key>
-	<string>2026082402</string>
+	<string>2026082602</string>
 	<!-- Nessuna crittografia: l'app non chiama niente di cifrato e non ha rete.
 	     Senza questa chiave App Store Connect ripete la domanda sulla conformita'
 	     all'esportazione a ogni caricamento. -->
@@ -52,10 +52,16 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>MinimumOSVersion</key>
-	<string>13.0</string>
+	<string>15.0</string>
 	<key>UIDeviceFamily</key>
 	<array>
 		<integer>1</integer>
+	</array>
+	<!-- Il binario ha la sola fetta a 64 bit: senza questa chiave il caricamento
+	     su App Store Connect viene respinto con ITMS-90502. -->
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
