@@ -36,6 +36,20 @@ target_compile_definitions(opencardcore PRIVATE ZINT_NO_PNG=1)
 
 set_target_properties(opencardcore PROPERTIES C_STANDARD 99)
 
+# Il percorso di compilazione non deve finire dentro il binario: altrimenti la
+# stessa versione compilata in cartelle diverse produce librerie diverse, perché
+# cambia il NT_GNU_BUILD_ID, e due build non si possono più confrontare.
+get_filename_component(CORE_REALE "${CORE_DIR}" REALPATH)
+target_compile_options(opencardcore PRIVATE "-ffile-prefix-map=${CORE_REALE}=/opencard")
+
+# Stessa cosa per l'NDK: le intestazioni di sistema entrano nelle informazioni di
+# debug col loro percorso, quindi due installazioni dell'SDK in posti diversi
+# darebbero librerie diverse.
+if(DEFINED ANDROID_NDK)
+    get_filename_component(NDK_REALE "${ANDROID_NDK}" REALPATH)
+    target_compile_options(opencardcore PRIVATE "-ffile-prefix-map=${NDK_REALE}=/ndk")
+endif()
+
 # Pagine di memoria da 16 KB. L'NDK r27 allinea i segmenti a 4 KB, e Google Play
 # rifiuta le app che puntano ad Android 15 o superiore con codice a 64 bit
 # allineato così. Dalla r28 è il comportamento predefinito e questa riga non
