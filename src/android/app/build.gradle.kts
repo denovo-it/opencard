@@ -10,7 +10,8 @@ plugins {
 // Due chiavi, e non è un capriccio: l'APK che va sul sito continua a essere
 // firmato con la chiave della beta, altrimenti chi ce l'ha non può aggiornare;
 // il bundle per Play vuole una chiave vera, perché Play rifiuta i certificati
-// di debug. Si sceglie con -PkeystoreProps=keystore-upload.properties.
+// di debug. Si sceglie con -PkeystoreProps=keystore-upload.properties, che passa
+// bundle-play.sh.
 val keystoreProps = Properties().apply {
     val nome = (project.findProperty("keystoreProps") as String?) ?: "keystore.properties"
     val f = rootProject.file(nome)
@@ -131,7 +132,7 @@ androidComponents {
 }
 
 // L'APK non si costruisce più: dal 14 agosto 2026 si distribuisce solo dal Play
-// Store, e l'artefatto è il bundle. Un APK accanto al
+// Store, e l'artefatto è il .aab di build/bundle-play.sh. Un APK accanto al
 // bundle serve solo a far caricare in console qualcosa di diverso da quello che
 // è stato provato. Chi lancia assembleRelease a mano se lo ritrova comunque,
 // perché è un task di serie di AGP, ma non lo usa nessuno script.

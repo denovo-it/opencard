@@ -36,15 +36,18 @@ target_compile_definitions(opencardcore PRIVATE ZINT_NO_PNG=1)
 
 set_target_properties(opencardcore PROPERTIES C_STANDARD 99)
 
-# Il percorso di compilazione non deve finire dentro il binario: altrimenti la
-# stessa versione compilata in cartelle diverse produce librerie diverse, perché
-# cambia il NT_GNU_BUILD_ID, e due build non si possono più confrontare.
+# Il percorso di compilazione non deve finire dentro il binario. Senza questa
+# riga due macchine che compilano la stessa versione in cartelle diverse
+# producono .so diversi: cambia il build ID, e il confronto degli artefatti
+# prima del caricamento non tornerebbe mai. Misurato il 27 agosto 2026: 20 byte
+# di differenza, esattamente il NT_GNU_BUILD_ID.
 get_filename_component(CORE_REALE "${CORE_DIR}" REALPATH)
 target_compile_options(opencardcore PRIVATE "-ffile-prefix-map=${CORE_REALE}=/opencard")
 
 # Stessa cosa per l'NDK: le intestazioni di sistema entrano nelle informazioni di
-# debug col loro percorso, quindi due installazioni dell'SDK in posti diversi
-# darebbero librerie diverse.
+# debug col loro percorso, e se l'SDK sta in due posti diversi sulle due macchine
+# il build ID cambia lo stesso. Misurato il 27 agosto 2026 spostando l'SDK da
+# ~/Android/Sdk a ~/sdk/Android.
 if(DEFINED ANDROID_NDK)
     get_filename_component(NDK_REALE "${ANDROID_NDK}" REALPATH)
     target_compile_options(opencardcore PRIVATE "-ffile-prefix-map=${NDK_REALE}=/ndk")
