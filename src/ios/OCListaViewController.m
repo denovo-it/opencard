@@ -12,6 +12,25 @@
 #import "OCTema.h"
 #import "OCTrasferimentoViewController.h"
 
+/// Contenitore del marchio nella barra.
+///
+/// La barra di sistema misura la vista del titolo dalla sua dimensione
+/// naturale, e per una `UIImageView` quella è la dimensione dell'immagine:
+/// 440x220 punti, cioè fuori dalla barra e sopra le carte. Il riquadro
+/// assegnato a mano non basta, perché la barra può seguire la dimensione
+/// naturale e ignorarlo, ed è quello che succede su iPhone e su iPad mentre
+/// nel simulatore il riquadro veniva rispettato. Scrivendo qui la dimensione
+/// naturale le due strade portano allo stesso posto.
+@interface OCMarcaBarra : UIView
+@end
+
+@implementation OCMarcaBarra
+- (CGSize)intrinsicContentSize
+{
+    return CGSizeMake(92, 34);
+}
+@end
+
 @interface OCListaViewController () <UIPageViewControllerDataSource, UIPageViewControllerDelegate,
                                      UIDocumentPickerDelegate>
 @property (nonatomic, strong) UISegmentedControl *schede;
@@ -84,10 +103,14 @@
     UIImage *marca = [UIImage imageNamed:@"opencard_appbar"];
 
     if (marca != nil) {
+        OCMarcaBarra *contenitore =
+            [[OCMarcaBarra alloc] initWithFrame:CGRectMake(0, 0, 92, 34)];
         UIImageView *vista = [[UIImageView alloc] initWithImage:marca];
         vista.contentMode = UIViewContentModeScaleAspectFit;
-        vista.frame = CGRectMake(0, 0, 92, 34);
-        self.navigationItem.titleView = vista;
+        vista.frame = contenitore.bounds;
+        vista.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [contenitore addSubview:vista];
+        self.navigationItem.titleView = contenitore;
     } else {
         self.title = @"OpenCard";
     }
@@ -376,6 +399,13 @@
     // La casella "usa e getta" parte come la scheda da cui hai premuto il +.
     OCFormViewController *form = [[OCFormViewController alloc]
                                   initPerNuovaConUsaEGetta:([self schedaCorrente] == 1)];
+
+    // Il modulo si apre come foglio, e chiudendolo questa schermata non passa
+    // da viewWillAppear: senza questo la carta appena salvata compariva solo
+    // cambiando scheda e tornando indietro.
+    __weak typeof(self) debole = self;
+    form.suSalvataggio = ^{ [debole ricaricaTutto]; };
+
     UINavigationController *contenitore = [[UINavigationController alloc]
                                            initWithRootViewController:form];
     [self presentViewController:contenitore animated:YES completion:nil];

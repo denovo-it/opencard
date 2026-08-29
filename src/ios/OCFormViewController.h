@@ -20,6 +20,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// modifica dalla carta aperta non ha più niente da mostrare e si chiude.
 @property (nonatomic, copy, nullable) void (^suEliminazione)(void);
 
+/// Chiamato quando la carta è stata salvata, a foglio già chiuso.
+///
+/// Il modulo si apre come foglio, e chiudendolo la schermata sotto non passa
+/// da `viewWillAppear`: senza avviso resterebbe com'era prima del salvataggio.
+@property (nonatomic, copy, nullable) void (^suSalvataggio)(void);
+
 @end
 
 NS_ASSUME_NONNULL_END

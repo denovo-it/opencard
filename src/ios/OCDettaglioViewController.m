@@ -180,6 +180,10 @@
         [debole.navigationController popViewControllerAnimated:YES];
     };
 
+    // Modificata, va riletta: chiudendo il foglio questa schermata resta dov'era
+    // e mostrerebbe ancora il nome e il codice di prima.
+    form.suSalvataggio = ^{ [debole carica]; };
+
     UINavigationController *contenitore = [[UINavigationController alloc]
                                            initWithRootViewController:form];
     [self presentViewController:contenitore animated:YES completion:nil];

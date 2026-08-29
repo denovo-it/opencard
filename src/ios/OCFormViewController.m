@@ -37,6 +37,7 @@ static const NSUInteger OCLimiteCodice = 500;
 /// già modificando non deve uscire e rientrare.
 @property (nonatomic, strong) UISwitch *stella;
 @property (nonatomic, strong) UIStackView *tavolozza;
+@property (nonatomic, strong) UIScrollView *scorrevole;
 @property (nonatomic, strong) UILabel *errore;
 @property (nonatomic, strong) UIButton *elimina;
 @end
@@ -81,6 +82,11 @@ static const NSUInteger OCLimiteCodice = 500;
 
     [self costruisciModulo];
 
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(tastieraCambiata:)
+                                                 name:UIKeyboardWillChangeFrameNotification
+                                               object:nil];
+
     if (self.identificativo != 0) {
         [self carica];
     } else {
@@ -99,6 +105,7 @@ static const NSUInteger OCLimiteCodice = 500;
     campo.autocorrectionType = UITextAutocorrectionTypeNo;
     campo.clearButtonMode = UITextFieldViewModeWhileEditing;
     campo.delegate = self;
+    campo.inputAccessoryView = [self barraTastiera];
     return campo;
 }
 
@@ -144,6 +151,10 @@ static const NSUInteger OCLimiteCodice = 500;
     self.nome = [self campoConSegnaposto:@"Etichetta"];
     self.codice = [self campoConSegnaposto:@"Codice"];
     self.codice.font = [UIFont monospacedDigitSystemFontOfSize:16 weight:UIFontWeightRegular];
+
+    // Dall'etichetta si passa al codice, dal codice la tastiera si chiude.
+    self.nome.returnKeyType = UIReturnKeyNext;
+    self.codice.returnKeyType = UIReturnKeyDone;
 
     self.tipo = [[UISegmentedControl alloc] initWithItems:@[@"Barcode", @"QR code"]];
     self.tipo.selectedSegmentIndex = 0;
@@ -235,8 +246,20 @@ static const NSUInteger OCLimiteCodice = 500;
 
     UIScrollView *scorrevole = [UIScrollView new];
     scorrevole.translatesAutoresizingMaskIntoConstraints = NO;
+
+    // La tastiera si toglie di mezzo in tre modi: il tasto Fine sopra i tasti,
+    // un tocco fuori dai campi, il trascinamento del modulo verso il basso.
+    // `cancelsTouchesInView` resta NO, altrimenti il tocco si ferma qui e i
+    // pulsanti del modulo non rispondono più.
+    scorrevole.keyboardDismissMode = UIScrollViewKeyboardDismissModeInteractive;
+    UITapGestureRecognizer *tocco = [[UITapGestureRecognizer alloc]
+        initWithTarget:self action:@selector(chiudiTastiera)];
+    tocco.cancelsTouchesInView = NO;
+    [scorrevole addGestureRecognizer:tocco];
+
     [scorrevole addSubview:colonna];
     [self.view addSubview:scorrevole];
+    self.scorrevole = scorrevole;
 
     UILayoutGuide *area = self.view.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[
@@ -260,6 +283,70 @@ static const NSUInteger OCLimiteCodice = 500;
     etichetta.font = [UIFont systemFontOfSize:13];
     etichetta.textColor = [OCTema attenuato];
     return etichetta;
+}
+
+#pragma mark - Tastiera
+
+/// La barra sopra i tasti, con il solo pulsante per chiudere.
+///
+/// Il tasto Fine della tastiera basterebbe, ma si vede solo quando il fuoco è
+/// nel campo giusto: qui il modo per uscire è sempre scritto a video.
+- (UIToolbar *)barraTastiera
+{
+    // La larghezza dello schermo e non zero: come vista sopra la tastiera un
+    // riquadro vuoto resta vuoto, e il pulsante non si vedrebbe.
+    UIToolbar *barra = [[UIToolbar alloc]
+        initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 44)];
+    barra.items = @[
+        [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+                                                      target:nil
+                                                      action:nil],
+        [[UIBarButtonItem alloc] initWithTitle:@"Fine"
+                                         style:UIBarButtonItemStyleDone
+                                        target:self
+                                        action:@selector(chiudiTastiera)],
+    ];
+    [barra sizeToFit];
+    return barra;
+}
+
+- (void)chiudiTastiera
+{
+    [self.view endEditing:YES];
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)campo
+{
+    if (campo == self.nome) {
+        [self.codice becomeFirstResponder];
+    } else {
+        [campo resignFirstResponder];
+    }
+    return NO;
+}
+
+/// Con la tastiera aperta il modulo finisce sotto, e la parte bassa, dove
+/// stanno i colori e il pulsante di eliminazione, non si raggiunge più. Lo
+/// spazio in fondo cresce di quanto la tastiera copre davvero.
+- (void)tastieraCambiata:(NSNotification *)avviso
+{
+    NSValue *quadro = avviso.userInfo[UIKeyboardFrameEndUserInfoKey];
+    UIWindow *finestra = self.view.window;
+    if (quadro == nil || finestra == nil) {
+        return;
+    }
+
+    // Il riquadro arriva in coordinate dello schermo: su iPad, con l'app in
+    // una finestra affiancata, non sono quelle della finestra e la parte
+    // coperta verrebbe fuori sbagliata.
+    CGRect nellaFinestra = [finestra convertRect:quadro.CGRectValue
+                             fromCoordinateSpace:finestra.screen.coordinateSpace];
+    CGRect tastiera = [self.view convertRect:nellaFinestra fromView:finestra];
+    CGRect sovrapposto = CGRectIntersection(self.scorrevole.frame, tastiera);
+    CGFloat coperto = CGRectIsNull(sovrapposto) ? 0 : CGRectGetHeight(sovrapposto);
+
+    self.scorrevole.contentInset = UIEdgeInsetsMake(0, 0, coperto, 0);
+    self.scorrevole.verticalScrollIndicatorInsets = UIEdgeInsetsMake(0, 0, coperto, 0);
 }
 
 #pragma mark - Colori
@@ -374,7 +461,13 @@ static const NSUInteger OCLimiteCodice = 500;
         self.errore.text = errore.localizedDescription;
         return;
     }
-    [self chiudi];
+
+    void (^avvisa)(void) = self.suSalvataggio;
+    [self dismissViewControllerAnimated:YES completion:^{
+        if (avvisa != nil) {
+            avvisa();
+        }
+    }];
 }
 
 /// La domanda è la stessa del cestino nell'elenco, con lo stesso titolo e lo

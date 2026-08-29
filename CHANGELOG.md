@@ -1,5 +1,8 @@
 ## 1.0.2
 
+- Su iPhone e iPad il marchio in cima alla schermata delle carte resta dentro la barra: si ingrandiva fino a coprire l'elenco.
+- Su iPhone e iPad la tastiera si chiude dal modulo di inserimento, con il tasto Fine sopra i tasti, toccando fuori dai campi o trascinando il modulo verso il basso.
+- Su iPhone e iPad la carta appena salvata compare subito nell'elenco, senza cambiare scheda e tornare indietro.
 - Su iPhone serve iOS 15: sono gli stessi modelli di prima, dall'iPhone 6s in su, ma con il sistema aggiornato.
 - I testi dell'app usano le lettere accentate: si legge «è» dove prima c'era «e'».
 - Se il codice di una foto non viene letto, l'app riprova con l'immagine intera: le tessere fotografate da lontano adesso passano.
