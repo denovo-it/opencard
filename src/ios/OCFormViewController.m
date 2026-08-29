@@ -105,7 +105,6 @@ static const NSUInteger OCLimiteCodice = 500;
     campo.autocorrectionType = UITextAutocorrectionTypeNo;
     campo.clearButtonMode = UITextFieldViewModeWhileEditing;
     campo.delegate = self;
-    campo.inputAccessoryView = [self barraTastiera];
     return campo;
 }
 
@@ -247,11 +246,21 @@ static const NSUInteger OCLimiteCodice = 500;
     UIScrollView *scorrevole = [UIScrollView new];
     scorrevole.translatesAutoresizingMaskIntoConstraints = NO;
 
-    // La tastiera si toglie di mezzo in tre modi: il tasto Fine sopra i tasti,
-    // un tocco fuori dai campi, il trascinamento del modulo verso il basso.
+    // La tastiera si toglie di mezzo trascinando il modulo, o toccando fuori dai
+    // campi. Due accortezze, tutte e due volute dopo la prova su iPad:
+    //
+    // `OnDrag` e non `Interactive`: con `Interactive` la tastiera segue il dito
+    // e se ne va solo se il dito arriva sopra di lei, che su un modulo è un
+    // gesto da indovinare. Così basta cominciare a trascinare.
+    //
+    // Il rimbalzo verticale perché su uno schermo grande il modulo ci sta tutto:
+    // senza, la vista non si muove, e una vista che non si muove non fa partire
+    // nessun trascinamento.
+    //
     // `cancelsTouchesInView` resta NO, altrimenti il tocco si ferma qui e i
     // pulsanti del modulo non rispondono più.
-    scorrevole.keyboardDismissMode = UIScrollViewKeyboardDismissModeInteractive;
+    scorrevole.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
+    scorrevole.alwaysBounceVertical = YES;
     UITapGestureRecognizer *tocco = [[UITapGestureRecognizer alloc]
         initWithTarget:self action:@selector(chiudiTastiera)];
     tocco.cancelsTouchesInView = NO;
@@ -287,29 +296,13 @@ static const NSUInteger OCLimiteCodice = 500;
 
 #pragma mark - Tastiera
 
-/// La barra sopra i tasti, con il solo pulsante per chiudere.
-///
-/// Il tasto Fine della tastiera basterebbe, ma si vede solo quando il fuoco è
-/// nel campo giusto: qui il modo per uscire è sempre scritto a video.
-- (UIToolbar *)barraTastiera
-{
-    // La larghezza dello schermo e non zero: come vista sopra la tastiera un
-    // riquadro vuoto resta vuoto, e il pulsante non si vedrebbe.
-    UIToolbar *barra = [[UIToolbar alloc]
-        initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 44)];
-    barra.items = @[
-        [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
-                                                      target:nil
-                                                      action:nil],
-        [[UIBarButtonItem alloc] initWithTitle:@"Fine"
-                                         style:UIBarButtonItemStyleDone
-                                        target:self
-                                        action:@selector(chiudiTastiera)],
-    ];
-    [barra sizeToFit];
-    return barra;
-}
-
+/// I tre modi per chiudere la tastiera sono tutti di sistema: il tasto di invio
+/// del campo, un tocco fuori dai campi, il trascinamento del modulo verso il
+/// basso. Una barra con Fine sopra i tasti non serve, perché il modo per
+/// chiudere il lavoro sta già in alto, dove Contatti e Calendario mettono
+/// Annulla e Fine. Serve invece sulle tastiere senza tasto di invio, come il
+/// tastierino numerico: se un giorno il campo Codice diventa numerico, la barra
+/// torna obbligatoria.
 - (void)chiudiTastiera
 {
     [self.view endEditing:YES];
