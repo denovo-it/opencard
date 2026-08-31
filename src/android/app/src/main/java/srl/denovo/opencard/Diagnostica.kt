@@ -91,9 +91,4 @@ object Diagnostica {
             }
         }
     }
-
-    /** Dove cercare il file, da dire all'utente. */
-    fun percorsoLeggibile(contesto: Context): String =
-        contesto.getExternalFilesDir(null)?.let { "${it.absolutePath}/$NOME_FILE" }
-            ?: "${contesto.filesDir.absolutePath}/$NOME_FILE"
 }

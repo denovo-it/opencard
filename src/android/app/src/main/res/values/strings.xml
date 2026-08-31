@@ -56,7 +56,6 @@
 
     <string name="backup">Backup</string>
     <string name="esporta">Esporta su file</string>
-    <string name="ripristina">Ripristina un backup</string>
     <string name="importa">Importa da file</string>
     <string name="ripristina_titolo">Sostituire le carte?</string>
     <string name="ripristina_avviso">Le carte che hai adesso vengono sostituite da quelle del backup.</string>
