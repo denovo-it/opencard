@@ -57,6 +57,13 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 
 /// Dove stanno i dati: Application Support, che il sistema non svuota e che
 /// non compare fra i documenti dell'utente.
+///
+/// Da qui il file rientra nel backup del telefono, iCloud compreso, ed è una
+/// scelta: chi cambia iPhone ritrova le carte senza doverle esportare a mano.
+/// Per tenerlo fuori basterebbe NSURLIsExcludedFromBackupKey sull'URL della
+/// directory, e apposta non c'è. Su Android il comportamento è l'opposto,
+/// allowBackup="false" nel manifesto, perché lì il backup passa dal cloud di
+/// Google. La privacy policy su denovo.srl dichiara tutte e due le cose.
 + (NSString *)directoryDati
 {
     NSArray<NSString *> *percorsi = NSSearchPathForDirectoriesInDomains(

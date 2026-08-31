@@ -9,10 +9,14 @@
 	     Va nella radice del bundle, accanto a Info.plist, ed è un file di
 	     testo: viene copiato nel bundle a ogni compilazione. -->
 
-	<!-- Niente tracciamento e nessun dato raccolto: l'app non ha il permesso di
-	     rete, non ha SDK di terze parti che parlano fuori, e le carte restano
-	     nel container. E' la stessa cosa che dice la privacy policy su
-	     denovo.srl e il modulo Data safety su Play. -->
+	<!-- Niente tracciamento e nessun dato raccolto: l'app non usa la rete, non
+	     ha SDK di terze parti che parlano fuori, e le carte restano nel
+	     container. È la stessa cosa che dice la privacy policy su denovo.srl
+	     e il modulo Data safety su Play.
+
+	     «Non usa la rete» e non «non ha il permesso di rete»: il permesso si
+	     dichiara nel manifesto di Android, su iOS non esiste. Qui il fatto è
+	     che nel codice non c'è niente che apra una connessione. -->
 	<key>NSPrivacyTracking</key>
 	<false/>
 	<key>NSPrivacyTrackingDomains</key>

@@ -16,13 +16,16 @@
 	<string>OpenCard</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<!-- Qui va solo un numero: App Store Connect accetta al massimo tre interi
+	     separati da punto e respinge il caricamento se trova altro. Il segno
+	     della lavorazione sta su Android, in versionName, e nel CHANGELOG. -->
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.2</string>
+	<string>1.0.3</string>
 	<key>CFBundleVersion</key>
 	<string>2026082902</string>
-	<!-- Nessuna crittografia: l'app non chiama niente di cifrato e non ha rete.
-	     Senza questa chiave App Store Connect ripete la domanda sulla conformita'
-	     all'esportazione a ogni caricamento. -->
+	<!-- Nessuna crittografia: l'app non chiama niente di cifrato e non usa la
+	     rete. Senza questa chiave App Store Connect ripete la domanda sulla
+	     conformità all'esportazione a ogni caricamento. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>CFBundleSupportedPlatforms</key>

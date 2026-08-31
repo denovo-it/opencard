@@ -1,3 +1,7 @@
+## 1.0.3-dev (in lavorazione)
+
+- Ancora niente che si veda usando l'app: per adesso sono cambiati commenti nel codice e il numero di versione.
+
 ## 1.0.2
 
 - Su iPhone e iPad il marchio in cima alla schermata delle carte resta dentro la barra: si ingrandiva fino a coprire l'elenco.

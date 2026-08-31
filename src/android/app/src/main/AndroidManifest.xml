@@ -15,6 +15,11 @@
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 
+    <!-- allowBackup="false": le carte non vanno nel backup automatico verso il
+         cloud di Google. Su iPhone la scelta è l'opposta, il file rientra nel
+         backup di iCloud, e la privacy policy su denovo.srl dichiara tutte e
+         due le cose. Chi cambia telefono Android porta le carte con il backup
+         su file o con il passaggio a QR. -->
     <application
         android:name=".Applicazione"
         android:allowBackup="false"
