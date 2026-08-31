@@ -94,6 +94,10 @@
     <string name="versione_e_build_canale">%1$s (build %2$d) · %3$s</string>
 
     <string name="perche_esiste">OpenCard è un gesto di solidarietà nei confronti delle persone che tengono alla loro privacy e hanno bisogno di strumenti semplici.\n\nStrumenti che fanno esattamente quello che ti aspetti, senza proporti di continuo servizi che non ti interessano.</string>
+    <string name="pagina_titolo">La pagina di OpenCard</string>
+    <string name="pagina_intro">Cosa fa l\'app, come si aggiunge una tessera e dove si scarica per Android e per iPhone.</string>
+    <string name="pagina_riga">denovo.srl/opencard</string>
+    <string name="pagina_apri">Apri</string>
     <string name="sorgente_titolo">Codice sorgente</string>
     <string name="sorgente_intro">Il codice di OpenCard è pubblico. È disponibile su GitHub con licenza AGPL v3: si legge, si compila e si controlla che l\'app faccia solo quello che dice.</string>
     <string name="sorgente_riga">github.com/denovo-it/opencard</string>
@@ -108,6 +112,8 @@
     <string name="privacy_intro">OpenCard non raccoglie niente e non ha nemmeno il permesso di collegarsi a internet: le carte restano nella memoria privata dell\'app. La pagina qui sotto lo dice per esteso, ed è quella dichiarata a Google e ad Apple.</string>
     <string name="privacy_riga">denovo.srl/opencard-privacy</string>
     <string name="privacy_apri">Apri</string>
+    <string name="backup_sottotitolo">Backup del telefono</string>
+    <string name="backup_privacy">Le carte non entrano nel backup automatico verso il cloud di Google, che è disattivato. Se cambi telefono le porti con il backup su file oppure con il passaggio a QR.</string>
 
     <string name="licenza_uso_titolo">Licenza d\'uso</string>
     <string name="licenza_uso">OpenCard è un regalo di Denovo srl.\n\nUso personale: libero.\nUso commerciale: scrivi a info@denovo.srl.\n\nIl programma è distribuito sotto licenza AGPL v3, in alternativa a una licenza commerciale. Il testo integrale della AGPL v3 è qui sotto.</string>

@@ -83,6 +83,15 @@ class InfoActivity : AppCompatActivity() {
         contenuto.addView(paragrafo(getString(R.string.perche_esiste), 15f))
         contenuto.addView(riga())
 
+        contenuto.addView(titolo(getString(R.string.pagina_titolo)))
+        contenuto.addView(paragrafo(getString(R.string.pagina_intro), 13f, colore = R.color.muted))
+        contenuto.addView(
+            voceCollegamento(
+                getString(R.string.pagina_riga), getString(R.string.pagina_apri), PAGINA
+            )
+        )
+        contenuto.addView(riga())
+
         contenuto.addView(titolo(getString(R.string.sorgente_titolo)))
         contenuto.addView(paragrafo(getString(R.string.sorgente_intro), 13f, colore = R.color.muted))
         contenuto.addView(
@@ -114,6 +123,8 @@ class InfoActivity : AppCompatActivity() {
                 getString(R.string.privacy_riga), getString(R.string.privacy_apri), PRIVACY
             )
         )
+        contenuto.addView(sottotitolo(getString(R.string.backup_sottotitolo)))
+        contenuto.addView(paragrafo(getString(R.string.backup_privacy), 13f, colore = R.color.muted))
         contenuto.addView(riga())
 
         contenuto.addView(titolo(getString(R.string.licenza_uso_titolo)))

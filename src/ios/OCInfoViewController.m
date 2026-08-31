@@ -10,6 +10,12 @@
 
 static NSString *const OCSitoDenovo = @"https://denovo.srl";
 
+static NSString *const OCPaginaApp = @"https://denovo.srl/opencard/";
+
+static NSString *const OCIntroPagina =
+    @"Cosa fa l'app, come si aggiunge una tessera e dove si scarica per iPhone e per "
+     "Android.";
+
 static NSString *const OCSorgente = @"https://github.com/denovo-it/opencard";
 
 static NSString *const OCIntroSorgente =
@@ -22,6 +28,12 @@ static NSString *const OCIntroPrivacy =
     @"OpenCard non raccoglie niente e non esce dal telefono: le carte restano nella memoria "
      "privata dell'app. La pagina qui sotto lo dice per esteso, ed è quella dichiarata a "
      "Google e ad Apple.";
+
+static NSString *const OCBackupTelefono =
+    @"Le carte stanno nello spazio riservato all'app e rientrano nel backup del telefono: "
+     "se hai acceso iCloud ci finiscono anche loro, insieme ai dati delle altre app, e "
+     "cambiando iPhone le ritrovi. È il tuo backup, sul tuo account Apple, e Denovo non vi "
+     "ha accesso.";
 
 static NSString *const OCPercheEsiste =
     @"OpenCard è un gesto di solidarietà nei confronti delle persone che tengono alla "
@@ -196,6 +208,13 @@ static NSString *const OCIntroOpenSource =
     [foglio.colonna addArrangedSubview:[self paragrafo:OCPercheEsiste dimensione:15]];
     [foglio.colonna addArrangedSubview:[self riga]];
 
+    [foglio.colonna addArrangedSubview:[self titolo:@"La pagina di OpenCard"]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroPagina dimensione:13]];
+    [self aggiungiCollegamenti:@[
+        @[@"denovo.srl/opencard", @"Apri", OCPaginaApp],
+    ] a:foglio.colonna];
+    [foglio.colonna addArrangedSubview:[self riga]];
+
     [foglio.colonna addArrangedSubview:[self titolo:@"Codice sorgente"]];
     [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroSorgente dimensione:13]];
     [self aggiungiCollegamenti:@[
@@ -238,6 +257,8 @@ static NSString *const OCIntroOpenSource =
     [self aggiungiCollegamenti:@[
         @[@"denovo.srl/opencard-privacy", @"Apri", OCPrivacy],
     ] a:foglio.colonna];
+    [foglio.colonna addArrangedSubview:[self sottotitolo:@"Backup del telefono"]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCBackupTelefono dimensione:13]];
     [foglio.colonna addArrangedSubview:[self riga]];
 
     [foglio.colonna addArrangedSubview:[self titolo:@"Licenza d'uso"]];

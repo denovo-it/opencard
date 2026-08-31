@@ -1,6 +1,7 @@
 ## 1.0.3-dev (in lavorazione)
 
-- Ancora niente che si veda usando l'app: per adesso sono cambiati commenti nel codice e il numero di versione.
+- Nella schermata Informazioni c'è l'indirizzo della pagina di OpenCard sul sito, accanto al codice sorgente.
+- Sempre lì, sotto Privacy, c'è scritto cosa succede alle carte quando il telefono fa il backup: su iPhone rientrano in quello di iCloud, su Android il backup automatico verso Google resta disattivato.
 
 ## 1.0.2
 

@@ -33,7 +33,7 @@ android {
 
         // Formato YYYYMMDDnn: nn è il progressivo della giornata. Deve solo
         // crescere, e a colpo d'occhio dice quando è stata costruita.
-        versionCode = 2026082402
+        versionCode = 2026083101
         // Il suffisso -dev dice che è una build di lavorazione: sparisce nel
         // commit che chiude la 1.0.3. Su iOS non si può, App Store Connect
         // vuole solo cifre e punti, quindi lì il numero è già 1.0.3.
