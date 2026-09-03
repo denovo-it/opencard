@@ -5,10 +5,11 @@ pubblicità e funzionante offline.
 
 ## Dove si scarica
 
-L'app è pubblicata sui due store, gratis e senza account:
+L'app è pubblicata sui due store ed è gratis:
 
-<p>
-  <a href="https://apps.apple.com/it/app/opencard/id6805435861"><img src="immagini/badge-app-store-it.png" alt="Scarica su App Store" height="50"></a>
+<p align="center">
+  <a href="https://apps.apple.com/it/app/opencard/id6805435861"><img src="immagini/badge-app-store-it.png" alt="Scarica su App Store" height="65"></a>
+  &nbsp;&nbsp;&nbsp;&nbsp;
   <a href="https://play.google.com/store/apps/details?id=srl.denovo.opencard"><img src="immagini/badge-google-play-it.png" alt="Disponibile su Google Play" height="65"></a>
 </p>
 
