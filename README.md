@@ -1,7 +1,7 @@
 # OpenCard
 
-Tutte le tue tessere fedeltà e codici usa-e-getta sul telefono, senza account, senza
-pubblicità e funzionante offline.
+Tutte le tue tessere fedeltà e codici usa-e-getta sul telefono, senza registrazione,
+senza pubblicità e funzionante offline.
 
 ## Dove si scarica
 
