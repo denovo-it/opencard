@@ -3,6 +3,18 @@
 Tutte le tue tessere fedeltà e codici usa-e-getta sul telefono, senza account, senza
 pubblicità e funzionante offline.
 
+## Dove si scarica
+
+L'app è pubblicata sui due store, gratis e senza account:
+
+<p>
+  <a href="https://apps.apple.com/it/app/opencard/id6805435861"><img src="immagini/badge-app-store-it.png" alt="Scarica su App Store" height="50"></a>
+  <a href="https://play.google.com/store/apps/details?id=srl.denovo.opencard"><img src="immagini/badge-google-play-it.png" alt="Disponibile su Google Play" height="65"></a>
+</p>
+
+- App Store: `https://apps.apple.com/it/app/opencard/id6805435861`
+- Google Play: `https://play.google.com/store/apps/details?id=srl.denovo.opencard`
+
 ## Requisiti
 
 - **Android 7.0** (API 24) o successivo. L'app è compilata contro l'API 36 e
@@ -47,6 +59,14 @@ si compila e funziona anche senza.
 
 Chi compila la propria versione inserisce le proprie immagini, con gli stessi
 nomi di file dei segnaposto.
+
+I due riquadri degli store qui sopra sono di Google e di Apple. Sono i file
+ufficiali, non modificati, e servono solo a collegare le schede dell'app: anche
+loro restano fuori dall'AGPL, che riguarda il codice.
+
+Google Play e il logo Google Play sono marchi di Google LLC. Apple e il logo
+Apple sono marchi di Apple Inc., registrati negli Stati Uniti e in altri paesi.
+App Store è un marchio di servizio di Apple Inc.
 
 ## Licenza
 
