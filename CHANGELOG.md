@@ -1,7 +1,21 @@
 ## 1.0.3-dev (in lavorazione)
 
+- I tipi di codice passano da 5 a 18: Aztec, Data Matrix, PDF417, Micro QR e gli altri si scelgono da un elenco quando si aggiunge una carta. Quello giusto lo propone l'app guardando il codice.
+- Ogni carta può avere una nota, una scadenza e un saldo. Restano vuoti finché non servono.
+- La scadenza si sceglie dal calendario, senza scriverla a mano.
+- Ogni carta può avere la foto del fronte e del retro, per leggere quello che sulla tessera è stampato e nel codice non c'è. Si passa da una faccia all'altra scorrendo di lato o con le due frecce, e toccandola si apre a schermo pieno, dove si ingrandisce con due dita.
+- Il backup su file adesso è un archivio con dentro le carte e le foto, e si può chiudere con una password.
+- Le carte si esportano anche in CSV, il formato che leggono le altre app, e un CSV di Catima si importa qui.
+- I codici del passaggio fra telefoni si salvano su un PDF, uno per pagina, da usare quando l'altro telefono non c'è.
+- Dal menu si azzerano tutte le carte, con una domanda prima.
+- Una tessera si aggiunge anche da un PDF, oltre che dalla fotocamera, da una foto e a mano.
+- La scheda «Usa & getta» compare solo quando c'è almeno una carta dentro, come già faceva quella con la stella, e la fila delle schede sparisce quando ne resta una sola.
+- L'app parla anche inglese: la lingua la sceglie il telefono, e da Impostazioni si può cambiare a mano con IT o EN.
+- Funziona da Android 6 in su, prima serviva Android 7.
 - Nella schermata Informazioni c'è l'indirizzo della pagina di OpenCard sul sito, accanto al codice sorgente.
-- Sempre lì, sotto Privacy, c'è scritto cosa succede alle carte quando il telefono fa il backup: su iPhone rientrano in quello di iCloud, su Android il backup automatico verso Google resta disattivato.
+- Il file delle carte sul telefono adesso è cifrato: chi lo tira fuori da un telefono spento, o da un backup, trova byte a caso.
+- Da Impostazioni si sceglie se le carte entrano nel backup del telefono verso il cloud di Google. Di partenza è spento, e quello che esce è un elenco che il telefono nuovo rilegge al primo avvio.
+- Sempre lì, sotto Privacy, c'è scritto cosa succede alle carte quando il telefono fa il backup: su iPhone rientrano in quello di iCloud, su Android il backup automatico verso Google parte spento e si accende da Impostazioni.
 
 ## 1.0.2
 
