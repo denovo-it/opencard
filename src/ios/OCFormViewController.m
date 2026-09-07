@@ -7,8 +7,11 @@
 #import <Vision/Vision.h>
 
 #import "OCCore.h"
+#import "OCFoto.h"
 #import "OCScannerViewController.h"
 #import "OCTema.h"
+
+#include "store.h"
 
 /// Gli stessi colori che assegna il core, per la scelta a mano.
 static NSArray<NSString *> *OCColoriScelta(void)
@@ -31,7 +34,29 @@ static const NSUInteger OCLimiteCodice = 500;
 
 @property (nonatomic, strong) UITextField *nome;
 @property (nonatomic, strong) UITextField *codice;
-@property (nonatomic, strong) UISegmentedControl *tipo;
+/// Il tipo di codice: un pulsante che apre l'elenco delle 18 simbologie.
+/// Quale sia scelta sta in `simbologiaScelta`, non nel titolo del pulsante.
+@property (nonatomic, strong) UIButton *tipo;
+@property (nonatomic, assign) NSInteger simbologiaScelta;
+
+@property (nonatomic, strong) UITextView *note;
+@property (nonatomic, strong) UIDatePicker *scadenza;
+@property (nonatomic, strong) UIButton *togliScadenza;
+/// Il calendario una data ce l'ha sempre: questa dice se l'ha messa l'utente.
+@property (nonatomic, assign) BOOL scadenzaMessa;
+@property (nonatomic, strong) UITextField *saldo;
+
+/// Le foto scelte, in memoria finché non si salva: una carta nuova il suo id
+/// non ce l'ha ancora, e il nome del file lo contiene.
+@property (nonatomic, strong, nullable) UIImage *fotoFronte;
+@property (nonatomic, strong, nullable) UIImage *fotoRetro;
+/// I nomi dei file già scritti, per sapere cosa cancellare se la foto si toglie.
+@property (nonatomic, copy) NSString *nomeFotoFronte;
+@property (nonatomic, copy) NSString *nomeFotoRetro;
+@property (nonatomic, strong) UIButton *riquadroFronte;
+@property (nonatomic, strong) UIButton *riquadroRetro;
+/// Per chi arriva la foto che sta scegliendo: 0 il codice, 1 il fronte, 2 il retro.
+@property (nonatomic, assign) NSInteger fotoPer;
 @property (nonatomic, strong) UISwitch *interruttore;
 /// La stella si accende anche da qui, oltre che dalla carta aperta: chi sta
 /// già modificando non deve uscire e rientrare.
@@ -69,15 +94,15 @@ static const NSUInteger OCLimiteCodice = 500;
 {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor systemBackgroundColor];
-    self.title = self.identificativo == 0 ? @"Aggiungi" : @"Modifica";
+    self.title = self.identificativo == 0 ? NSLocalizedString(@"aggiungi", nil) : NSLocalizedString(@"modifica_codice", nil);
 
     // Annulla e Salva in cima: in fondo finivano sotto la tastiera quando un
     // campo aveva il fuoco.
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
-        initWithTitle:@"Annulla" style:UIBarButtonItemStylePlain
+        initWithTitle:NSLocalizedString(@"annulla", nil) style:UIBarButtonItemStylePlain
                target:self action:@selector(chiudi)];
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]
-        initWithTitle:@"Salva" style:UIBarButtonItemStyleDone
+        initWithTitle:NSLocalizedString(@"salva", nil) style:UIBarButtonItemStyleDone
                target:self action:@selector(salva)];
 
     [self costruisciModulo];
@@ -147,21 +172,37 @@ static const NSUInteger OCLimiteCodice = 500;
 - (void)costruisciModulo
 {
     // Le stesse due parole che Android mette come etichetta dei campi.
-    self.nome = [self campoConSegnaposto:@"Etichetta"];
-    self.codice = [self campoConSegnaposto:@"Codice"];
+    self.nome = [self campoConSegnaposto:NSLocalizedString(@"etichetta", nil)];
+    self.codice = [self campoConSegnaposto:NSLocalizedString(@"codice", nil)];
     self.codice.font = [UIFont monospacedDigitSystemFontOfSize:16 weight:UIFontWeightRegular];
 
     // Dall'etichetta si passa al codice, dal codice la tastiera si chiude.
     self.nome.returnKeyType = UIReturnKeyNext;
     self.codice.returnKeyType = UIReturnKeyDone;
 
-    self.tipo = [[UISegmentedControl alloc] initWithItems:@[@"Barcode", @"QR code"]];
-    self.tipo.selectedSegmentIndex = 0;
+    // Barre o quadrato non basta più: le simbologie sono 18, e quale sia
+    // cambia il disegno alla cassa. Un pulsante che apre l'elenco occupa una
+    // riga sola, dove un segmentato a 18 voci non ci starebbe.
+    self.tipo = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.tipo.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeading;
+    self.tipo.titleLabel.font = [UIFont systemFontOfSize:16];
+    self.tipo.showsMenuAsPrimaryAction = YES;
+    self.tipo.layer.borderColor = [UIColor separatorColor].CGColor;
+    self.tipo.layer.borderWidth = 1;
+    self.tipo.layer.cornerRadius = 8;
+    if (@available(iOS 15.0, *)) {
+        UIButtonConfiguration *configurazione = [UIButtonConfiguration plainButtonConfiguration];
+        configurazione.contentInsets = NSDirectionalEdgeInsetsMake(0, 12, 0, 12);
+        self.tipo.configuration = configurazione;
+    }
+    [self.tipo.heightAnchor constraintEqualToConstant:44].active = YES;
+    self.simbologiaScelta = OPENCARD_SIM_CODE128;
+    [self aggiornaSimbologia];
 
     UIStackView *acquisizione = [[UIStackView alloc] initWithArrangedSubviews:@[
-        [self bottoneAcquisizione:@"Foto" simbolo:@"camera" azione:@selector(daFotocamera)],
-        [self bottoneAcquisizione:@"Galleria" simbolo:@"photo" azione:@selector(daGalleria)],
-        [self bottoneAcquisizione:@"File" simbolo:@"folder" azione:@selector(daFile)],
+        [self bottoneAcquisizione:NSLocalizedString(@"da_fotocamera", nil) simbolo:@"camera" azione:@selector(daFotocamera)],
+        [self bottoneAcquisizione:NSLocalizedString(@"da_galleria", nil) simbolo:@"photo" azione:@selector(daGalleria)],
+        [self bottoneAcquisizione:NSLocalizedString(@"da_file", nil) simbolo:@"folder" azione:@selector(daFile)],
     ]];
     acquisizione.axis = UILayoutConstraintAxisHorizontal;
     acquisizione.distribution = UIStackViewDistributionFillEqually;
@@ -184,11 +225,60 @@ static const NSUInteger OCLimiteCodice = 500;
         [scorrevoleColori.heightAnchor constraintEqualToConstant:48],
     ]];
 
+    // I tre campi in più. La nota è alta quattro righe, la scadenza si sceglie
+    // dal calendario e il saldo è testo libero, perché «12,50 €», «300 punti» e
+    // «due caffè» sono tutti saldi veri.
+    self.note = [UITextView new];
+    self.note.font = [UIFont systemFontOfSize:16];
+    self.note.backgroundColor = [UIColor secondarySystemBackgroundColor];
+    self.note.layer.cornerRadius = 8;
+    [self.note.heightAnchor constraintEqualToConstant:88].active = YES;
+
+    self.scadenza = [UIDatePicker new];
+    self.scadenza.datePickerMode = UIDatePickerModeDate;
+    self.scadenza.preferredDatePickerStyle = UIDatePickerStyleCompact;
+    [self.scadenza addTarget:self action:@selector(scadenzaToccata)
+            forControlEvents:UIControlEventValueChanged];
+
+    // La X per togliere la data: senza, una scadenza messa per sbaglio non si
+    // toglie più, perché il calendario una data ce l'ha sempre.
+    self.togliScadenza = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.togliScadenza setImage:[UIImage systemImageNamed:@"xmark.circle.fill"]
+                        forState:UIControlStateNormal];
+    self.togliScadenza.tintColor = [OCTema attenuato];
+    self.togliScadenza.hidden = YES;
+    [self.togliScadenza addTarget:self action:@selector(scadenzaTolta)
+                 forControlEvents:UIControlEventTouchUpInside];
+
+    UILabel *etichettaScadenza = [UILabel new];
+    etichettaScadenza.text = NSLocalizedString(@"scadenza", nil);
+    etichettaScadenza.font = [UIFont systemFontOfSize:16];
+
+    UIStackView *rigaScadenza = [[UIStackView alloc] initWithArrangedSubviews:@[
+        etichettaScadenza, self.scadenza, self.togliScadenza,
+    ]];
+    rigaScadenza.axis = UILayoutConstraintAxisHorizontal;
+    rigaScadenza.spacing = 8;
+
+    self.saldo = [self campoConSegnaposto:NSLocalizedString(@"saldo", nil)];
+    self.saldo.returnKeyType = UIReturnKeyDone;
+
+    self.riquadroFronte = [self riquadroFoto:NSLocalizedString(@"foto_fronte", nil)
+                                      azione:@selector(scegliFotoFronte)];
+    self.riquadroRetro = [self riquadroFoto:NSLocalizedString(@"foto_retro", nil)
+                                     azione:@selector(scegliFotoRetro)];
+
+    UIStackView *rigaFoto = [[UIStackView alloc]
+        initWithArrangedSubviews:@[self.riquadroFronte, self.riquadroRetro]];
+    rigaFoto.axis = UILayoutConstraintAxisHorizontal;
+    rigaFoto.distribution = UIStackViewDistributionFillEqually;
+    rigaFoto.spacing = 12;
+
     self.interruttore = [UISwitch new];
     self.interruttore.onTintColor = [OCTema marca];
 
     UILabel *etichettaUsaEGetta = [UILabel new];
-    etichettaUsaEGetta.text = @"Usa & getta";
+    etichettaUsaEGetta.text = NSLocalizedString(@"scheda_usa_e_getta", nil);
     etichettaUsaEGetta.font = [UIFont systemFontOfSize:16];
 
     UIStackView *rigaUsaEGetta = [[UIStackView alloc]
@@ -199,7 +289,7 @@ static const NSUInteger OCLimiteCodice = 500;
     self.stella.onTintColor = [OCTema marca];
 
     UILabel *etichettaStella = [UILabel new];
-    etichettaStella.text = @"Preferita";
+    etichettaStella.text = NSLocalizedString(@"preferita", nil);
     etichettaStella.font = [UIFont systemFontOfSize:16];
 
     UIStackView *rigaStella = [[UIStackView alloc]
@@ -207,8 +297,7 @@ static const NSUInteger OCLimiteCodice = 500;
     rigaStella.axis = UILayoutConstraintAxisHorizontal;
 
     UILabel *spiegazione = [UILabel new];
-    spiegazione.text = @"Finisce nella seconda scheda, con il cestino per toglierla "
-                        "appena l'hai usata.";
+    spiegazione.text = NSLocalizedString(@"usa_e_getta_spiega", nil);
     spiegazione.font = [UIFont systemFontOfSize:13];
     spiegazione.textColor = [OCTema attenuato];
     spiegazione.numberOfLines = 0;
@@ -221,7 +310,7 @@ static const NSUInteger OCLimiteCodice = 500;
     // In fondo e lontano da Salva: si vede solo modificando una carta che
     // esiste già, e chiede conferma prima di cancellare.
     self.elimina = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.elimina setTitle:@"Elimina" forState:UIControlStateNormal];
+    [self.elimina setTitle:NSLocalizedString(@"elimina", nil) forState:UIControlStateNormal];
     [self.elimina setImage:[UIImage systemImageNamed:@"trash"] forState:UIControlStateNormal];
     self.elimina.tintColor = [OCTema pericolo];
     self.elimina.layer.borderColor = [OCTema pericolo].CGColor;
@@ -233,8 +322,10 @@ static const NSUInteger OCLimiteCodice = 500;
            forControlEvents:UIControlEventTouchUpInside];
 
     UIStackView *colonna = [[UIStackView alloc] initWithArrangedSubviews:@[
-        self.nome, self.codice, [self titoletto:@"Tipo di codice"], self.tipo, acquisizione,
-        [self titoletto:@"Colore"], scorrevoleColori,
+        self.nome, self.codice, [self titoletto:NSLocalizedString(@"tipo_di_codice", nil)], self.tipo, acquisizione,
+        [self titoletto:NSLocalizedString(@"colore", nil)], scorrevoleColori,
+        [self titoletto:NSLocalizedString(@"nota", nil)], self.note,
+        rigaScadenza, self.saldo, rigaFoto,
         // L'errore sta sotto Elimina e non sopra: da vuoto occupa comunque una
         // riga, e in mezzo faceva un buco fra la preferita e il pulsante.
         rigaUsaEGetta, spiegazione, rigaStella, self.elimina, self.errore,
@@ -292,6 +383,189 @@ static const NSUInteger OCLimiteCodice = 500;
     etichetta.font = [UIFont systemFontOfSize:13];
     etichetta.textColor = [OCTema attenuato];
     return etichetta;
+}
+
+/// Il riquadro di una foto: vuoto mostra il nome del lato, pieno la foto.
+- (UIButton *)riquadroFoto:(NSString *)testo azione:(SEL)azione
+{
+    UIButton *riquadro = [UIButton buttonWithType:UIButtonTypeSystem];
+    [riquadro setTitle:testo forState:UIControlStateNormal];
+    riquadro.titleLabel.font = [UIFont systemFontOfSize:13];
+    riquadro.tintColor = [OCTema attenuato];
+    riquadro.backgroundColor = [UIColor secondarySystemBackgroundColor];
+    riquadro.layer.cornerRadius = 10;
+    riquadro.clipsToBounds = YES;
+    riquadro.imageView.contentMode = UIViewContentModeScaleAspectFill;
+    [riquadro.heightAnchor constraintEqualToConstant:110].active = YES;
+    [riquadro addTarget:self action:azione forControlEvents:UIControlEventTouchUpInside];
+    return riquadro;
+}
+
+#pragma mark - Simbologia
+
+/// Rifà il titolo e l'elenco, con la spunta su quella scelta. L'elenco si
+/// ricostruisce ogni volta perché la spunta sta dentro le voci.
+- (void)aggiornaSimbologia
+{
+    NSArray<NSString *> *nomi = [OCCore nomiSimbologie];
+    NSInteger scelta = self.simbologiaScelta;
+
+    if (scelta < 0 || scelta >= (NSInteger)nomi.count) {
+        scelta = OPENCARD_SIM_CODE128;
+        self.simbologiaScelta = scelta;
+    }
+    // Con una configurazione addosso il titolo lo tiene lei: setTitle: non
+    // farebbe niente e il pulsante resterebbe vuoto.
+    if (@available(iOS 15.0, *)) {
+        UIButtonConfiguration *configurazione = self.tipo.configuration;
+        configurazione.title = nomi[scelta];
+        self.tipo.configuration = configurazione;
+    } else {
+        [self.tipo setTitle:nomi[scelta] forState:UIControlStateNormal];
+    }
+
+    NSMutableArray<UIAction *> *voci = [NSMutableArray arrayWithCapacity:nomi.count];
+    __weak typeof(self) debole = self;
+
+    for (NSUInteger i = 0; i < nomi.count; i++) {
+        NSUInteger quale = i;
+        UIAction *voce = [UIAction actionWithTitle:nomi[i]
+                                             image:nil
+                                        identifier:nil
+                                           handler:^(__kindof UIAction *azione) {
+            (void)azione;
+            debole.simbologiaScelta = (NSInteger)quale;
+            [debole aggiornaSimbologia];
+        }];
+        voce.state = ((NSInteger)i == scelta) ? UIMenuElementStateOn : UIMenuElementStateOff;
+        [voci addObject:voce];
+    }
+    self.tipo.menu = [UIMenu menuWithTitle:NSLocalizedString(@"tipo_di_codice", nil)
+                                  children:voci];
+}
+
+#pragma mark - Scadenza
+
+- (void)scadenzaToccata
+{
+    self.scadenzaMessa = YES;
+    self.togliScadenza.hidden = NO;
+}
+
+- (void)scadenzaTolta
+{
+    self.scadenzaMessa = NO;
+    self.togliScadenza.hidden = YES;
+    self.scadenza.date = [NSDate date];
+}
+
+/// La data come la vuole il core, "AAAA-MM-GG", oppure vuota.
+- (NSString *)scadenzaScritta
+{
+    if (!self.scadenzaMessa) {
+        return @"";
+    }
+    NSDateFormatter *formato = [NSDateFormatter new];
+    formato.dateFormat = @"yyyy-MM-dd";
+    formato.locale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+    return [formato stringFromDate:self.scadenza.date];
+}
+
+- (void)mostraScadenza:(NSString *)scritta
+{
+    if (scritta.length == 0) {
+        [self scadenzaTolta];
+        return;
+    }
+    NSDateFormatter *formato = [NSDateFormatter new];
+    formato.dateFormat = @"yyyy-MM-dd";
+    formato.locale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+
+    NSDate *quando = [formato dateFromString:scritta];
+    if (quando == nil) {
+        [self scadenzaTolta];
+        return;
+    }
+    self.scadenza.date = quando;
+    self.scadenzaMessa = YES;
+    self.togliScadenza.hidden = NO;
+}
+
+#pragma mark - Foto della carta
+
+- (void)scegliFotoFronte
+{
+    [self chiediFotoPer:1];
+}
+
+- (void)scegliFotoRetro
+{
+    [self chiediFotoPer:2];
+}
+
+- (void)chiediFotoPer:(NSInteger)lato
+{
+    BOOL cePosto = (lato == 1 ? self.fotoFronte : self.fotoRetro) != nil;
+
+    UIAlertController *scelte = [UIAlertController
+        alertControllerWithTitle:nil message:nil
+                  preferredStyle:UIAlertControllerStyleActionSheet];
+
+    if ([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]) {
+        [scelte addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"da_fotocamera", nil)
+                                                  style:UIAlertActionStyleDefault
+                                                handler:^(UIAlertAction *azione) {
+            (void)azione;
+            [self prendiFotoDa:UIImagePickerControllerSourceTypeCamera per:lato];
+        }]];
+    }
+    [scelte addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"da_galleria", nil)
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *azione) {
+        (void)azione;
+        [self prendiFotoDa:UIImagePickerControllerSourceTypePhotoLibrary per:lato];
+    }]];
+
+    if (cePosto) {
+        [scelte addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"togli_foto", nil)
+                                                  style:UIAlertActionStyleDestructive
+                                                handler:^(UIAlertAction *azione) {
+            (void)azione;
+            [self mostraFoto:nil per:lato];
+        }]];
+    }
+    [scelte addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
+                                              style:UIAlertActionStyleCancel handler:nil]];
+
+    // Su iPad un foglio di scelte senza ancora non si apre: la si aggancia al
+    // riquadro toccato.
+    scelte.popoverPresentationController.sourceView =
+        lato == 1 ? self.riquadroFronte : self.riquadroRetro;
+    [self presentViewController:scelte animated:YES completion:nil];
+}
+
+- (void)prendiFotoDa:(UIImagePickerControllerSourceType)sorgente per:(NSInteger)lato
+{
+    self.fotoPer = lato;
+
+    UIImagePickerController *selettore = [UIImagePickerController new];
+    selettore.sourceType = sorgente;
+    selettore.delegate = self;
+    [self presentViewController:selettore animated:YES completion:nil];
+}
+
+- (void)mostraFoto:(UIImage *)immagine per:(NSInteger)lato
+{
+    UIButton *riquadro = lato == 1 ? self.riquadroFronte : self.riquadroRetro;
+    NSString *testo = lato == 1 ? NSLocalizedString(@"foto_fronte", nil)
+                                : NSLocalizedString(@"foto_retro", nil);
+    if (lato == 1) {
+        self.fotoFronte = immagine;
+    } else {
+        self.fotoRetro = immagine;
+    }
+    [riquadro setBackgroundImage:immagine forState:UIControlStateNormal];
+    [riquadro setTitle:immagine != nil ? @"" : testo forState:UIControlStateNormal];
 }
 
 #pragma mark - Tastiera
@@ -398,7 +672,17 @@ static const NSUInteger OCLimiteCodice = 500;
 
     self.nome.text = carta.etichetta;
     self.codice.text = carta.codice;
-    self.tipo.selectedSegmentIndex = carta.qrcode ? 1 : 0;
+    self.simbologiaScelta = carta.simbologia;
+    [self aggiornaSimbologia];
+    self.note.text = carta.note;
+    self.saldo.text = carta.saldo;
+    [self mostraScadenza:carta.scadenza];
+
+    self.nomeFotoFronte = carta.fotoFronte;
+    self.nomeFotoRetro = carta.fotoRetro;
+    [self mostraFoto:[OCFoto leggi:carta.fotoFronte] per:1];
+    [self mostraFoto:[OCFoto leggi:carta.fotoRetro] per:2];
+
     self.interruttore.on = carta.usaEGetta;
     self.stella.on = carta.preferita;
     self.usaEGetta = carta.usaEGetta;
@@ -417,15 +701,15 @@ static const NSUInteger OCLimiteCodice = 500;
                         [NSCharacterSet whitespaceAndNewlineCharacterSet]] ?: @"";
 
     if (etichetta.length == 0) {
-        self.errore.text = @"L'etichetta è obbligatoria.";
+        self.errore.text = NSLocalizedString(@"manca_etichetta", nil);
         return;
     }
     if (valore.length == 0) {
-        self.errore.text = @"Il codice è obbligatorio.";
+        self.errore.text = NSLocalizedString(@"manca_codice", nil);
         return;
     }
 
-    BOOL qrcode = self.tipo.selectedSegmentIndex == 1;
+    BOOL qrcode = [OCCore simbologiaQuadrata:self.simbologiaScelta];
     NSString *colore = self.coloreScelto ?: @"";
     NSError *errore = nil;
     BOOL esito;
@@ -455,12 +739,69 @@ static const NSUInteger OCLimiteCodice = 500;
         return;
     }
 
+    // Come la stella: inserisci e aggiorna lasciano stare questi campi, così
+    // modificare l'etichetta di una carta non le cancella la nota.
+    if (![OCCore impostaSimbologia:quale simbologia:self.simbologiaScelta errore:&errore]) {
+        self.errore.text = errore.localizedDescription;
+        return;
+    }
+    if (![OCCore impostaDettagli:quale
+                            note:self.note.text ?: @""
+                        scadenza:[self scadenzaScritta]
+                           saldo:self.saldo.text ?: @""
+                          errore:&errore]) {
+        self.errore.text = errore.localizedDescription;
+        return;
+    }
+    if (![self salvaLeFotoDi:quale errore:&errore]) {
+        self.errore.text = errore.localizedDescription;
+        return;
+    }
+
     void (^avvisa)(void) = self.suSalvataggio;
     [self dismissViewControllerAnimated:YES completion:^{
         if (avvisa != nil) {
             avvisa();
         }
     }];
+}
+
+/// Scrive i file delle due foto e mette i nomi nella carta.
+///
+/// Si fa dopo l'inserimento e non prima: il nome del file contiene l'id, e una
+/// carta nuova l'id ce l'ha solo dopo che il core gliel'ha dato.
+- (BOOL)salvaLeFotoDi:(NSInteger)quale errore:(NSError **)errore
+{
+    NSString *fronte = @"";
+    NSString *retro = @"";
+
+    if (self.fotoFronte != nil) {
+        fronte = [OCFoto salva:self.fotoFronte id:quale fronte:YES] ?: @"";
+        if (fronte.length == 0) {
+            if (errore != NULL) {
+                *errore = [NSError errorWithDomain:@"srl.denovo.opencard" code:-1
+                    userInfo:@{NSLocalizedDescriptionKey: NSLocalizedString(@"foto_non_salvata", nil)}];
+            }
+            return NO;
+        }
+    } else if (self.nomeFotoFronte.length > 0) {
+        [OCFoto cancella:self.nomeFotoFronte];
+    }
+
+    if (self.fotoRetro != nil) {
+        retro = [OCFoto salva:self.fotoRetro id:quale fronte:NO] ?: @"";
+        if (retro.length == 0) {
+            if (errore != NULL) {
+                *errore = [NSError errorWithDomain:@"srl.denovo.opencard" code:-1
+                    userInfo:@{NSLocalizedDescriptionKey: NSLocalizedString(@"foto_non_salvata", nil)}];
+            }
+            return NO;
+        }
+    } else if (self.nomeFotoRetro.length > 0) {
+        [OCFoto cancella:self.nomeFotoRetro];
+    }
+
+    return [OCCore impostaFoto:quale fronte:fronte retro:retro errore:errore];
 }
 
 /// La domanda è la stessa del cestino nell'elenco, con lo stesso titolo e lo
@@ -472,14 +813,14 @@ static const NSUInteger OCLimiteCodice = 500;
                            [NSCharacterSet whitespaceAndNewlineCharacterSet]] ?: @"";
 
     UIAlertController *domanda = [UIAlertController
-        alertControllerWithTitle:@"Elimina codice"
-                         message:[NSString stringWithFormat:@"Eliminare \"%@\"?", etichetta]
+        alertControllerWithTitle:NSLocalizedString(@"elimina_titolo", nil)
+                         message:[NSString stringWithFormat:NSLocalizedString(@"elimina_domanda", nil), etichetta]
                   preferredStyle:UIAlertControllerStyleAlert];
 
-    [domanda addAction:[UIAlertAction actionWithTitle:@"Annulla"
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
                                                 style:UIAlertActionStyleCancel
                                               handler:nil]];
-    [domanda addAction:[UIAlertAction actionWithTitle:@"Elimina"
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"elimina", nil)
                                                 style:UIAlertActionStyleDestructive
                                               handler:^(UIAlertAction *azione) {
         NSError *errore = nil;
@@ -508,7 +849,10 @@ static const NSUInteger OCLimiteCodice = 500;
 - (void)accetta:(NSString *)letto qrcode:(BOOL)qrcode
 {
     self.codice.text = letto;
-    self.tipo.selectedSegmentIndex = qrcode ? 1 : 0;
+    // La simbologia la propone il core guardando il codice: EAN-13 se le cifre
+    // sono tredici e il controllo torna, e via così. Resta cambiabile a mano.
+    self.simbologiaScelta = [OCCore simbologiaIndovinata:letto qrcode:qrcode];
+    [self aggiornaSimbologia];
     self.errore.text = @"";
 }
 
@@ -535,23 +879,86 @@ static const NSUInteger OCLimiteCodice = 500;
 
 - (void)daFile
 {
+    // Anche i PDF: le tessere arrivano spesso per email come allegato, e
+    // stamparle per poi fotografarle è un giro assurdo.
     UIDocumentPickerViewController *selettore = [[UIDocumentPickerViewController alloc]
-        initWithDocumentTypes:@[@"public.image"] inMode:UIDocumentPickerModeImport];
+        initWithDocumentTypes:@[@"public.image", @"com.adobe.pdf"]
+                       inMode:UIDocumentPickerModeImport];
     selettore.delegate = self;
     [self presentViewController:selettore animated:YES completion:nil];
+}
+
+/// La prima pagina di un PDF disegnata come immagine, o nil se non è un PDF.
+///
+/// Si rende a tre volte la misura della pagina: un codice a barre stampato
+/// piccolo, reso alla misura naturale, esce con le barre troppo sottili perché
+/// il lettore le distingua.
+- (UIImage *)paginaDaPdf:(NSData *)contenuto
+{
+    CGDataProviderRef fornitore = CGDataProviderCreateWithCFData((__bridge CFDataRef)contenuto);
+    if (fornitore == NULL) {
+        return nil;
+    }
+    CGPDFDocumentRef documento = CGPDFDocumentCreateWithProvider(fornitore);
+    CGDataProviderRelease(fornitore);
+
+    if (documento == NULL) {
+        return nil;
+    }
+    CGPDFPageRef pagina = CGPDFDocumentGetPage(documento, 1);
+    if (pagina == NULL) {
+        CGPDFDocumentRelease(documento);
+        return nil;
+    }
+
+    CGRect riquadro = CGPDFPageGetBoxRect(pagina, kCGPDFMediaBox);
+    CGFloat ingrandimento = 3;
+    CGSize misura = CGSizeMake(riquadro.size.width * ingrandimento,
+                               riquadro.size.height * ingrandimento);
+
+    UIGraphicsImageRendererFormat *formato = [UIGraphicsImageRendererFormat defaultFormat];
+    formato.scale = 1;
+    UIGraphicsImageRenderer *disegnatore =
+        [[UIGraphicsImageRenderer alloc] initWithSize:misura format:formato];
+
+    UIImage *immagine = [disegnatore imageWithActions:^(UIGraphicsImageRendererContext *contesto) {
+        CGContextRef ct = contesto.CGContext;
+        // Fondo bianco: un PDF trasparente su fondo nero non si legge.
+        CGContextSetFillColorWithColor(ct, [UIColor whiteColor].CGColor);
+        CGContextFillRect(ct, CGRectMake(0, 0, misura.width, misura.height));
+
+        // Il PDF ha l'origine in basso a sinistra, la grafica in alto.
+        CGContextTranslateCTM(ct, 0, misura.height);
+        CGContextScaleCTM(ct, ingrandimento, -ingrandimento);
+        CGContextTranslateCTM(ct, -riquadro.origin.x, -riquadro.origin.y);
+        CGContextDrawPDFPage(ct, pagina);
+    }];
+
+    CGPDFDocumentRelease(documento);
+    return immagine;
 }
 
 - (void)imagePickerController:(UIImagePickerController *)selettore
     didFinishPickingMediaWithInfo:(NSDictionary<UIImagePickerControllerInfoKey, id> *)informazioni
 {
     UIImage *immagine = informazioni[UIImagePickerControllerOriginalImage];
+    NSInteger per = self.fotoPer;
+    self.fotoPer = 0;
+
     [selettore dismissViewControllerAnimated:YES completion:^{
-        [self leggiDaImmagine:immagine];
+        // Stesso selettore, due mestieri: o si legge un codice dall'immagine,
+        // o l'immagine è la foto della tessera.
+        if (per == 0) {
+            [self leggiDaImmagine:immagine];
+        } else {
+            [self mostraFoto:immagine per:per];
+        }
     }];
 }
 
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)selettore
 {
+    self.fotoPer = 0;
     [selettore dismissViewControllerAnimated:YES completion:nil];
 }
 
@@ -570,8 +977,11 @@ static const NSUInteger OCLimiteCodice = 500;
     }
 
     UIImage *immagine = contenuto != nil ? [UIImage imageWithData:contenuto] : nil;
+    if (immagine == nil && contenuto != nil) {
+        immagine = [self paginaDaPdf:contenuto];
+    }
     if (immagine == nil) {
-        self.errore.text = @"Non sono riuscito a leggere l'immagine.";
+        self.errore.text = NSLocalizedString(@"immagine_non_letta", nil);
         return;
     }
     [self leggiDaImmagine:immagine];
@@ -582,7 +992,7 @@ static const NSUInteger OCLimiteCodice = 500;
 - (void)leggiDaImmagine:(UIImage *)immagine
 {
     if (immagine.CGImage == NULL) {
-        self.errore.text = @"Non sono riuscito a leggere l'immagine.";
+        self.errore.text = NSLocalizedString(@"immagine_non_letta", nil);
         return;
     }
 
@@ -590,7 +1000,7 @@ static const NSUInteger OCLimiteCodice = 500;
         initWithCompletionHandler:^(VNRequest *fatta, NSError *guasto) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (guasto != nil) {
-                self.errore.text = [NSString stringWithFormat:@"Lettura non riuscita: %@",
+                self.errore.text = [NSString stringWithFormat:NSLocalizedString(@"lettura_non_riuscita", nil),
                                     guasto.localizedDescription];
                 return;
             }
@@ -603,7 +1013,7 @@ static const NSUInteger OCLimiteCodice = 500;
                 [self accetta:trovato.payloadStringValue qrcode:qrcode];
                 return;
             }
-            self.errore.text = @"Nell'immagine non c'è nessun codice leggibile.";
+            self.errore.text = NSLocalizedString(@"nessun_codice_nell_immagine", nil);
         });
     }];
 

@@ -47,10 +47,10 @@ NSString *const OCCanale = @"";
     NSString *build = info[@"CFBundleVersion"] ?: @"?";
 
     if (OCCanale.length > 0) {
-        return [NSString stringWithFormat:@"%@ (build %@) · %@",
+        return [NSString stringWithFormat:NSLocalizedString(@"versione_e_build_canale", nil),
                 versione, build, OCCanale.uppercaseString];
     }
-    return [NSString stringWithFormat:@"%@ (build %@)", versione, build];
+    return [NSString stringWithFormat:NSLocalizedString(@"versione_e_build", nil), versione, build];
 }
 
 + (NSString *)versioneSemplice
@@ -59,7 +59,7 @@ NSString *const OCCanale = @"";
     NSString *versione = info[@"CFBundleShortVersionString"] ?: @"?";
     NSString *build = info[@"CFBundleVersion"] ?: @"?";
 
-    return [NSString stringWithFormat:@"%@ (build %@)", versione, build];
+    return [NSString stringWithFormat:NSLocalizedString(@"versione_e_build", nil), versione, build];
 }
 
 @end

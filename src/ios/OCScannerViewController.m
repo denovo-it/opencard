@@ -64,7 +64,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor blackColor];
-    self.title = self.raccolta ? @"Inquadra i codici" : @"Inquadra il codice";
+    self.title = self.raccolta ? NSLocalizedString(@"trasferimento_ricevi", nil) : NSLocalizedString(@"inquadra_codice", nil);
     self.pezzi = [NSMutableArray array];
 
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
@@ -103,7 +103,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 - (void)preparaProgresso
 {
     self.progresso = [UILabel new];
-    self.progresso.text = @"Inquadra il primo codice dell'altro telefono.";
+    self.progresso.text = NSLocalizedString(@"trasferimento_attesa", nil);
     self.progresso.numberOfLines = 0;
     self.progresso.textAlignment = NSTextAlignmentCenter;
     self.progresso.textColor = [UIColor whiteColor];
@@ -153,8 +153,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 {
     // Senza fotocamera la carta si aggiunge lo stesso, scrivendo il codice a
     // mano o leggendolo da una foto: si torna indietro e basta.
-    self.avviso.text = @"Senza fotocamera puoi scrivere il codice a mano, "
-                        "oppure leggerlo da una foto.";
+    self.avviso.text = NSLocalizedString(@"fotocamera_negata", nil);
     self.avviso.hidden = NO;
 }
 
@@ -162,7 +161,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 {
     AVCaptureDevice *fotocamera = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     if (fotocamera == nil) {
-        self.avviso.text = @"La fotocamera non è disponibile su questo dispositivo.";
+        self.avviso.text = NSLocalizedString(@"fotocamera_non_disponibile", nil);
         self.avviso.hidden = NO;
         return;
     }
@@ -178,7 +177,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 
     self.sessione = [AVCaptureSession new];
     if (![self.sessione canAddInput:ingresso]) {
-        self.avviso.text = @"La fotocamera non è disponibile su questo dispositivo.";
+        self.avviso.text = NSLocalizedString(@"fotocamera_non_disponibile", nil);
         self.avviso.hidden = NO;
         return;
     }
@@ -186,7 +185,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 
     AVCaptureMetadataOutput *uscita = [AVCaptureMetadataOutput new];
     if (![self.sessione canAddOutput:uscita]) {
-        self.avviso.text = @"La fotocamera non è disponibile su questo dispositivo.";
+        self.avviso.text = NSLocalizedString(@"fotocamera_non_disponibile", nil);
         self.avviso.hidden = NO;
         return;
     }
@@ -307,7 +306,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 
 - (void)mostraTieniFermo
 {
-    NSString *testo = @"Tieni fermo il telefono: il codice va letto tre volte uguale.";
+    NSString *testo = NSLocalizedString(@"scanner_tieni_fermo", nil);
     if ([testo isEqualToString:self.ultimoAvviso]) {
         return;
     }
@@ -361,7 +360,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
     }
 
     self.ultimoAvviso = nil;
-    self.progresso.text = [NSString stringWithFormat:@"Presi %ld codici di %ld",
+    self.progresso.text = [NSString stringWithFormat:NSLocalizedString(@"trasferimento_raccolta", nil),
                                                      (long)ricevuti, (long)totale];
 
     // Si tocca l'interfaccia senza cambiare coda: l'uscita dei metadati è

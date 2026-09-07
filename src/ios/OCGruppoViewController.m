@@ -64,11 +64,11 @@ static NSString *const OCRiusoCella = @"carta";
     self.vuoto.textColor = [OCTema tenue];
     self.vuoto.font = [UIFont systemFontOfSize:16];
     if (self.preferite) {
-        self.vuoto.text = @"Qui finiscono le carte con la stella.";
+        self.vuoto.text = NSLocalizedString(@"nessuna_preferita", nil);
     } else if (self.usaEGetta) {
-        self.vuoto.text = @"Qui finiscono i buoni e i codici che si usano una volta sola.";
+        self.vuoto.text = NSLocalizedString(@"nessuna_usa_e_getta", nil);
     } else {
-        self.vuoto.text = @"Non hai ancora salvato nessuna carta.\nTocca il pulsante + per aggiungerne una.";
+        self.vuoto.text = NSLocalizedString(@"nessuna_carta", nil);
     }
     self.vuoto.hidden = YES;
     self.vuoto.translatesAutoresizingMaskIntoConstraints = NO;

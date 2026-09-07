@@ -29,7 +29,7 @@
 {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor systemBackgroundColor];
-    self.title = @"Copia tra telefoni";
+    self.title = NSLocalizedString(@"trasferisci", nil);
 
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
         initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
@@ -52,14 +52,13 @@
 - (void)preparaScelta
 {
     UILabel *spiega = [UILabel new];
-    spiega.text = @"Serve OpenCard su tutti e due i telefoni. Uno mostra i codici, "
-                  @"l'altro li inquadra. Non passa niente dalla rete.";
+    spiega.text = NSLocalizedString(@"trasferimento_spiega", nil);
     spiega.numberOfLines = 0;
     spiega.font = [UIFont systemFontOfSize:16];
     spiega.textColor = [OCTema inchiostro];
 
-    UIButton *mostra = [self pulsante:@"Mostra i codici" pieno:YES azione:@selector(preparaCodici)];
-    UIButton *ricevi = [self pulsante:@"Inquadra i codici" pieno:NO azione:@selector(apriLettore)];
+    UIButton *mostra = [self pulsante:NSLocalizedString(@"trasferimento_mostra", nil) pieno:YES azione:@selector(preparaCodici)];
+    UIButton *ricevi = [self pulsante:NSLocalizedString(@"trasferimento_ricevi", nil) pieno:NO azione:@selector(apriLettore)];
 
     self.scelta = [[UIStackView alloc] initWithArrangedSubviews:@[spiega, mostra, ricevi]];
     self.scelta.axis = UILayoutConstraintAxisVertical;
@@ -108,16 +107,14 @@
     self.contatore.textColor = [OCTema inchiostro];
 
     UILabel *avviso = [UILabel new];
-    avviso.text = @"Metti lo schermo davanti alla fotocamera dell'altro telefono. "
-                  @"I codici girano da soli: lascia fare finché non ha finito.";
+    avviso.text = NSLocalizedString(@"trasferimento_mostra_avviso", nil);
     avviso.numberOfLines = 0;
     avviso.textAlignment = NSTextAlignmentCenter;
     avviso.font = [UIFont systemFontOfSize:14];
     avviso.textColor = [OCTema attenuato];
 
     UILabel *privacy = [UILabel new];
-    privacy.text = @"Il codice contiene i numeri delle tue tessere. "
-                   @"Mostralo solo a chi le sta ricevendo.";
+    privacy.text = NSLocalizedString(@"trasferimento_privacy", nil);
     privacy.numberOfLines = 0;
     privacy.textAlignment = NSTextAlignmentCenter;
     privacy.font = [UIFont systemFontOfSize:13];
@@ -151,7 +148,7 @@
         return;
     }
     if (codici.count == 0) {
-        [self avvisa:@"Non hai ancora nessuna carta da passare."];
+        [self avvisa:NSLocalizedString(@"trasferimento_niente_carte", nil)];
         return;
     }
 
@@ -202,8 +199,8 @@
 {
     self.codice.image = self.immagini[self.mostrato];
     self.contatore.text = self.immagini.count == 1
-        ? @"Un codice solo"
-        : [NSString stringWithFormat:@"Codice %lu di %lu",
+        ? NSLocalizedString(@"trasferimento_pezzo_unico", nil)
+        : [NSString stringWithFormat:NSLocalizedString(@"trasferimento_pezzo", nil),
                                      (unsigned long)(self.mostrato + 1),
                                      (unsigned long)self.immagini.count];
 }
@@ -242,32 +239,30 @@
         return;
     }
     if (arrivate.count == 0) {
-        [self avvisa:@"Non è arrivata nessuna carta."];
+        [self avvisa:NSLocalizedString(@"trasferimento_niente_ricevuto", nil)];
         return;
     }
 
     NSInteger quante = (NSInteger)arrivate.count;
     NSString *domanda = [NSString stringWithFormat:
-        @"Arrivano %ld carte e tu ne hai %ld.\n\nAggiungi le mette in fondo alle tue, "
-        @"doppioni compresi. Azzera e sostituisci cancella le tue e lascia solo "
-        @"quelle arrivate.", (long)quante, (long)self.mie];
+        NSLocalizedString(@"trasferimento_scelta_domanda", nil), (long)quante, (long)self.mie];
 
     UIAlertController *scelta = [UIAlertController
-        alertControllerWithTitle:@"Come mettere le carte arrivate"
+        alertControllerWithTitle:NSLocalizedString(@"trasferimento_scelta_titolo", nil)
                          message:domanda
                   preferredStyle:UIAlertControllerStyleAlert];
 
-    [scelta addAction:[UIAlertAction actionWithTitle:@"Aggiungi"
+    [scelta addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"aggiungi", nil)
                                                style:UIAlertActionStyleDefault
                                              handler:^(UIAlertAction *azione) {
         [self applica:pezzi azzera:NO];
     }]];
-    [scelta addAction:[UIAlertAction actionWithTitle:@"Azzera e sostituisci"
+    [scelta addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"trasferimento_sostituisci", nil)
                                                style:UIAlertActionStyleDestructive
                                              handler:^(UIAlertAction *azione) {
         [self confermaSostituzione:pezzi quante:quante];
     }]];
-    [scelta addAction:[UIAlertAction actionWithTitle:@"Annulla"
+    [scelta addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
                                                style:UIAlertActionStyleCancel
                                              handler:nil]];
 
@@ -278,18 +273,17 @@
 - (void)confermaSostituzione:(NSArray<NSString *> *)pezzi quante:(NSInteger)quante
 {
     NSString *avviso = [NSString stringWithFormat:
-        @"Le %ld carte che hai adesso spariscono e restano solo le %ld arrivate. "
-        @"Non si torna indietro.", (long)self.mie, (long)quante];
+        NSLocalizedString(@"trasferimento_sostituisci_avviso", nil), (long)self.mie, (long)quante];
 
     UIAlertController *domanda = [UIAlertController
-        alertControllerWithTitle:@"Cancellare le tue carte?"
+        alertControllerWithTitle:NSLocalizedString(@"trasferimento_sostituisci_titolo", nil)
                          message:avviso
                   preferredStyle:UIAlertControllerStyleAlert];
 
-    [domanda addAction:[UIAlertAction actionWithTitle:@"Annulla"
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
                                                 style:UIAlertActionStyleCancel
                                               handler:nil]];
-    [domanda addAction:[UIAlertAction actionWithTitle:@"Azzera e sostituisci"
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"trasferimento_sostituisci", nil)
                                                 style:UIAlertActionStyleDestructive
                                               handler:^(UIAlertAction *azione) {
         [self applica:pezzi azzera:YES];

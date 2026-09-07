@@ -40,7 +40,7 @@ static const NSTimeInterval OCDurataBenvenuto = 3.0;
     nome.textColor = [OCTema inchiostro];
 
     UILabel *regalo = [UILabel new];
-    regalo.text = @"Un regalo di Denovo";
+    regalo.text = NSLocalizedString(@"un_regalo", nil);
     regalo.font = [UIFont systemFontOfSize:18];
     regalo.textColor = [OCTema attenuato];
 

@@ -4,7 +4,10 @@
 
 #import "OCListaViewController.h"
 
+#import "OCArchivio.h"
 #import "OCCore.h"
+#import "OCCsv.h"
+#import "OCImpostazioniViewController.h"
 #import "OCDettaglioViewController.h"
 #import "OCFormViewController.h"
 #import "OCGruppoViewController.h"
@@ -40,12 +43,18 @@
 @property (nonatomic, strong) UIView *schedeSfondo;
 /// Vero quando la scheda con la stella è in mezzo alle altre.
 @property (nonatomic, assign) BOOL conPreferite;
+/// Lo stesso per la scheda usa e getta: senza carte dentro non si mostra.
+@property (nonatomic, assign) BOOL conUsaEGetta;
+/// L'altezza della barra delle schede: va a zero quando resta una scheda sola.
+@property (nonatomic, strong) NSLayoutConstraint *altezzaSchede;
 /// Vero fino alla prima comparsa: serve a distinguere l'apertura dell'app dal
 /// ritorno da una carta, dove la scheda aperta va lasciata dov'era.
 @property (nonatomic, assign) BOOL primaApertura;
 - (void)importa;
 - (void)esporta;
 - (void)trasferisci;
+- (void)azzera;
+- (void)apriImpostazioni;
 @end
 
 @implementation OCListaViewController
@@ -60,6 +69,10 @@
     [self preparaSchede];
     [self preparaPagine];
     [self preparaPulsanteAggiungi];
+
+    // Le schede si disegnano quando le pagine ci sono: rifaiLeSchede: guarda
+    // quale pagina è aperta per sapere quale segmento accendere.
+    [self rifaiLeSchede:[self ordine]];
 }
 
 /// Tornando qui da una carta le cose possono essere cambiate: la stella si
@@ -140,19 +153,28 @@
     // icona per la stessa cosa.
     if (@available(iOS 14.0, *)) {
         __weak typeof(self) debole = self;
-        UIAction *importa = [UIAction actionWithTitle:@"Importa da file"
+        UIAction *importa = [UIAction actionWithTitle:NSLocalizedString(@"importa", nil)
                                                 image:[UIImage systemImageNamed:@"square.and.arrow.up"]
                                            identifier:nil
                                               handler:^(UIAction *azione) { [debole importa]; }];
-        UIAction *esporta = [UIAction actionWithTitle:@"Esporta su file"
+        UIAction *esporta = [UIAction actionWithTitle:NSLocalizedString(@"esporta", nil)
                                                 image:[UIImage systemImageNamed:@"square.and.arrow.down"]
                                            identifier:nil
                                               handler:^(UIAction *azione) { [debole esporta]; }];
-        UIAction *passa = [UIAction actionWithTitle:@"Copia tra telefoni"
+        UIAction *passa = [UIAction actionWithTitle:NSLocalizedString(@"trasferisci", nil)
                                               image:[UIImage systemImageNamed:@"qrcode"]
                                          identifier:nil
                                             handler:^(UIAction *azione) { [debole trasferisci]; }];
-        backup.menu = [UIMenu menuWithTitle:@"" children:@[importa, esporta, passa]];
+        UIAction *azzera = [UIAction actionWithTitle:NSLocalizedString(@"azzera", nil)
+                                              image:[UIImage systemImageNamed:@"trash"]
+                                         identifier:nil
+                                            handler:^(UIAction *azione) { [debole azzera]; }];
+        azzera.attributes = UIMenuElementAttributesDestructive;
+        UIAction *impostazioni = [UIAction actionWithTitle:NSLocalizedString(@"impostazioni", nil)
+                                                    image:[UIImage systemImageNamed:@"gearshape"]
+                                               identifier:nil
+                                                  handler:^(UIAction *azione) { [debole apriImpostazioni]; }];
+        backup.menu = [UIMenu menuWithTitle:@"" children:@[importa, esporta, passa, azzera, impostazioni]];
         backup.target = nil;
         backup.action = nil;
     }
@@ -164,8 +186,9 @@
 
 - (void)preparaSchede
 {
-    self.schede = [[UISegmentedControl alloc] initWithItems:@[@"Carte", @"Usa & getta"]];
-    self.schede.selectedSegmentIndex = 0;
+    // Vuoto: quali schede ci sono lo decide rifaiLeSchede: guardando le carte,
+    // e costruirle qui vorrebbe dire scriverle in due posti.
+    self.schede = [[UISegmentedControl alloc] initWithItems:@[]];
     self.schede.selectedSegmentTintColor = [OCTema sopraMarca];
     [self.schede setTitleTextAttributes:@{NSForegroundColorAttributeName: [OCTema sopraMarca]}
                                forState:UIControlStateNormal];
@@ -183,11 +206,13 @@
     self.schede.translatesAutoresizingMaskIntoConstraints = NO;
     [sfondo addSubview:self.schede];
 
+    self.altezzaSchede = [sfondo.heightAnchor constraintEqualToConstant:52];
+
     [NSLayoutConstraint activateConstraints:@[
         [sfondo.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
         [sfondo.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [sfondo.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [sfondo.heightAnchor constraintEqualToConstant:52],
+        self.altezzaSchede,
 
         [self.schede.centerYAnchor constraintEqualToAnchor:sfondo.centerYAnchor],
         [self.schede.leadingAnchor constraintEqualToAnchor:sfondo.leadingAnchor constant:12],
@@ -277,10 +302,16 @@
 /// sempre passando di qui.
 - (NSArray<OCGruppoViewController *> *)ordine
 {
-    if (!self.conPreferite) {
-        return @[self.gruppi[0], self.gruppi[1]];
+    NSMutableArray<OCGruppoViewController *> *quali = [NSMutableArray array];
+
+    if (self.conPreferite) {
+        [quali addObject:self.gruppi[2]];
     }
-    return @[self.gruppi[2], self.gruppi[0], self.gruppi[1]];
+    [quali addObject:self.gruppi[0]];
+    if (self.conUsaEGetta) {
+        [quali addObject:self.gruppi[1]];
+    }
+    return quali;
 }
 
 - (NSInteger)schedaCorrente
@@ -347,44 +378,74 @@
     [self aggiornaSchedaPreferite];
 }
 
-/// Mette o toglie la scheda con la stella.
+/// Mette e toglie le due schede facoltative, la stella e l'usa e getta.
 ///
-/// L'ordine conta: se la scheda sparisce mentre è quella aperta, la pagina va
+/// La regola è la stessa per tutte e due: senza carte dentro, la scheda non si
+/// mostra. Una scheda vuota occupa spazio in cima allo schermo e non serve a
+/// niente, e quando ne resta una sola sparisce anche la fila.
+///
+/// L'ordine conta: se la scheda che sparisce è quella aperta, la pagina va
 /// spostata prima, altrimenti resta visibile una schermata che non ha più una
 /// scheda sua.
 - (void)aggiornaSchedaPreferite
 {
-    NSArray<OCCarta *> *preferite = [OCCore cartePreferite:NULL];
-    BOOL servono = preferite.count > 0;
+    BOOL cePreferite = [OCCore cartePreferite:NULL].count > 0;
+    BOOL ceUsaEGetta = [OCCore carteDelGruppo:YES errore:NULL].count > 0;
 
-    if (servono == self.conPreferite) {
-        return;
-    }
-    self.conPreferite = servono;
-
-    // La scheda con la stella è la prima: aggiungerla e toglierla sposta le
-    // altre, quindi la pagina visibile va rimessa dov'è finita.
-    if (servono) {
-        UIImage *stella = [UIImage systemImageNamed:@"star.fill"];
-        if (stella != nil) {
-            [self.schede insertSegmentWithImage:stella atIndex:0 animated:YES];
-        } else {
-            [self.schede insertSegmentWithTitle:@"Preferite" atIndex:0 animated:YES];
-        }
-        self.schede.selectedSegmentIndex = [self schedaCorrente];
+    if (cePreferite == self.conPreferite && ceUsaEGetta == self.conUsaEGetta) {
         return;
     }
 
-    if (self.pagine.viewControllers.firstObject == self.gruppi[2]) {
+    // Chi stava guardando una scheda deve restare su quella, non trovarsi
+    // all'improvviso su un'altra: ci si segna la pagina prima di cambiare.
+    OCGruppoViewController *guardava = self.pagine.viewControllers.firstObject;
+
+    self.conPreferite = cePreferite;
+    self.conUsaEGetta = ceUsaEGetta;
+
+    NSArray<OCGruppoViewController *> *ordine = [self ordine];
+
+    // La pagina aperta è sparita: si torna a quella principale, che c'è sempre.
+    if (![ordine containsObject:guardava]) {
         [self.pagine setViewControllers:@[self.gruppi[0]]
                               direction:UIPageViewControllerNavigationDirectionForward
                                animated:NO
                              completion:nil];
     }
-    if (self.schede.numberOfSegments > 2) {
-        [self.schede removeSegmentAtIndex:0 animated:YES];
+
+    [self rifaiLeSchede:ordine];
+}
+
+/// Rifà i segmenti dall'ordine corrente. Toglierli e rimetterli uno per uno
+/// costringerebbe a ragionare per numeri, ed è lì che si sbaglia.
+- (void)rifaiLeSchede:(NSArray<OCGruppoViewController *> *)ordine
+{
+    [self.schede removeAllSegments];
+
+    for (NSUInteger i = 0; i < ordine.count; i++) {
+        OCGruppoViewController *gruppo = ordine[i];
+        UIImage *stella = [UIImage systemImageNamed:@"star.fill"];
+
+        if (gruppo == self.gruppi[2] && stella != nil) {
+            [self.schede insertSegmentWithImage:stella atIndex:i animated:NO];
+        } else if (gruppo == self.gruppi[2]) {
+            [self.schede insertSegmentWithTitle:NSLocalizedString(@"scheda_preferite", nil)
+                                        atIndex:i animated:NO];
+        } else if (gruppo == self.gruppi[1]) {
+            [self.schede insertSegmentWithTitle:NSLocalizedString(@"scheda_usa_e_getta", nil)
+                                        atIndex:i animated:NO];
+        } else {
+            [self.schede insertSegmentWithTitle:NSLocalizedString(@"scheda_carte", nil)
+                                        atIndex:i animated:NO];
+        }
     }
     self.schede.selectedSegmentIndex = [self schedaCorrente];
+
+    // Con una scheda sola la fila non dice niente: sparisce, e le carte
+    // guadagnano l'altezza.
+    BOOL unaSola = ordine.count < 2;
+    self.schedeSfondo.hidden = unaSola;
+    self.altezzaSchede.constant = unaSola ? 0 : 52;
 }
 
 - (void)apriCarta:(OCCarta *)carta
@@ -419,14 +480,14 @@
 - (void)confermaEliminazione:(OCCarta *)carta
 {
     UIAlertController *domanda = [UIAlertController
-        alertControllerWithTitle:@"Elimina codice"
-                         message:[NSString stringWithFormat:@"Eliminare \"%@\"?", carta.etichetta]
+        alertControllerWithTitle:NSLocalizedString(@"elimina_titolo", nil)
+                         message:[NSString stringWithFormat:NSLocalizedString(@"elimina_domanda", nil), carta.etichetta]
                   preferredStyle:UIAlertControllerStyleAlert];
 
-    [domanda addAction:[UIAlertAction actionWithTitle:@"Annulla"
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
                                                 style:UIAlertActionStyleCancel
                                               handler:nil]];
-    [domanda addAction:[UIAlertAction actionWithTitle:@"Elimina"
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"elimina", nil)
                                                 style:UIAlertActionStyleDestructive
                                               handler:^(UIAlertAction *azione) {
         NSError *errore = nil;
@@ -449,16 +510,22 @@
                                                                  message:nil
                                                           preferredStyle:UIAlertControllerStyleActionSheet];
 
-    [menu addAction:[UIAlertAction actionWithTitle:@"Importa da file"
+    [menu addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"importa", nil)
                                              style:UIAlertActionStyleDefault
                                            handler:^(UIAlertAction *azione) { [self importa]; }]];
-    [menu addAction:[UIAlertAction actionWithTitle:@"Esporta su file"
+    [menu addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"esporta", nil)
                                              style:UIAlertActionStyleDefault
                                            handler:^(UIAlertAction *azione) { [self esporta]; }]];
-    [menu addAction:[UIAlertAction actionWithTitle:@"Copia tra telefoni"
+    [menu addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"trasferisci", nil)
                                              style:UIAlertActionStyleDefault
                                            handler:^(UIAlertAction *azione) { [self trasferisci]; }]];
-    [menu addAction:[UIAlertAction actionWithTitle:@"Annulla"
+    [menu addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"azzera", nil)
+                                             style:UIAlertActionStyleDestructive
+                                           handler:^(UIAlertAction *azione) { [self azzera]; }]];
+    [menu addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"impostazioni", nil)
+                                             style:UIAlertActionStyleDefault
+                                           handler:^(UIAlertAction *azione) { [self apriImpostazioni]; }]];
+    [menu addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
                                              style:UIAlertActionStyleCancel
                                            handler:nil]];
 
@@ -478,22 +545,122 @@
         return;
     }
     if (tutte.count == 0) {
-        [self avvisa:@"Non c'è ancora nessuna carta da esportare."];
+        [self avvisa:NSLocalizedString(@"niente_da_esportare", nil)];
         return;
     }
+    [self chiediFormato:^(BOOL csv) {
+        [self chiediPasswordConTitolo:NSLocalizedString(@"password_esporta_titolo", nil)
+                            spiegando:NSLocalizedString(@"password_esporta_spiega", nil)
+                         vuotoAmmesso:YES
+                              bottone:NSLocalizedString(@"salva", nil)
+                                  poi:^(NSString *password) {
+            [self scriviBackupCsv:csv password:password carte:tutte];
+        }];
+    }];
+}
 
-    NSData *contenuto = [OCCore esportaBackup:&errore];
+/// Due formati, come su Android: l'archivio con le foto, oppure il CSV che
+/// leggono le altre app.
+- (void)chiediFormato:(void (^)(BOOL csv))poi
+{
+    UIAlertController *scelte = [UIAlertController
+        alertControllerWithTitle:NSLocalizedString(@"esporta_come", nil)
+                         message:nil
+                  preferredStyle:UIAlertControllerStyleActionSheet];
+
+    [scelte addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"esporta_archivio", nil)
+                                               style:UIAlertActionStyleDefault
+                                             handler:^(UIAlertAction *azione) { poi(NO); }]];
+    [scelte addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"esporta_csv", nil)
+                                               style:UIAlertActionStyleDefault
+                                             handler:^(UIAlertAction *azione) { poi(YES); }]];
+    [scelte addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
+                                               style:UIAlertActionStyleCancel handler:nil]];
+
+    scelte.popoverPresentationController.barButtonItem = self.navigationItem.rightBarButtonItem;
+    [self presentViewController:scelte animated:YES completion:nil];
+}
+
+/// La password del file. Vuota vuol dire file leggibile, ed è ammesso solo
+/// quando si scrive: aprendone uno chiuso, senza password non si va da nessuna
+/// parte.
+- (void)chiediPasswordConTitolo:(NSString *)titolo
+                      spiegando:(NSString *)spiegazione
+                   vuotoAmmesso:(BOOL)vuotoAmmesso
+                        bottone:(NSString *)bottone
+                            poi:(void (^)(NSString *password))poi
+{
+    UIAlertController *domanda = [UIAlertController alertControllerWithTitle:titolo
+                                                                    message:spiegazione
+                                                             preferredStyle:UIAlertControllerStyleAlert];
+    [domanda addTextFieldWithConfigurationHandler:^(UITextField *campo) {
+        campo.secureTextEntry = YES;
+        campo.placeholder = NSLocalizedString(@"password", nil);
+    }];
+
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
+                                                style:UIAlertActionStyleCancel handler:nil]];
+    if (vuotoAmmesso) {
+        [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"senza_password", nil)
+                                                    style:UIAlertActionStyleDefault
+                                                  handler:^(UIAlertAction *azione) { poi(@""); }]];
+    }
+    [domanda addAction:[UIAlertAction actionWithTitle:bottone
+                                                style:UIAlertActionStyleDefault
+                                              handler:^(UIAlertAction *azione) {
+        NSString *scritta = domanda.textFields.firstObject.text ?: @"";
+        if (scritta.length == 0 && !vuotoAmmesso) {
+            return;
+        }
+        poi(scritta);
+    }]];
+
+    [self presentViewController:domanda animated:YES completion:nil];
+}
+
+- (void)scriviBackupCsv:(BOOL)csv password:(NSString *)password carte:(NSArray<OCCarta *> *)carte
+{
+    NSError *errore = nil;
+    NSData *contenuto = nil;
+
+    if (csv) {
+        contenuto = [OCCsv scrivi:carte];
+    } else {
+        // Dentro l'archivio vanno l'elenco e le foto. La password chiude
+        // l'archivio intero: lo zip da solo cifra male, e le foto resterebbero
+        // in chiaro.
+        NSData *elenco = [OCCore esportaBackup:&errore];
+        if (elenco == nil) {
+            [self avvisa:errore.localizedDescription];
+            return;
+        }
+        contenuto = [OCArchivio scriviConElenco:elenco carte:carte];
+    }
     if (contenuto == nil) {
-        [self avvisa:errore.localizedDescription];
+        [self avvisa:NSLocalizedString(@"backup_non_scritto", nil)];
         return;
     }
 
-    // Il file si scrive in una cartella temporanea e poi lo prende il
-    // selettore di sistema: l'utente sceglie dove metterlo, e l'app non
-    // chiede nessun permesso sui documenti.
-    NSString *percorso = [NSTemporaryDirectory() stringByAppendingPathComponent:[OCCore nomeBackup]];
+    if (password.length > 0) {
+        contenuto = [OCCore cifra:contenuto password:password errore:&errore];
+        if (contenuto == nil) {
+            [self avvisa:errore.localizedDescription];
+            return;
+        }
+    }
+
+    // Un archivio si chiama .zip, e uno chiuso con la password .opencard:
+    // l'estensione deve dire cosa trova chi apre il file, non cosa c'è dentro.
+    NSString *nudo = [[OCCore nomeBackup] stringByDeletingPathExtension];
+    NSString *estensione = password.length > 0 ? @"opencard" : (csv ? @"csv" : @"zip");
+    NSString *percorso = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                          [nudo stringByAppendingPathExtension:estensione]];
+
+    // Il file si scrive in una cartella temporanea e poi lo prende il selettore
+    // di sistema: l'utente sceglie dove metterlo, e l'app non chiede nessun
+    // permesso sui documenti.
     if (![contenuto writeToFile:percorso atomically:YES]) {
-        [self avvisa:@"Esportazione non riuscita."];
+        [self avvisa:NSLocalizedString(@"backup_non_scritto", nil)];
         return;
     }
 
@@ -517,7 +684,7 @@
     didPickDocumentsAtURLs:(NSArray<NSURL *> *)indirizzi
 {
     if (selettore.documentPickerMode != UIDocumentPickerModeImport) {
-        [self avvisa:@"Carte esportate."];
+        [self avvisa:NSLocalizedString(@"backup_salvato", nil)];
         return;
     }
 
@@ -537,7 +704,7 @@
         if (protetto) {
             [scelto stopAccessingSecurityScopedResource];
         }
-        [self avvisa:@"Il file è troppo grande per essere un backup di OpenCard."];
+        [self avvisa:NSLocalizedString(@"backup_troppo_grande", nil)];
         return;
     }
 
@@ -547,7 +714,7 @@
     }
 
     if (contenuto == nil) {
-        [self avvisa:@"Non sono riuscito a leggere il file."];
+        [self avvisa:NSLocalizedString(@"backup_non_letto", nil)];
         return;
     }
     [self confermaRipristino:contenuto];
@@ -555,30 +722,151 @@
 
 - (void)confermaRipristino:(NSData *)contenuto
 {
+    NSError *errore = nil;
+    NSArray<OCCarta *> *tutte = [OCCore tutteLeCarte:&errore];
+
+    // Con zero carte non c'è niente da sostituire: la domanda sarebbe solo un
+    // passaggio in più prima di una cosa che non toglie nulla a nessuno.
+    if (tutte != nil && tutte.count == 0) {
+        [self chiediPasswordSeServe:contenuto];
+        return;
+    }
+
     UIAlertController *domanda = [UIAlertController
-        alertControllerWithTitle:@"Sostituire le carte?"
-                         message:@"Le carte che hai adesso vengono sostituite da quelle del backup."
+        alertControllerWithTitle:NSLocalizedString(@"ripristina_titolo", nil)
+                         message:NSLocalizedString(@"ripristina_avviso", nil)
                   preferredStyle:UIAlertControllerStyleAlert];
 
-    [domanda addAction:[UIAlertAction actionWithTitle:@"Annulla"
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
                                                 style:UIAlertActionStyleCancel
                                               handler:nil]];
-    [domanda addAction:[UIAlertAction actionWithTitle:@"Sostituisci"
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"ripristina_conferma", nil)
                                                 style:UIAlertActionStyleDefault
                                               handler:^(UIAlertAction *azione) {
-        NSError *errore = nil;
-        NSInteger quante = [OCCore ripristinaBackup:contenuto errore:&errore];
+        [self chiediPasswordSeServe:contenuto];
+    }]];
 
-        if (quante < 0) {
+    [self presentViewController:domanda animated:YES completion:nil];
+}
+
+/// La password si chiede solo se il file ce l'ha: chi non l'ha mai usata non
+/// vede niente di nuovo.
+- (void)chiediPasswordSeServe:(NSData *)contenuto
+{
+    if (![OCCore backupCifrato:contenuto]) {
+        [self scriviLeCarte:contenuto password:@""];
+        return;
+    }
+    [self chiediPasswordConTitolo:NSLocalizedString(@"password_apri_titolo", nil)
+                        spiegando:NSLocalizedString(@"password_apri_spiega", nil)
+                     vuotoAmmesso:NO
+                          // Qui non si salva niente: si apre un file che c'è già.
+                          bottone:NSLocalizedString(@"apri", nil)
+                              poi:^(NSString *password) {
+        [self scriviLeCarte:contenuto password:password];
+    }];
+}
+
+/// Le carte di un CSV entrano una per una, con i campi che portano.
+- (NSInteger)aggiungiDaCsv:(NSArray<OCCartaCsv *> *)carte errore:(NSError **)errore
+{
+    for (OCCartaCsv *carta in carte) {
+        NSInteger id = [OCCore inserisci:carta.etichetta
+                                  codice:carta.codice
+                                  qrcode:[OCCore simbologiaQuadrata:carta.simbologia]
+                                  colore:carta.colore
+                               usaEGetta:NO
+                                  errore:errore];
+        if (id < 0) {
+            return -1;
+        }
+        if (![OCCore impostaSimbologia:id simbologia:carta.simbologia errore:errore]
+            || ![OCCore impostaDettagli:id note:carta.note scadenza:carta.scadenza
+                                  saldo:carta.saldo errore:errore]) {
+            return -1;
+        }
+        if (carta.preferita && ![OCCore impostaPreferita:id accesa:YES errore:errore]) {
+            return -1;
+        }
+    }
+    return (NSInteger)carte.count;
+}
+
+- (void)scriviLeCarte:(NSData *)dati password:(NSString *)password
+{
+    NSError *errore = nil;
+    NSData *aperto = dati;
+
+    if (password.length > 0) {
+        aperto = [OCCore decifra:dati password:password errore:&errore];
+        if (aperto == nil) {
+            [self avvisa:errore.localizedDescription];
+            return;
+        }
+    }
+
+    NSInteger quante;
+
+    // Tre forme, in ordine di quanto sono recenti: l'archivio con le foto, il
+    // CSV di un'altra app, e il solo JSON dei backup fatti prima delle foto.
+    if ([OCArchivio eArchivio:aperto]) {
+        NSData *elenco = [OCArchivio leggiElencoDa:aperto];
+        if (elenco == nil) {
+            [self avvisa:NSLocalizedString(@"backup_non_letto", nil)];
+            return;
+        }
+        quante = [OCCore ripristinaBackup:elenco errore:&errore];
+    } else if ([OCCsv eCsv:aperto]) {
+        // Il CSV non sostituisce: si aggiunge in fondo. Chi arriva da un'altra
+        // app di solito ha già qualcosa qui dentro, e cancellarglielo sarebbe
+        // un modo brutto di dare il benvenuto.
+        quante = [self aggiungiDaCsv:[OCCsv leggi:aperto] errore:&errore];
+    } else {
+        quante = [OCCore ripristinaBackup:aperto errore:&errore];
+    }
+
+    if (quante < 0) {
+        [self avvisa:errore.localizedDescription];
+        return;
+    }
+    [self ricaricaTutto];
+    /* Il singolare e il plurale li sceglie il sistema, dal .stringsdict: ci
+     * sono lingue dove le forme non sono due. */
+    [self avvisa:[NSString localizedStringWithFormat:
+                  NSLocalizedString(@"carte_ripristinate", nil), (long)quante]];
+}
+
+/// Butta via tutte le carte, con una domanda prima.
+- (void)azzera
+{
+    UIAlertController *domanda = [UIAlertController
+        alertControllerWithTitle:NSLocalizedString(@"azzera_titolo", nil)
+                         message:NSLocalizedString(@"azzera_avviso", nil)
+                  preferredStyle:UIAlertControllerStyleAlert];
+
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
+                                                style:UIAlertActionStyleCancel handler:nil]];
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"azzera_conferma", nil)
+                                                style:UIAlertActionStyleDestructive
+                                              handler:^(UIAlertAction *azione) {
+        NSError *errore = nil;
+        if (![OCCore azzeraTutto:&errore]) {
             [self avvisa:errore.localizedDescription];
             return;
         }
         [self ricaricaTutto];
-        [self avvisa:quante == 1 ? @"Ripristinata una carta."
-                                 : [NSString stringWithFormat:@"Ripristinate %ld carte.", (long)quante]];
+        [self avvisa:NSLocalizedString(@"azzerate", nil)];
     }]];
 
     [self presentViewController:domanda animated:YES completion:nil];
+}
+
+- (void)apriImpostazioni
+{
+    OCImpostazioniViewController *schermo = [OCImpostazioniViewController new];
+    UINavigationController *contenitore =
+        [[UINavigationController alloc] initWithRootViewController:schermo];
+    [self presentViewController:contenitore animated:YES completion:nil];
 }
 
 /// Passaggio delle carte fra due telefoni con i QR.
@@ -589,9 +877,8 @@
     __weak typeof(self) debole = self;
     passaggio.suRicevute = ^(NSInteger quante) {
         [debole ricaricaTutto];
-        [debole avvisa:quante == 1
-            ? @"Ricevuta una carta."
-            : [NSString stringWithFormat:@"Ricevute %ld carte.", (long)quante]];
+        [debole avvisa:[NSString localizedStringWithFormat:
+                        NSLocalizedString(@"carte_ricevute", nil), (long)quante]];
     };
 
     UINavigationController *contenitore =

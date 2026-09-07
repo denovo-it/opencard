@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>carte_ricevute</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@quantita@</string>
+		<key>quantita</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>ld</string>
+			<key>one</key>
+			<string>Ricevuta una carta.</string>
+			<key>other</key>
+			<string>Ricevute %ld carte.</string>
+		</dict>
+	</dict>
+	<key>carte_ripristinate</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@quantita@</string>
+		<key>quantita</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>ld</string>
+			<key>one</key>
+			<string>Ripristinata una carta.</string>
+			<key>other</key>
+			<string>Ripristinate %ld carte.</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

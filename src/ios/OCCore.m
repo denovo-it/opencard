@@ -4,11 +4,14 @@
 
 #import "OCCore.h"
 
+#import "OCChiaveDati.h"
+
 #include <stdlib.h>
 #include <string.h>
 
 #include "backup.h"
 #include "codegen.h"
+#include "cripto.h"
 #include "store.h"
 #include "transfer.h"
 
@@ -39,7 +42,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 
     NSString *testo = messaggio[0] != '\0'
         ? [NSString stringWithUTF8String:messaggio]
-        : @"Errore imprevisto.";
+        : NSLocalizedString(@"errore_imprevisto", nil);
 
     return [NSError errorWithDomain:OCDominioErrore
                                code:(errore ? errore->codice : -1)
@@ -58,12 +61,11 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 /// Dove stanno i dati: Application Support, che il sistema non svuota e che
 /// non compare fra i documenti dell'utente.
 ///
-/// Da qui il file rientra nel backup del telefono, iCloud compreso, ed è una
-/// scelta: chi cambia iPhone ritrova le carte senza doverle esportare a mano.
-/// Per tenerlo fuori basterebbe NSURLIsExcludedFromBackupKey sull'URL della
-/// directory, e apposta non c'è. Su Android il comportamento è l'opposto,
-/// allowBackup="false" nel manifesto, perché lì il backup passa dal cloud di
-/// Google. La privacy policy su denovo.srl dichiara tutte e due le cose.
+/// Da qui il file rientra nel backup del telefono, iCloud compreso, ed è la
+/// scelta di partenza: chi cambia iPhone ritrova le carte senza esportarle a
+/// mano. Da Impostazioni si può spegnere, e allora sulla cartella finisce
+/// NSURLIsExcludedFromBackupKey. Su Android la scelta di partenza è l'opposta.
+/// La privacy policy su denovo.srl dichiara tutte e due le cose.
 + (NSString *)directoryDati
 {
     NSArray<NSString *> *percorsi = NSSearchPathForDirectoriesInDomains(
@@ -118,6 +120,11 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return NO;
     }
+    // La chiave prima di qualsiasi lettura e prima che il file venga creato:
+    // un file cifrato senza chiave non si apre, e l'app direbbe che è rotto.
+    // Se il portachiavi non risponde si va avanti in chiaro, come prima.
+    [self impostaChiaveDati:[OCChiaveDati chiave]];
+
     if (opencard_init_db() != OPENCARD_OK) {
         [self riporta:errore da:&guasto];
         return NO;
@@ -151,6 +158,12 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     carta.coloreScelto = card->color[0] != '\0';
     carta.usaEGetta = card->disposable != 0;
     carta.preferita = card->favorite != 0;
+    carta.simbologia = (NSInteger)card->simbologia;
+    carta.note = [NSString stringWithUTF8String:card->note];
+    carta.scadenza = [NSString stringWithUTF8String:card->scadenza];
+    carta.saldo = [NSString stringWithUTF8String:card->saldo];
+    carta.fotoFronte = [NSString stringWithUTF8String:card->foto_fronte];
+    carta.fotoRetro = [NSString stringWithUTF8String:card->foto_retro];
     return carta;
 }
 
@@ -343,7 +356,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         if (errore != NULL) {
             NSString *testo = messaggio[0] != '\0'
                 ? [NSString stringWithUTF8String:messaggio]
-                : @"Codice non generabile.";
+                : NSLocalizedString(@"codice_non_generabile", nil);
             *errore = [NSError errorWithDomain:OCDominioErrore
                                           code:esito
                                       userInfo:@{NSLocalizedDescriptionKey: testo}];
@@ -351,6 +364,15 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         return nil;
     }
 
+    return [self immagineDaPixel:pixel larghezza:larghezza altezza:altezza];
+}
+
+/// I pixel del core, tre byte l'uno, diventano un'immagine senza passare da un
+/// file. La memoria la libera CoreGraphics quando ha finito.
++ (UIImage *)immagineDaPixel:(unsigned char *)pixel
+                   larghezza:(int)larghezza
+                     altezza:(int)altezza
+{
     size_t byte = (size_t)larghezza * (size_t)altezza * 3;
     CGDataProviderRef fornitore = CGDataProviderCreateWithData(NULL, pixel, byte,
                                                                OCLiberaPixel);
@@ -430,6 +452,255 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     NSInteger quante = (NSInteger)lista.n;
     opencard_lista_free(&lista);
     return quante;
+}
+
+
+#pragma mark - Simbologia
+
+/// I nomi da mostrare, non quelli del core: `opencard_simbologia_nome()` torna
+/// le sigle con cui la simbologia si scrive nel file, `code128` e `ean13`, che
+/// servono al formato e non si fanno leggere. L'ordine è quello dell'enum,
+/// quindi l'indice qui dentro è il numero da salvare nella carta.
++ (NSArray<NSString *> *)nomiSimbologie
+{
+    static NSArray<NSString *> *nomi = nil;
+    static dispatch_once_t unaVolta;
+    dispatch_once(&unaVolta, ^{
+        nomi = @[@"Code 128", @"QR code", @"Aztec", @"Codabar", @"Code 39", @"Code 93",
+                 @"Data Matrix", @"EAN-8", @"EAN-13", @"ITF", @"PDF417", @"UPC-A", @"UPC-E",
+                 @"Micro QR", @"GS1-128", @"GS1 DataBar", @"DataBar Expanded", @"MSI Plessey"];
+        NSAssert(nomi.count == OPENCARD_SIM_QUANTE, @"le simbologie del core sono cambiate");
+    });
+    return nomi;
+}
+
+/// Vero per le due che si disegnano come quadrato e non come barre.
++ (BOOL)simbologiaQuadrata:(NSInteger)simbologia
+{
+    return simbologia == OPENCARD_SIM_QR || simbologia == OPENCARD_SIM_MICROQR;
+}
+
++ (NSInteger)simbologiaIndovinata:(NSString *)codice qrcode:(BOOL)qrcode
+{
+    return (NSInteger)opencard_simbologia_indovinata(codice.UTF8String, qrcode ? 1 : 0);
+}
+
++ (BOOL)impostaSimbologia:(NSInteger)identificativo
+               simbologia:(NSInteger)simbologia
+                   errore:(NSError **)errore
+{
+    opencard_errore guasto;
+
+    if (opencard_set_simbologia((int)identificativo, (opencard_simbologia)simbologia,
+                                &guasto) != OPENCARD_OK) {
+        [self riporta:errore da:&guasto];
+        return NO;
+    }
+    return YES;
+}
+
++ (BOOL)impostaDettagli:(NSInteger)identificativo
+                   note:(NSString *)note
+               scadenza:(NSString *)scadenza
+                  saldo:(NSString *)saldo
+                 errore:(NSError **)errore
+{
+    opencard_errore guasto;
+
+    if (opencard_set_dettagli((int)identificativo,
+                              note.length > 0 ? note.UTF8String : "",
+                              scadenza.length > 0 ? scadenza.UTF8String : "",
+                              saldo.length > 0 ? saldo.UTF8String : "",
+                              &guasto) != OPENCARD_OK) {
+        [self riporta:errore da:&guasto];
+        return NO;
+    }
+    return YES;
+}
+
++ (BOOL)impostaFoto:(NSInteger)identificativo
+             fronte:(NSString *)fronte
+              retro:(NSString *)retro
+             errore:(NSError **)errore
+{
+    opencard_errore guasto;
+
+    if (opencard_set_foto((int)identificativo,
+                          fronte.length > 0 ? fronte.UTF8String : "",
+                          retro.length > 0 ? retro.UTF8String : "",
+                          &guasto) != OPENCARD_OK) {
+        [self riporta:errore da:&guasto];
+        return NO;
+    }
+    return YES;
+}
+
+/// I pixel del core diventano un'immagine. Uguale a immaginePerCodice:qrcode:,
+/// ma il tipo lo dice la simbologia invece del solo interruttore QR.
++ (UIImage *)immaginePerCodice:(NSString *)codice
+                    simbologia:(NSInteger)simbologia
+                        errore:(NSError **)errore
+{
+    unsigned char *pixel = NULL;
+    char messaggio[128] = {0};
+    int larghezza = 0, altezza = 0;
+
+    int esito = opencard_render_bitmap_simbologia(codice.UTF8String,
+                                                  (opencard_simbologia)simbologia,
+                                                  &pixel, &larghezza, &altezza,
+                                                  messaggio, sizeof(messaggio));
+    if (esito != 0 || pixel == NULL) {
+        if (errore != NULL) {
+            NSString *testo = messaggio[0] != '\0'
+                ? [NSString stringWithUTF8String:messaggio]
+                : NSLocalizedString(@"codice_non_generabile", nil);
+            *errore = [NSError errorWithDomain:OCDominioErrore
+                                          code:esito
+                                      userInfo:@{NSLocalizedDescriptionKey: testo}];
+        }
+        return nil;
+    }
+    return [self immagineDaPixel:pixel larghezza:larghezza altezza:altezza];
+}
+
+#pragma mark - Cifratura
+
++ (void)impostaChiaveDati:(NSData *)chiave
+{
+    if (chiave.length == OPENCARD_CRIPTO_CHIAVE_N) {
+        opencard_store_chiave((const unsigned char *)chiave.bytes);
+    } else {
+        opencard_store_chiave(NULL);
+    }
+}
+
++ (BOOL)carteNelBackup
+{
+    NSURL *dove = [NSURL fileURLWithPath:[self directoryDati]];
+    NSNumber *fuori = nil;
+
+    if (![dove getResourceValue:&fuori forKey:NSURLIsExcludedFromBackupKey error:NULL]) {
+        return YES;
+    }
+    return !fuori.boolValue;
+}
+
++ (void)metticiLeCarteNelBackup:(BOOL)dentro
+{
+    NSURL *dove = [NSURL fileURLWithPath:[self directoryDati]];
+
+    // Il segno sta sulla cartella e vale per quello che c'è dentro: il file
+    // delle carte e le foto, che sono file a parte.
+    [dove setResourceValue:@(!dentro) forKey:NSURLIsExcludedFromBackupKey error:NULL];
+}
+
++ (BOOL)azzeraTutto:(NSError **)errore
+{
+    opencard_lista vuota;
+    opencard_errore guasto;
+
+    /* Una scrittura sola: cancellare carta per carta riscriverebbe il file
+     * tante volte quante sono le carte, e ognuna è un momento in cui il
+     * telefono può spegnersi lasciando metà lavoro fatto. */
+    memset(&vuota, 0, sizeof(vuota));
+    if (opencard_replace_all(&vuota, &guasto) != OPENCARD_OK) {
+        [self riporta:errore da:&guasto];
+        return NO;
+    }
+    return YES;
+}
+
++ (NSData *)esportaBackupCifrato:(NSString *)password errore:(NSError **)errore
+{
+    NSDateFormatter *formato = [NSDateFormatter new];
+    formato.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssXXX";
+    formato.locale = [NSLocale localeWithLocaleIdentifier:@"it_IT"];
+
+    unsigned char *byte = NULL;
+    size_t quanti = 0;
+    opencard_errore guasto;
+
+    if (opencard_backup_esporta_cifrato([formato stringFromDate:[NSDate date]].UTF8String,
+                                        password.UTF8String, &byte, &quanti,
+                                        &guasto) != OPENCARD_OK || byte == NULL) {
+        [self riporta:errore da:&guasto];
+        return nil;
+    }
+
+    NSData *dati = [NSData dataWithBytes:byte length:quanti];
+    opencard_cripto_free(byte);
+    return dati;
+}
+
++ (BOOL)backupCifrato:(NSData *)dati
+{
+    if (dati.length == 0 || dati.bytes == NULL) {
+        return NO;
+    }
+    return opencard_cripto_e_cifrato((const unsigned char *)dati.bytes, dati.length) != 0;
+}
+
++ (NSInteger)ripristinaBackupFile:(NSData *)dati
+                         password:(NSString *)password
+                           errore:(NSError **)errore
+{
+    opencard_lista lista;
+    opencard_errore guasto;
+
+    if (dati.length == 0 || dati.bytes == NULL) {
+        opencard_errore vuoto = {OPENCARD_ERR_JSON, 0, {0}, 0};
+        [self riporta:errore da:&vuoto];
+        return -1;
+    }
+    if (opencard_backup_leggi_file((const unsigned char *)dati.bytes, dati.length,
+                                   password.length > 0 ? password.UTF8String : "",
+                                   &lista, &guasto) != OPENCARD_OK) {
+        [self riporta:errore da:&guasto];
+        return -1;
+    }
+    if (opencard_replace_all(&lista, &guasto) != OPENCARD_OK) {
+        opencard_lista_free(&lista);
+        [self riporta:errore da:&guasto];
+        return -1;
+    }
+
+    NSInteger quante = (NSInteger)lista.n;
+    opencard_lista_free(&lista);
+    return quante;
+}
+
++ (NSData *)cifra:(NSData *)dati password:(NSString *)password errore:(NSError **)errore
+{
+    unsigned char *byte = NULL;
+    size_t quanti = 0;
+    opencard_errore guasto;
+
+    if (opencard_cripto_cifra((const unsigned char *)dati.bytes, dati.length,
+                              password.UTF8String, &byte, &quanti,
+                              &guasto) != OPENCARD_OK || byte == NULL) {
+        [self riporta:errore da:&guasto];
+        return nil;
+    }
+    NSData *fuori = [NSData dataWithBytes:byte length:quanti];
+    opencard_cripto_free(byte);
+    return fuori;
+}
+
++ (NSData *)decifra:(NSData *)dati password:(NSString *)password errore:(NSError **)errore
+{
+    unsigned char *byte = NULL;
+    size_t quanti = 0;
+    opencard_errore guasto;
+
+    if (opencard_cripto_decifra((const unsigned char *)dati.bytes, dati.length,
+                                password.UTF8String, &byte, &quanti,
+                                &guasto) != OPENCARD_OK || byte == NULL) {
+        [self riporta:errore da:&guasto];
+        return nil;
+    }
+    NSData *fuori = [NSData dataWithBytes:byte length:quanti];
+    opencard_cripto_free(byte);
+    return fuori;
 }
 
 #pragma mark - Passaggio delle carte con i QR

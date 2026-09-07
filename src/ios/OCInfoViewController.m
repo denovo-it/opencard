@@ -12,53 +12,65 @@ static NSString *const OCSitoDenovo = @"https://denovo.srl";
 
 static NSString *const OCPaginaApp = @"https://denovo.srl/opencard/";
 
-static NSString *const OCIntroPagina =
-    @"Cosa fa l'app, come si aggiunge una tessera e dove si scarica per iPhone e per "
-     "Android.";
+/* Testo lungo: sta nei file di lingua, e NSLocalizedString non si può usare
+ * fuori da una funzione. */
+static NSString *OCIntroPagina(void)
+{
+    return NSLocalizedString(@"pagina_intro", nil);
+}
 
 static NSString *const OCSorgente = @"https://github.com/denovo-it/opencard";
 
-static NSString *const OCIntroSorgente =
-    @"Il codice di OpenCard è pubblico. È disponibile su GitHub con licenza AGPL v3: si legge, si "
-     "compila e si controlla che l'app faccia solo quello che dice.";
+/* Testo lungo: sta nei file di lingua, e NSLocalizedString non si può usare
+ * fuori da una funzione. */
+static NSString *OCIntroSorgente(void)
+{
+    return NSLocalizedString(@"sorgente_intro", nil);
+}
 
 static NSString *const OCPrivacy = @"https://denovo.srl/opencard-privacy/";
 
-static NSString *const OCIntroPrivacy =
-    @"OpenCard non raccoglie niente e non esce dal telefono: le carte restano nella memoria "
-     "privata dell'app. La pagina qui sotto lo dice per esteso, ed è quella dichiarata a "
-     "Google e ad Apple.";
+/* Testo lungo: sta nei file di lingua, e NSLocalizedString non si può usare
+ * fuori da una funzione. */
+static NSString *OCIntroPrivacy(void)
+{
+    return NSLocalizedString(@"privacy_intro_ios", nil);
+}
 
-static NSString *const OCBackupTelefono =
-    @"Le carte stanno nello spazio riservato all'app e rientrano nel backup del telefono: "
-     "se hai acceso iCloud ci finiscono anche loro, insieme ai dati delle altre app, e "
-     "cambiando iPhone le ritrovi. È il tuo backup, sul tuo account Apple, e Denovo non vi "
-     "ha accesso.";
+/* Testo lungo: sta nei file di lingua, e NSLocalizedString non si può usare
+ * fuori da una funzione. */
+static NSString *OCBackupTelefono(void)
+{
+    return NSLocalizedString(@"backup_privacy_ios", nil);
+}
 
-static NSString *const OCPercheEsiste =
-    @"OpenCard è un gesto di solidarietà nei confronti delle persone che tengono alla "
-     "loro privacy e hanno bisogno di strumenti semplici.\n\n"
-     "Strumenti che fanno esattamente quello che ti aspetti, senza proporti di continuo "
-     "servizi che non ti interessano.";
+/* Testo lungo: sta nei file di lingua, e NSLocalizedString non si può usare
+ * fuori da una funzione. */
+static NSString *OCPercheEsiste(void)
+{
+    return NSLocalizedString(@"perche_esiste", nil);
+}
 
-static NSString *const OCLicenzaUso =
-    @"OpenCard è un regalo di Denovo srl.\n\n"
-     "Uso personale: libero.\n"
-     "Uso commerciale: scrivi a info@denovo.srl.\n\n"
-     "Il programma è distribuito sotto licenza AGPL v3, in alternativa a una licenza "
-     "commerciale. Il testo integrale della AGPL v3 è qui sotto.";
+/* Testo lungo: sta nei file di lingua, e NSLocalizedString non si può usare
+ * fuori da una funzione. */
+static NSString *OCLicenzaUso(void)
+{
+    return NSLocalizedString(@"licenza_uso", nil);
+}
 
-static NSString *const OCMarchi =
-    @"Denovo e OpenCard sono marchi di Denovo srl. Il nome Denovo, il nome OpenCard, i "
-     "loghi e i segni distintivi che li accompagnano sono di proprietà riservata di "
-     "Denovo srl.\n\n"
-     "La licenza AGPL v3 riguarda il codice sorgente e non concede alcun diritto sui "
-     "marchi. Chi distribuisce una versione modificata deve rimuovere i marchi e i loghi "
-     "di Denovo srl e darle un nome proprio.";
+/* Testo lungo: sta nei file di lingua, e NSLocalizedString non si può usare
+ * fuori da una funzione. */
+static NSString *OCMarchi(void)
+{
+    return NSLocalizedString(@"marchi", nil);
+}
 
-static NSString *const OCIntroOpenSource =
-    @"OpenCard è stato realizzato anche grazie al lavoro di altri. Queste sono le librerie che "
-     "contiene, con la licenza di ciascuna. Tocca un nome per aprirne la pagina.";
+/* Testo lungo: sta nei file di lingua, e NSLocalizedString non si può usare
+ * fuori da una funzione. */
+static NSString *OCIntroOpenSource(void)
+{
+    return NSLocalizedString(@"oss_intro", nil);
+}
 
 @interface OCInfoViewController () <UIPageViewControllerDataSource, UIPageViewControllerDelegate>
 @property (nonatomic, strong) UISegmentedControl *schede;
@@ -110,11 +122,11 @@ static NSString *const OCIntroOpenSource =
 {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor systemBackgroundColor];
-    self.title = @"Informazioni";
+    self.title = NSLocalizedString(@"informazioni", nil);
 
     UIView *intestazione = [self costruisciIntestazione];
 
-    self.schede = [[UISegmentedControl alloc] initWithItems:@[@"Informazioni", @"Legale"]];
+    self.schede = [[UISegmentedControl alloc] initWithItems:@[NSLocalizedString(@"informazioni", nil), NSLocalizedString(@"legale", nil)]];
     self.schede.selectedSegmentIndex = 0;
     self.schede.selectedSegmentTintColor = [OCTema marca];
     [self.schede setTitleTextAttributes:@{NSForegroundColorAttributeName: [OCTema sopraMarca]}
@@ -170,7 +182,7 @@ static NSString *const OCIntroOpenSource =
         initWithTarget:self action:@selector(rivediBenvenuto)]];
 
     UIButton *sito = [UIButton buttonWithType:UIButtonTypeSystem];
-    [sito setTitle:@"denovo.srl" forState:UIControlStateNormal];
+    [sito setTitle:NSLocalizedString(@"sito_denovo", nil) forState:UIControlStateNormal];
     [sito setTitleColor:[OCTema marca] forState:UIControlStateNormal];
     [sito addTarget:self action:@selector(apriSito) forControlEvents:UIControlEventTouchUpInside];
 
@@ -205,39 +217,40 @@ static NSString *const OCIntroOpenSource =
     OCFoglioViewController *foglio = [OCFoglioViewController new];
     [foglio loadViewIfNeeded];
 
-    [foglio.colonna addArrangedSubview:[self paragrafo:OCPercheEsiste dimensione:15]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCPercheEsiste() dimensione:15]];
     [foglio.colonna addArrangedSubview:[self riga]];
 
-    [foglio.colonna addArrangedSubview:[self titolo:@"La pagina di OpenCard"]];
-    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroPagina dimensione:13]];
+    [foglio.colonna addArrangedSubview:[self titolo:NSLocalizedString(@"pagina_titolo", nil)]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroPagina() dimensione:13]];
     [self aggiungiCollegamenti:@[
-        @[@"denovo.srl/opencard", @"Apri", OCPaginaApp],
+        @[@"denovo.srl/opencard", NSLocalizedString(@"pagina_apri", nil), OCPaginaApp],
     ] a:foglio.colonna];
     [foglio.colonna addArrangedSubview:[self riga]];
 
-    [foglio.colonna addArrangedSubview:[self titolo:@"Codice sorgente"]];
-    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroSorgente dimensione:13]];
+    [foglio.colonna addArrangedSubview:[self titolo:NSLocalizedString(@"sorgente_titolo", nil)]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroSorgente() dimensione:13]];
     [self aggiungiCollegamenti:@[
-        @[@"github.com/denovo-it/opencard", @"AGPL v3", OCSorgente],
+        @[@"github.com/denovo-it/opencard", NSLocalizedString(@"sorgente_licenza", nil), OCSorgente],
     ] a:foglio.colonna];
     [foglio.colonna addArrangedSubview:[self riga]];
 
-    [foglio.colonna addArrangedSubview:[self titolo:@"Revisioni"]];
+    [foglio.colonna addArrangedSubview:[self titolo:NSLocalizedString(@"revisioni", nil)]];
     for (OCBlocco *blocco in [OCMarkdown analizza:[self leggiRisorsa:@"CHANGELOG" tipo:@"md"]]) {
         [foglio.colonna addArrangedSubview:[self vistaPerBlocco:blocco]];
     }
     [foglio.colonna addArrangedSubview:[self riga]];
 
-    [foglio.colonna addArrangedSubview:[self titolo:@"Software open source"]];
-    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroOpenSource dimensione:13]];
+    [foglio.colonna addArrangedSubview:[self titolo:NSLocalizedString(@"software_open_source", nil)]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroOpenSource() dimensione:13]];
 
-    [foglio.colonna addArrangedSubview:[self sottotitolo:@"Componenti native"]];
+    [foglio.colonna addArrangedSubview:[self sottotitolo:NSLocalizedString(@"componenti_native", nil)]];
     [self aggiungiCollegamenti:@[
         @[@"zint", @"BSD 3-Clause", @"https://www.zint.org.uk"],
+        @[@"Monocypher", @"BSD 2-Clause o CC0", @"https://monocypher.org"],
         @[@"cJSON", @"MIT", @"https://github.com/DaveGamble/cJSON"],
     ] a:foglio.colonna];
 
-    [foglio.colonna addArrangedSubview:[self sottotitolo:@"Componenti di sistema"]];
+    [foglio.colonna addArrangedSubview:[self sottotitolo:NSLocalizedString(@"componenti_sistema", nil)]];
     [self aggiungiCollegamenti:@[
         @[@"UIKit", @"Apple", @"https://developer.apple.com/documentation/uikit"],
         @[@"AVFoundation", @"Apple", @"https://developer.apple.com/documentation/avfoundation"],
@@ -252,24 +265,24 @@ static NSString *const OCIntroOpenSource =
     OCFoglioViewController *foglio = [OCFoglioViewController new];
     [foglio loadViewIfNeeded];
 
-    [foglio.colonna addArrangedSubview:[self titolo:@"Privacy"]];
-    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroPrivacy dimensione:14]];
+    [foglio.colonna addArrangedSubview:[self titolo:NSLocalizedString(@"privacy_titolo", nil)]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroPrivacy() dimensione:14]];
     [self aggiungiCollegamenti:@[
-        @[@"denovo.srl/opencard-privacy", @"Apri", OCPrivacy],
+        @[@"denovo.srl/opencard-privacy", NSLocalizedString(@"pagina_apri", nil), OCPrivacy],
     ] a:foglio.colonna];
-    [foglio.colonna addArrangedSubview:[self sottotitolo:@"Backup del telefono"]];
-    [foglio.colonna addArrangedSubview:[self paragrafo:OCBackupTelefono dimensione:13]];
+    [foglio.colonna addArrangedSubview:[self sottotitolo:NSLocalizedString(@"backup_sottotitolo", nil)]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCBackupTelefono() dimensione:13]];
     [foglio.colonna addArrangedSubview:[self riga]];
 
-    [foglio.colonna addArrangedSubview:[self titolo:@"Licenza d'uso"]];
-    [foglio.colonna addArrangedSubview:[self paragrafo:OCLicenzaUso dimensione:15]];
+    [foglio.colonna addArrangedSubview:[self titolo:NSLocalizedString(@"licenza_uso_titolo", nil)]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCLicenzaUso() dimensione:15]];
     [foglio.colonna addArrangedSubview:[self riga]];
 
-    [foglio.colonna addArrangedSubview:[self titolo:@"Marchi"]];
-    [foglio.colonna addArrangedSubview:[self paragrafo:OCMarchi dimensione:14]];
+    [foglio.colonna addArrangedSubview:[self titolo:NSLocalizedString(@"marchi_titolo", nil)]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCMarchi() dimensione:14]];
     [foglio.colonna addArrangedSubview:[self riga]];
 
-    [foglio.colonna addArrangedSubview:[self titolo:@"Licenza completa (AGPL v3)"]];
+    [foglio.colonna addArrangedSubview:[self titolo:NSLocalizedString(@"licenza_completa_titolo", nil)]];
 
     UILabel *licenza = [UILabel new];
     licenza.text = [self leggiRisorsa:@"LICENSE" tipo:@"txt"];
@@ -287,7 +300,7 @@ static NSString *const OCIntroOpenSource =
     NSString *contenuto = percorso != nil
         ? [NSString stringWithContentsOfFile:percorso encoding:NSUTF8StringEncoding error:NULL]
         : nil;
-    return contenuto ?: @"Contenuto non disponibile.";
+    return contenuto ?: NSLocalizedString(@"contenuto_non_disponibile", nil);
 }
 
 - (UIView *)vistaPerBlocco:(OCBlocco *)blocco
