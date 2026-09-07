@@ -3,6 +3,8 @@
  * Parte di OpenCard. Rilasciato sotto AGPL v3; licenza commerciale su richiesta.
  */
 
+#include "cripto.h"
+#include "third-party/monocypher/monocypher.h"
 #include "store.h"
 
 #include <stdio.h>
@@ -31,6 +33,23 @@ static const char *const COLORI[] = {
 
 static char percorso_dati[1024];
 static char percorso_flag[1024];
+
+/* La chiave del file dei dati, quando la piattaforma ce l'ha data. Tutti zeri
+ * e `con_chiave` a zero vuol dire file in chiaro, come prima. */
+static unsigned char chiave_dati[OPENCARD_CRIPTO_CHIAVE_N];
+static int con_chiave = 0;
+
+void opencard_store_chiave(const unsigned char *chiave)
+{
+    if (chiave == NULL) {
+        crypto_wipe(chiave_dati, sizeof(chiave_dati));
+        con_chiave = 0;
+        return;
+    }
+    memcpy(chiave_dati, chiave, sizeof(chiave_dati));
+    con_chiave = 1;
+}
+
 
 static void azzera_errore(opencard_errore *errore)
 {
@@ -312,7 +331,31 @@ static cJSON *leggi_file(int *mancante, opencard_errore *errore)
     fclose(f);
     testo[letti] = '\0';
 
+    /* Il file puo' essere cifrato o in chiaro, e si riconosce dai primi byte.
+     * In chiaro si legge sempre, anche con la chiave in mano: e' il file di
+     * chi aggiorna da una versione precedente, e la prima scrittura lo
+     * converte. Cifrato senza chiave non si apre, ed e' il punto. */
+    if (opencard_cripto_e_cifrato((const unsigned char *)testo, letti)) {
+        unsigned char *chiaro = NULL;
+        size_t chiaro_n = 0;
+
+        if (!con_chiave) {
+            free(testo);
+            segnala(errore, OPENCARD_ERR_PASSWORD);
+            return NULL;
+        }
+        if (opencard_cripto_decifra_chiave((const unsigned char *)testo, letti,
+                                           chiave_dati, &chiaro, &chiaro_n,
+                                           errore) != OPENCARD_OK) {
+            free(testo);
+            return NULL;
+        }
+        free(testo);
+        testo = (char *)chiaro;
+    }
+
     radice = cJSON_Parse(testo);
+    crypto_wipe(testo, strlen(testo));
     free(testo);
     if (radice == NULL) {
         segnala(errore, OPENCARD_ERR_JSON);
@@ -322,7 +365,123 @@ static cJSON *leggi_file(int *mancante, opencard_errore *errore)
 }
 
 /* Una carta dal suo oggetto JSON. `posizione` serve solo ai messaggi. */
-static opencard_esito carta_da_json(const cJSON *nodo, int posizione,
+/* I nomi con cui le simbologie viaggiano nel file. L'indice è il valore
+ * dell'enum: chi aggiunge una simbologia aggiunge una riga in fondo, qui e in
+ * store.h, e non tocca quelle che ci sono. */
+static const char *const NOMI_SIMBOLOGIA[OPENCARD_SIM_QUANTE] = {
+    "code128", "qr", "aztec", "codabar", "code39", "code93", "datamatrix",
+    "ean8", "ean13", "itf", "pdf417", "upca", "upce", "microqr", "gs1_128",
+    "databar", "databar_espanso", "msi"
+};
+
+/* Le cifre di un codice, saltando gli spazi ai capi. */
+static int solo_cifre_fra_spazi(const char *code, size_t *quante)
+{
+    const char *p = code;
+    const char *fine;
+    size_t i, n;
+
+    *quante = 0;
+    if (code == NULL) {
+        return 0;
+    }
+    while (*p != '\0' && (*p == ' ' || *p == '\t' || *p == '\n')) {
+        p++;
+    }
+    fine = p + strlen(p);
+    while (fine > p && (fine[-1] == ' ' || fine[-1] == '\t' || fine[-1] == '\n')) {
+        fine--;
+    }
+    n = (size_t)(fine - p);
+    if (n == 0) {
+        return 0;
+    }
+    for (i = 0; i < n; i++) {
+        if (p[i] < '0' || p[i] > '9') {
+            return 0;
+        }
+    }
+    *quante = n;
+    return 1;
+}
+
+opencard_simbologia opencard_simbologia_indovinata(const char *code, int is_qrcode)
+{
+    size_t cifre;
+
+    if (is_qrcode) {
+        return OPENCARD_SIM_QR;
+    }
+    if (solo_cifre_fra_spazi(code, &cifre)) {
+        if (cifre == 13) {
+            return OPENCARD_SIM_EAN13;
+        }
+        if (cifre == 8) {
+            return OPENCARD_SIM_EAN8;
+        }
+        if (cifre == 12) {
+            return OPENCARD_SIM_UPCA;
+        }
+    }
+    return OPENCARD_SIM_CODE128;
+}
+
+const char *opencard_simbologia_nome(opencard_simbologia simbologia)
+{
+    if (simbologia < 0 || simbologia >= OPENCARD_SIM_QUANTE) {
+        return NULL;
+    }
+    return NOMI_SIMBOLOGIA[simbologia];
+}
+
+opencard_simbologia opencard_simbologia_da_nome(const char *nome)
+{
+    int i;
+
+    if (nome == NULL) {
+        return OPENCARD_SIM_QUANTE;
+    }
+    for (i = 0; i < (int)OPENCARD_SIM_QUANTE; i++) {
+        if (strcmp(nome, NOMI_SIMBOLOGIA[i]) == 0) {
+            return (opencard_simbologia)i;
+        }
+    }
+    return OPENCARD_SIM_QUANTE;
+}
+
+/* Le uniche due simbologie che l'app disegnava prima della 1.0.3, e che le
+ * interfacce continuano a chiedere finché non passano a `simbologia`. */
+static void allinea_is_qrcode(opencard_card *card)
+{
+    card->is_qrcode = (card->simbologia == OPENCARD_SIM_QR
+                       || card->simbologia == OPENCARD_SIM_MICROQR) ? 1 : 0;
+}
+
+/* Una data si accetta vuota oppure scritta per intero: "AAAA-MM-GG". Non
+ * controlla che il giorno esista davvero, controlla che sia una data e non
+ * testo libero, perché è su questo che poi si ordina e si avvisa. */
+static int data_valida(const char *testo)
+{
+    int i;
+
+    if (testo == NULL || testo[0] == '\0') {
+        return 1;
+    }
+    if (strlen(testo) != 10 || testo[4] != '-' || testo[7] != '-') {
+        return 0;
+    }
+    for (i = 0; i < 10; i++) {
+        if (i == 4 || i == 7) {
+            continue;
+        }
+        if (testo[i] < '0' || testo[i] > '9') {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema_del_file,
                                     opencard_card *out, opencard_errore *errore)
 {
     const cJSON *label = cJSON_GetObjectItemCaseSensitive(nodo, "label");
@@ -332,6 +491,12 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione,
     const cJSON *color = cJSON_GetObjectItemCaseSensitive(nodo, "color");
     const cJSON *disposable = cJSON_GetObjectItemCaseSensitive(nodo, "disposable");
     const cJSON *favorite = cJSON_GetObjectItemCaseSensitive(nodo, "favorite");
+    const cJSON *simbologia = cJSON_GetObjectItemCaseSensitive(nodo, "symbology");
+    const cJSON *note = cJSON_GetObjectItemCaseSensitive(nodo, "note");
+    const cJSON *scadenza = cJSON_GetObjectItemCaseSensitive(nodo, "expiry");
+    const cJSON *saldo = cJSON_GetObjectItemCaseSensitive(nodo, "balance");
+    const cJSON *foto_fronte = cJSON_GetObjectItemCaseSensitive(nodo, "photo_front");
+    const cJSON *foto_retro = cJSON_GetObjectItemCaseSensitive(nodo, "photo_back");
 
     memset(out, 0, sizeof(*out));
 
@@ -361,11 +526,36 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione,
         return segnala(errore, OPENCARD_ERR_CARTA);
     }
     if (strcmp(tipo->valuestring, "qrcode") == 0) {
-        out->is_qrcode = 1;
+        out->simbologia = OPENCARD_SIM_QR;
     } else if (strcmp(tipo->valuestring, "barcode") == 0) {
-        out->is_qrcode = 0;
+        /* Nessuna simbologia scritta vuol dire carta salvata prima della
+         * 1.0.3: si indovina dal codice, com'era prima. Darle Code 128 le
+         * toglierebbe le guardie dell'EAN, che i lettori da cassa si
+         * aspettano e che si vedono a occhio. */
+        out->simbologia = opencard_simbologia_indovinata(
+            cJSON_IsString(code) ? code->valuestring : NULL, 0);
     } else {
         return segnala(errore, OPENCARD_ERR_CARTA);
+    }
+    /* Dallo schema 2 la simbologia sta per esteso e vince su "type", che
+     * resta scritto per non rompere gli strumenti che leggono i backup.
+     * Un nome che non conosciamo arriva da una versione più nuova: la carta
+     * si tiene, e il codice si disegna come Code 128, che è il ripiego di
+     * sempre. */
+    if (cJSON_IsString(simbologia) && simbologia->valuestring != NULL) {
+        opencard_simbologia letta = opencard_simbologia_da_nome(simbologia->valuestring);
+        opencard_simbologia proposta = opencard_simbologia_indovinata(
+            cJSON_IsString(code) ? code->valuestring : NULL, 0);
+        /* Nei file di schema 2 il «code128» non vuol dire scelto: quelle build
+         * lo scrivevano su tutto quello che leggevano da un file di schema 1.
+         * Su un codice che si indovinerebbe EAN o UPC si preferisce la
+         * proposta, che è quello che l'app faceva prima e che ha le guardie. */
+        if (letta == OPENCARD_SIM_CODE128 && schema_del_file <= 2
+            && proposta != OPENCARD_SIM_CODE128 && proposta != OPENCARD_SIM_QR) {
+            out->simbologia = proposta;
+        } else if (letta != OPENCARD_SIM_QUANTE) {
+            out->simbologia = letta;
+        }
     }
     if (color != NULL && !cJSON_IsNull(color) && !cJSON_IsString(color)) {
         return segnala(errore, OPENCARD_ERR_CARTA);
@@ -387,6 +577,42 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione,
     /* Campo assente vuol dire "non preferita": è così che i file scritti
      * dalle versioni precedenti restano validi senza convertire niente. */
     out->favorite = cJSON_IsTrue(favorite) ? 1 : 0;
+    allinea_is_qrcode(out);
+
+    /* I campi in più: assenti vuol dire vuoti, e un file di schema 1 non ne
+     * ha nemmeno uno. Quello che c'è ma non è testo è un file malformato. */
+    if (cJSON_IsString(note) && note->valuestring != NULL) {
+        copia(out->note, sizeof(out->note), note->valuestring);
+        opencard_utf8_ripara(out->note);
+    } else if (note != NULL && !cJSON_IsNull(note)) {
+        return segnala(errore, OPENCARD_ERR_CARTA);
+    }
+    if (cJSON_IsString(saldo) && saldo->valuestring != NULL) {
+        copia(out->saldo, sizeof(out->saldo), saldo->valuestring);
+        opencard_utf8_ripara(out->saldo);
+    } else if (saldo != NULL && !cJSON_IsNull(saldo)) {
+        return segnala(errore, OPENCARD_ERR_CARTA);
+    }
+    if (cJSON_IsString(scadenza) && scadenza->valuestring != NULL) {
+        if (!data_valida(scadenza->valuestring)) {
+            return segnala(errore, OPENCARD_ERR_CARTA);
+        }
+        copia(out->scadenza, sizeof(out->scadenza), scadenza->valuestring);
+    } else if (scadenza != NULL && !cJSON_IsNull(scadenza)) {
+        return segnala(errore, OPENCARD_ERR_CARTA);
+    }
+    if (cJSON_IsString(foto_fronte) && foto_fronte->valuestring != NULL) {
+        copia(out->foto_fronte, sizeof(out->foto_fronte), foto_fronte->valuestring);
+        opencard_utf8_ripara(out->foto_fronte);
+    } else if (foto_fronte != NULL && !cJSON_IsNull(foto_fronte)) {
+        return segnala(errore, OPENCARD_ERR_CARTA);
+    }
+    if (cJSON_IsString(foto_retro) && foto_retro->valuestring != NULL) {
+        copia(out->foto_retro, sizeof(out->foto_retro), foto_retro->valuestring);
+        opencard_utf8_ripara(out->foto_retro);
+    } else if (foto_retro != NULL && !cJSON_IsNull(foto_retro)) {
+        return segnala(errore, OPENCARD_ERR_CARTA);
+    }
 
     if (errore != NULL) {
         errore->posizione = 0;
@@ -403,6 +629,7 @@ opencard_esito opencard_carte_da_json(const void *radice_json, int controlla_sch
     const cJSON *radice = (const cJSON *)radice_json;
     const cJSON *cards, *nodo;
     const cJSON *schema;
+    int schema_del_file;
     int posizione = 0;
 
     if (out == NULL || radice == NULL) {
@@ -419,9 +646,19 @@ opencard_esito opencard_carte_da_json(const void *radice_json, int controlla_sch
     if (!cJSON_IsArray(cards)) {
         return segnala(errore, OPENCARD_ERR_FORMATO);
     }
+    schema = cJSON_GetObjectItemCaseSensitive(radice, "schema");
+    /* Serve anche quando non si controlla: il file dei dati si legge senza
+     * controllo di versione, e la correzione del «code128» dipende da quale
+     * schema l'ha scritto. Zero vuol dire "non lo dice", cioè vecchio. */
+    schema_del_file = cJSON_IsNumber(schema) ? intero_da(schema->valuedouble) : 0;
+
     if (controlla_schema) {
-        schema = cJSON_GetObjectItemCaseSensitive(radice, "schema");
-        if (!cJSON_IsNumber(schema) || intero_da(schema->valuedouble) != OPENCARD_SCHEMA_VERSION) {
+        int trovato = schema_del_file;
+
+        /* Uno schema più vecchio si legge: i campi che non ha restano vuoti,
+         * ed è il motivo per cui i campi nuovi sono tutti facoltativi. Uno
+         * più nuovo no: avrebbe roba che qui si perderebbe riscrivendo. */
+        if (!cJSON_IsNumber(schema) || trovato < 1 || trovato > OPENCARD_SCHEMA_VERSION) {
             if (errore != NULL) {
                 errore->schema_trovato = cJSON_IsNumber(schema) ? intero_da(schema->valuedouble) : 0;
             }
@@ -434,7 +671,7 @@ opencard_esito opencard_carte_da_json(const void *radice_json, int controlla_sch
         opencard_esito esito;
 
         posizione++;
-        esito = carta_da_json(nodo, posizione, &card, errore);
+        esito = carta_da_json(nodo, posizione, schema_del_file, &card, errore);
         if (esito != OPENCARD_OK) {
             opencard_lista_free(out);
             return esito;
@@ -445,6 +682,19 @@ opencard_esito opencard_carte_da_json(const void *radice_json, int controlla_sch
         }
     }
     return OPENCARD_OK;
+}
+
+/* Il nome della simbologia di una carta. Una carta costruita a mano dalle
+ * interfacce, che oggi riempiono solo is_qrcode, arriva qui con simbologia a
+ * zero: il ripiego la fa tornare QR o Code 128 come si aspetta chi legge. */
+static const char *nome_simbologia_scritta(const opencard_card *card)
+{
+    const char *nome = opencard_simbologia_nome(card->simbologia);
+
+    if (nome == NULL || (card->simbologia == OPENCARD_SIM_CODE128 && card->is_qrcode)) {
+        return card->is_qrcode ? "qr" : "code128";
+    }
+    return nome;
 }
 
 /* Il JSON di una lista di carte. `intestazione_backup` aggiunge i campi che
@@ -510,6 +760,32 @@ void *opencard_carte_a_json(const opencard_lista *lista, const char *esportato_i
             goto fallito;
         }
         if (card->favorite && cJSON_AddBoolToObject(nodo, "favorite", 1) == NULL) {
+            goto fallito;
+        }
+        /* La simbologia si scrive sempre: "type" da solo saprebbe dire solo
+         * QR o non QR, e una carta Aztec riletta diventerebbe un Code 128. */
+        if (cJSON_AddStringToObject(nodo, "symbology",
+                                    nome_simbologia_scritta(card)) == NULL) {
+            goto fallito;
+        }
+        if (card->note[0] != '\0' &&
+            cJSON_AddStringToObject(nodo, "note", card->note) == NULL) {
+            goto fallito;
+        }
+        if (card->scadenza[0] != '\0' &&
+            cJSON_AddStringToObject(nodo, "expiry", card->scadenza) == NULL) {
+            goto fallito;
+        }
+        if (card->saldo[0] != '\0' &&
+            cJSON_AddStringToObject(nodo, "balance", card->saldo) == NULL) {
+            goto fallito;
+        }
+        if (card->foto_fronte[0] != '\0' &&
+            cJSON_AddStringToObject(nodo, "photo_front", card->foto_fronte) == NULL) {
+            goto fallito;
+        }
+        if (card->foto_retro[0] != '\0' &&
+            cJSON_AddStringToObject(nodo, "photo_back", card->foto_retro) == NULL) {
             goto fallito;
         }
     }
@@ -601,6 +877,26 @@ static opencard_esito salva(const opencard_lista *lista, opencard_errore *errore
         return segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     lunghezza = strlen(testo);
+
+    /* Con la chiave sul disco ci va il pacchetto cifrato, non il JSON. Il
+     * JSON in chiaro resta in memoria il tempo di cifrarlo e poi si azzera:
+     * dentro ci sono i numeri delle tessere. */
+    if (con_chiave) {
+        unsigned char *pacchetto = NULL;
+        size_t pacchetto_n = 0;
+
+        if (opencard_cripto_cifra_chiave((const unsigned char *)testo, lunghezza,
+                                         chiave_dati, &pacchetto, &pacchetto_n,
+                                         errore) != OPENCARD_OK) {
+            crypto_wipe(testo, lunghezza);
+            free(testo);
+            return errore != NULL ? errore->codice : OPENCARD_ERR_MEMORIA;
+        }
+        crypto_wipe(testo, lunghezza);
+        free(testo);
+        testo = (char *)pacchetto;
+        lunghezza = pacchetto_n;
+    }
 
     f = fopen(temporaneo, "wb");
     if (f == NULL) {
@@ -713,6 +1009,129 @@ opencard_esito opencard_set_favorite(int id, int preferita, opencard_errore *err
     return esito;
 }
 
+/* Cerca una carta e la passa a chi la deve cambiare. Il salvataggio avviene
+ * una volta sola, e se la modifica non cambia niente il file non si tocca. */
+static opencard_esito cambia_carta(int id, opencard_errore *errore,
+                                   int (*modifica)(opencard_card *, const void *),
+                                   const void *dati)
+{
+    opencard_lista tutte;
+    opencard_esito esito;
+    size_t i;
+
+    azzera_errore(errore);
+    esito = carica(&tutte, errore);
+    if (esito != OPENCARD_OK) {
+        return esito;
+    }
+    for (i = 0; i < tutte.n; i++) {
+        if (tutte.carte[i].id != id) {
+            continue;
+        }
+        switch (modifica(&tutte.carte[i], dati)) {
+        case 0:                                 /* già così: niente da scrivere */
+            opencard_lista_free(&tutte);
+            return OPENCARD_OK;
+        case -1:                                /* valori non validi */
+            opencard_lista_free(&tutte);
+            return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        default:
+            esito = salva(&tutte, errore);
+            opencard_lista_free(&tutte);
+            return esito;
+        }
+    }
+    opencard_lista_free(&tutte);
+    return segnala(errore, OPENCARD_ERR_NON_TROVATA);
+}
+
+static int scrivi_simbologia(opencard_card *card, const void *dati)
+{
+    opencard_simbologia voluta = *(const opencard_simbologia *)dati;
+
+    if (voluta < 0 || voluta >= OPENCARD_SIM_QUANTE) {
+        return -1;
+    }
+    if (card->simbologia == voluta) {
+        return 0;
+    }
+    card->simbologia = voluta;
+    allinea_is_qrcode(card);
+    return 1;
+}
+
+opencard_esito opencard_set_simbologia(int id, opencard_simbologia simbologia,
+                                       opencard_errore *errore)
+{
+    return cambia_carta(id, errore, scrivi_simbologia, &simbologia);
+}
+
+/* NULL vuol dire "lascia com'è": è quello che permette alle interfacce di
+ * toccare un campo solo senza rileggere e riscrivere gli altri due. */
+struct dettagli { const char *note; const char *scadenza; const char *saldo; };
+
+static int scrivi_dettagli(opencard_card *card, const void *dati)
+{
+    const struct dettagli *d = dati;
+    int cambiato = 0;
+
+    if (d->scadenza != NULL && !data_valida(d->scadenza)) {
+        return -1;
+    }
+    if (d->note != NULL && strcmp(card->note, d->note) != 0) {
+        copia(card->note, sizeof(card->note), d->note);
+        cambiato = 1;
+    }
+    if (d->scadenza != NULL && strcmp(card->scadenza, d->scadenza) != 0) {
+        copia(card->scadenza, sizeof(card->scadenza), d->scadenza);
+        cambiato = 1;
+    }
+    if (d->saldo != NULL && strcmp(card->saldo, d->saldo) != 0) {
+        copia(card->saldo, sizeof(card->saldo), d->saldo);
+        cambiato = 1;
+    }
+    return cambiato;
+}
+
+opencard_esito opencard_set_dettagli(int id, const char *note, const char *scadenza,
+                                     const char *saldo, opencard_errore *errore)
+{
+    struct dettagli d;
+
+    d.note = note;
+    d.scadenza = scadenza;
+    d.saldo = saldo;
+    return cambia_carta(id, errore, scrivi_dettagli, &d);
+}
+
+struct foto { const char *fronte; const char *retro; };
+
+static int scrivi_foto(opencard_card *card, const void *dati)
+{
+    const struct foto *f = dati;
+    int cambiato = 0;
+
+    if (f->fronte != NULL && strcmp(card->foto_fronte, f->fronte) != 0) {
+        copia(card->foto_fronte, sizeof(card->foto_fronte), f->fronte);
+        cambiato = 1;
+    }
+    if (f->retro != NULL && strcmp(card->foto_retro, f->retro) != 0) {
+        copia(card->foto_retro, sizeof(card->foto_retro), f->retro);
+        cambiato = 1;
+    }
+    return cambiato;
+}
+
+opencard_esito opencard_set_foto(int id, const char *fronte, const char *retro,
+                                 opencard_errore *errore)
+{
+    struct foto f;
+
+    f.fronte = fronte;
+    f.retro = retro;
+    return cambia_carta(id, errore, scrivi_foto, &f);
+}
+
 opencard_esito opencard_get_gruppo(int disposable, opencard_lista *out,
                                    opencard_errore *errore)
 {
@@ -798,8 +1217,17 @@ static void componi(opencard_card *card, int id, const char *label, const char *
     copia(card->label, sizeof(card->label), label);
     copia(card->code, sizeof(card->code), code);
     card->is_qrcode = is_qrcode ? 1 : 0;
+    card->simbologia = is_qrcode ? OPENCARD_SIM_QR : OPENCARD_SIM_CODE128;
     card->disposable = disposable ? 1 : 0;
     card->color[0] = '\0';
+    /* La carta arriva dallo stack e non è azzerata: i campi in più vanno
+     * messi a vuoto qui, altrimenti si porta dietro quello che c'era prima
+     * in memoria e finisce nel file. */
+    card->note[0] = '\0';
+    card->scadenza[0] = '\0';
+    card->saldo[0] = '\0';
+    card->foto_fronte[0] = '\0';
+    card->foto_retro[0] = '\0';
 
     if (color != NULL && color[0] != '\0') {
         opencard_color_for_id(id, colore_id, sizeof(colore_id));
@@ -1015,6 +1443,14 @@ opencard_esito opencard_append_all(const opencard_lista *lista,
                 lista->carte[i].label, lista->carte[i].code,
                 lista->carte[i].is_qrcode, lista->carte[i].color,
                 lista->carte[i].disposable, lista->carte[i].favorite);
+        /* Quello che componi() non sa: cambia l'id, non la carta. */
+        card.simbologia = lista->carte[i].simbologia;
+        allinea_is_qrcode(&card);
+        copia(card.note, sizeof(card.note), lista->carte[i].note);
+        copia(card.scadenza, sizeof(card.scadenza), lista->carte[i].scadenza);
+        copia(card.saldo, sizeof(card.saldo), lista->carte[i].saldo);
+        copia(card.foto_fronte, sizeof(card.foto_fronte), lista->carte[i].foto_fronte);
+        copia(card.foto_retro, sizeof(card.foto_retro), lista->carte[i].foto_retro);
         if (!lista_aggiungi(&tutte, &card)) {
             opencard_lista_free(&tutte);
             return segnala(errore, OPENCARD_ERR_MEMORIA);
@@ -1089,6 +1525,11 @@ void opencard_errore_testo(const opencard_errore *errore, char *out, size_t out_
         copia(out, out_size,
               "Le carte sono troppe per il passaggio con i QR. "
               "Usa l'esportazione su file.");
+        break;
+    case OPENCARD_ERR_PASSWORD:
+        copia(out, out_size,
+              "La password non apre questo backup, oppure il file è stato "
+              "modificato.");
         break;
     default:
         copia(out, out_size, "Errore imprevisto.");

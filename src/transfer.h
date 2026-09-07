@@ -48,7 +48,12 @@ extern "C" {
 /* Versione del formato che viaggia nel QR. Sale solo se cambia il modo di
  * scrivere i byte: un telefono che riceve un formato più alto del suo si
  * ferma e dice di aggiornare, invece di leggere numeri a caso. */
-#define OPENCARD_TRASF_FORMATO 1
+/* 2: dopo il colore, le carte che ne hanno bisogno portano un blocco con la
+ * simbologia per esteso e i campi in più (note, scadenza, saldo). Le carte
+ * che non hanno niente da aggiungere occupano gli stessi byte di prima, così
+ * un passaggio normale continua a starci in un QR solo. Le foto restano fuori:
+ * nel QR viaggiano i byte, e una foto sola vorrebbe centinaia di codici. */
+#define OPENCARD_TRASF_FORMATO 2
 
 /* Quante carte stanno in un trasferimento. Il conteggio viaggia in un byte. */
 #define OPENCARD_TRASF_CARTE_MAX 255

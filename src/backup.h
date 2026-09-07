@@ -40,6 +40,28 @@ opencard_esito opencard_backup_esporta(const char *esportato_il, char **testo,
 
 void opencard_backup_free(char *testo);
 
+/* Lo stesso backup, chiuso con una password: quello che esce è il pacchetto
+ * cifrato di cripto.h, byte e non testo. Password vuota torna
+ * OPENCARD_ERR_ARGOMENTI, perché la scelta di cifrare o no la fa la UI e qui
+ * non si indovina.
+ *
+ * Chi chiama libera con opencard_cripto_free().
+ */
+opencard_esito opencard_backup_esporta_cifrato(const char *esportato_il,
+                                               const char *password,
+                                               unsigned char **byte, size_t *quanti,
+                                               opencard_errore *errore);
+
+/* Le carte da un file di backup che può essere in chiaro o cifrato.
+ *
+ * Il file cifrato senza password torna OPENCARD_ERR_PASSWORD: è così che la UI
+ * capisce che deve chiederla, invece di dover riconoscere il formato da sé.
+ */
+opencard_esito opencard_backup_leggi_file(const unsigned char *dati, size_t quanti,
+                                          const char *password,
+                                          opencard_lista *out,
+                                          opencard_errore *errore);
+
 /* Le carte contenute in un backup. Non tocca il file dei dati: sta a chi chiama
  * decidere se confermare con opencard_replace_all().
  *

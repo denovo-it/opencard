@@ -17,7 +17,18 @@
 extern "C" {
 #endif
 
-#define OPENCARD_SCHEMA_VERSION 1
+/* 2: la carta ha la simbologia per esteso, le note, la scadenza, il saldo e
+ * i nomi delle due foto.
+ *
+ * 3: stessi campi, ma la simbologia scritta è affidabile. Le build interne del
+ * 7 settembre 2026 scrivevano «code128» su tutte le carte lette da un file di
+ * schema 1, anche sugli EAN, e quel valore poi si rispettava: risultato, i
+ * codici a barre senza le guardie. Leggendo uno schema 2 il «code128» su un
+ * codice che si indovinerebbe EAN o UPC si considera non scritto.
+ *
+ * Un file più vecchio si legge; uno più nuovo no, perché riscrivendolo si
+ * perderebbe quello che non si conosce. */
+#define OPENCARD_SCHEMA_VERSION 3
 
 /* Limiti generosi rispetto all'uso reale: una tessera fedeltà ha un nome
  * corto e un codice di poche decine di caratteri. Sono fissi per non spargere
@@ -25,6 +36,37 @@ extern "C" {
 #define OPENCARD_LABEL_MAX 128
 #define OPENCARD_CODE_MAX  512
 #define OPENCARD_COLOR_MAX 8     /* "#RRGGBB" più il terminatore */
+#define OPENCARD_NOTE_MAX  512   /* una nota, non un diario */
+#define OPENCARD_SALDO_MAX 32    /* testo libero: "12,50 €", "340 punti" */
+#define OPENCARD_DATA_MAX  11    /* "AAAA-MM-GG" più il terminatore */
+#define OPENCARD_FOTO_MAX  64    /* nome del file, non il percorso: le foto
+                                  * stanno in una cartella dentro i dati
+                                  * dell'app, e nel JSON viaggia solo il nome */
+
+/* Le simbologie che l'app sa disegnare. L'ordine non conta, i numeri sì: il
+ * passaggio a QR ne scrive uno per carta, quindi vanno aggiunte in fondo e mai
+ * rinumerate. Nel file JSON viaggia il nome, non il numero. */
+typedef enum {
+    OPENCARD_SIM_CODE128 = 0,
+    OPENCARD_SIM_QR = 1,
+    OPENCARD_SIM_AZTEC = 2,
+    OPENCARD_SIM_CODABAR = 3,
+    OPENCARD_SIM_CODE39 = 4,
+    OPENCARD_SIM_CODE93 = 5,
+    OPENCARD_SIM_DATAMATRIX = 6,
+    OPENCARD_SIM_EAN8 = 7,
+    OPENCARD_SIM_EAN13 = 8,
+    OPENCARD_SIM_ITF = 9,
+    OPENCARD_SIM_PDF417 = 10,
+    OPENCARD_SIM_UPCA = 11,
+    OPENCARD_SIM_UPCE = 12,
+    OPENCARD_SIM_MICROQR = 13,
+    OPENCARD_SIM_GS1_128 = 14,
+    OPENCARD_SIM_DATABAR = 15,
+    OPENCARD_SIM_DATABAR_ESPANSO = 16,
+    OPENCARD_SIM_MSI = 17,
+    OPENCARD_SIM_QUANTE = 18
+} opencard_simbologia;
 
 /* Codici di errore. Le stringhe da mostrare le compone la UI, che sa in che
  * lingua sta parlando: opencard_errore_testo() dà la versione italiana. */
@@ -43,7 +85,10 @@ typedef enum {
     OPENCARD_ERR_TRASF_INCOMPLETO = -10,/* mancano dei pezzi */
     OPENCARD_ERR_TRASF_ROTTO = -11,     /* i pezzi ci sono ma non tornano */
     OPENCARD_ERR_TRASF_VERSIONE = -12,  /* scritto da una versione più nuova */
-    OPENCARD_ERR_TRASF_TROPPE = -13     /* troppe carte per stare nei QR */
+    OPENCARD_ERR_TRASF_TROPPE = -13,    /* troppe carte per stare nei QR */
+    /* Backup cifrato: password sbagliata o pacchetto manomesso. I due casi
+     * danno lo stesso codice apposta, non si distinguono da fuori. */
+    OPENCARD_ERR_PASSWORD = -14
 } opencard_esito;
 
 /* Che cosa è andato storto, per comporre un messaggio utile all'utente.
@@ -60,9 +105,23 @@ typedef struct {
     int id;
     char label[OPENCARD_LABEL_MAX];
     char code[OPENCARD_CODE_MAX];
-    int is_qrcode;                      /* 0 = barcode, 1 = qrcode */
+    /* Quale codice è. Il core la tiene sempre allineata a is_qrcode. */
+    opencard_simbologia simbologia;
+    /* Vera solo per QR e Micro QR. Resta perché le due interfacce e i due
+     * ponti la leggono da sempre: sparisce quando useranno `simbologia`, e
+     * fino ad allora chi scrive l'una si vede aggiornare l'altra. */
+    int is_qrcode;
     char color[OPENCARD_COLOR_MAX];     /* "" se lo decide l'id */
     int disposable;
+    /* I quattro campi in più della carta. Vuoti vuol dire non compilati, e
+     * nel file compaiono solo quando c'è qualcosa dentro. Le foto sono nomi
+     * di file: i byte stanno in una cartella a parte, altrimenti il file dei
+     * dati diventa illeggibile e il passaggio a QR impossibile. */
+    char note[OPENCARD_NOTE_MAX];
+    char scadenza[OPENCARD_DATA_MAX];   /* "AAAA-MM-GG" oppure "" */
+    char saldo[OPENCARD_SALDO_MAX];
+    char foto_fronte[OPENCARD_FOTO_MAX];
+    char foto_retro[OPENCARD_FOTO_MAX];
     /* Preferita: la carta compare anche nella scheda con la stella, che sia
      * fedeltà o usa e getta. Nel file il campo c'è solo quando è accesa,
      * quindi un file scritto da una versione precedente si legge senza
@@ -82,6 +141,21 @@ typedef struct {
  * Attenzione, è la ragione per cui esiste questa funzione: la directory deve
  * essere quella dei dati dell'app, non quella del codice. */
 opencard_esito opencard_store_init(const char *directory_dati);
+
+/* La chiave con cui il file dei dati sta cifrato sul telefono.
+ *
+ * Trentadue byte, che la piattaforma tiene nel portachiavi di sistema:
+ * Keystore su Android, Keychain su iPhone. Va data prima di leggere o
+ * scrivere, subito dopo opencard_store_init().
+ *
+ * Senza chiave il file resta in chiaro, come nelle versioni precedenti, e
+ * un file in chiaro si legge lo stesso anche dopo: la prima scrittura lo
+ * converte. Al contrario no: dato che la chiave l'ha solo il telefono, un file
+ * cifrato senza chiave non si apre, ed e' il punto.
+ *
+ * `chiave` a NULL toglie la chiave: serve alle prove.
+ */
+void opencard_store_chiave(const unsigned char *chiave);
 
 /* Il file dei dati, per chi deve mostrarlo o copiarlo. */
 const char *opencard_store_percorso(void);
@@ -131,6 +205,42 @@ opencard_esito opencard_update(int id, const char *label, const char *code,
                                opencard_errore *errore);
 
 opencard_esito opencard_delete(int id, opencard_errore *errore);
+
+/* Quale simbologia sta bene a un codice: EAN-13, EAN-8 o UPC-A quando le
+ * cifre tornano, QR quando lo dice il tipo, Code 128 per tutto il resto.
+ *
+ * La usa il form, che la propone e lascia cambiare, e la usa la lettura dei
+ * file: una carta salvata prima della 1.0.3 non ha la simbologia scritta, e
+ * senza questa tornerebbe un Code 128, cioe' un codice a barre senza le
+ * guardie che i lettori da cassa si aspettano.
+ */
+opencard_simbologia opencard_simbologia_indovinata(const char *code, int is_qrcode);
+
+/* Il nome con cui una simbologia viaggia nel JSON ("code128", "qr", ...).
+ * Torna NULL se il numero non è una simbologia. */
+const char *opencard_simbologia_nome(opencard_simbologia simbologia);
+
+/* Il contrario: da nome a numero. Torna OPENCARD_SIM_QUANTE se il nome non
+ * si riconosce, così chi legge un file scritto da una versione più nuova può
+ * decidere da sé cosa fare invece di prendersi un valore a caso. */
+opencard_simbologia opencard_simbologia_da_nome(const char *nome);
+
+/* Cambia la simbologia di una carta e basta. Aggiorna anche is_qrcode. */
+opencard_esito opencard_set_simbologia(int id, opencard_simbologia simbologia,
+                                       opencard_errore *errore);
+
+/* Note, scadenza e saldo di una carta. NULL vuol dire "lascia com'è", ""
+ * vuol dire "svuota". La scadenza vuole "AAAA-MM-GG": qualsiasi altra cosa
+ * torna OPENCARD_ERR_ARGOMENTI e non scrive niente. */
+opencard_esito opencard_set_dettagli(int id, const char *note,
+                                     const char *scadenza, const char *saldo,
+                                     opencard_errore *errore);
+
+/* I nomi dei file delle due foto, con le stesse regole di NULL e "".
+ * Il core non tocca i file: li scrive e li cancella la piattaforma, che sa
+ * dove stanno. */
+opencard_esito opencard_set_foto(int id, const char *fronte, const char *retro,
+                                 opencard_errore *errore);
 
 /* Riscrive l'ordine di un gruppo lasciando l'altro dov'è.
  * Se gli id non sono esattamente quelli del gruppo non tocca niente: meglio un

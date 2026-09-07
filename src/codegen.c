@@ -112,6 +112,41 @@ int opencard_grouped_code(const char *code, char *out, size_t out_size)
     return (int)scritti;
 }
 
+/* Le simbologie di OpenCard e la costante zint che le disegna. L'ordine segue
+ * l'enum di store.h: una riga per valore, nessun buco.
+ *
+ * EAN-8 ed EAN-13 hanno la stessa costante perché zint sceglie in base a
+ * quante cifre gli arrivano; tenerle separate da noi serve a far vedere in
+ * elenco quello che la gente si aspetta di trovare. */
+static const int ZINT_DI_SIMBOLOGIA[OPENCARD_SIM_QUANTE] = {
+    BARCODE_CODE128,        /* CODE128 */
+    BARCODE_QRCODE,         /* QR */
+    BARCODE_AZTEC,          /* AZTEC */
+    BARCODE_CODABAR,        /* CODABAR */
+    BARCODE_CODE39,         /* CODE39 */
+    BARCODE_CODE93,         /* CODE93 */
+    BARCODE_DATAMATRIX,     /* DATAMATRIX */
+    BARCODE_EANX,           /* EAN8 */
+    BARCODE_EANX,           /* EAN13 */
+    BARCODE_C25INTER,       /* ITF */
+    BARCODE_PDF417,         /* PDF417 */
+    BARCODE_UPCA,           /* UPCA */
+    BARCODE_UPCE,           /* UPCE */
+    BARCODE_MICROQR,        /* MICROQR */
+    BARCODE_GS1_128,        /* GS1_128 */
+    BARCODE_DBAR_OMN,       /* DATABAR */
+    BARCODE_DBAR_EXP,       /* DATABAR_ESPANSO */
+    BARCODE_MSI_PLESSEY     /* MSI */
+};
+
+int opencard_zint_da_simbologia(opencard_simbologia simbologia)
+{
+    if (simbologia < 0 || simbologia >= OPENCARD_SIM_QUANTE) {
+        return -1;
+    }
+    return ZINT_DI_SIMBOLOGIA[simbologia];
+}
+
 int opencard_symbology(const char *code, opencard_tipo tipo)
 {
     const char *s;
@@ -139,9 +174,10 @@ int opencard_symbology(const char *code, opencard_tipo tipo)
     return BARCODE_CODE128;
 }
 
-int opencard_render_bitmap(const char *code, opencard_tipo tipo,
-                           unsigned char **pixel, int *larghezza, int *altezza,
-                           char *errore, size_t errore_len)
+/* Il motore vero: la simbologia arriva già decisa, in costanti di zint. */
+static int disegna(const char *code, int zint_simbologia,
+                   unsigned char **pixel, int *larghezza, int *altezza,
+                   char *errore, size_t errore_len)
 {
     struct zint_symbol *simbolo;
     const char *s;
@@ -164,7 +200,7 @@ int opencard_render_bitmap(const char *code, opencard_tipo tipo,
     }
 
     estremi(code, &s, &n);
-    simbolo->symbology = opencard_symbology(code, tipo);
+    simbolo->symbology = zint_simbologia;
     simbolo->show_hrt = 0;      /* il testo lo disegna la UI, raggruppato a tre */
     simbolo->scale = 4.0f;
 
@@ -193,6 +229,72 @@ int opencard_render_bitmap(const char *code, opencard_tipo tipo,
 
     ZBarcode_Delete(simbolo);
     return 0;
+}
+
+int opencard_render_bitmap(const char *code, opencard_tipo tipo,
+                           unsigned char **pixel, int *larghezza, int *altezza,
+                           char *errore, size_t errore_len)
+{
+    return disegna(code, opencard_symbology(code, tipo), pixel, larghezza, altezza,
+                   errore, errore_len);
+}
+
+/* EAN e UPC vogliono un numero di cifre preciso, con o senza quella di
+ * controllo, che zint calcola da sé. Il controllo sta qui e non in zint
+ * perché EAN-8 ed EAN-13 per lui sono la stessa simbologia: senza, uno che
+ * sceglie EAN-13 e scrive undici cifre si ritrova un codice disegnato che
+ * alla cassa non è la sua tessera. */
+static int lunghezza_adatta(opencard_simbologia simbologia, const char *code)
+{
+    const char *s;
+    size_t n;
+
+    if (simbologia != OPENCARD_SIM_EAN13 && simbologia != OPENCARD_SIM_EAN8
+        && simbologia != OPENCARD_SIM_UPCA && simbologia != OPENCARD_SIM_UPCE) {
+        return 1;
+    }
+    if (code == NULL) {
+        return 0;
+    }
+    estremi(code, &s, &n);
+    if (!tutto_cifre(s, n)) {
+        return 0;
+    }
+    switch (simbologia) {
+    case OPENCARD_SIM_EAN13:
+        return n == 12 || n == 13;
+    case OPENCARD_SIM_EAN8:
+        return n == 7 || n == 8;
+    case OPENCARD_SIM_UPCA:
+        return n == 11 || n == 12;
+    case OPENCARD_SIM_UPCE:
+        return n >= 6 && n <= 8;
+    default:
+        return 1;
+    }
+}
+
+int opencard_render_bitmap_simbologia(const char *code, opencard_simbologia simbologia,
+                                      unsigned char **pixel, int *larghezza,
+                                      int *altezza, char *errore, size_t errore_len)
+{
+    int zint_simbologia = opencard_zint_da_simbologia(simbologia);
+
+    if (zint_simbologia >= 0 && !lunghezza_adatta(simbologia, code)) {
+        if (errore != NULL && errore_len > 0) {
+            strncpy(errore, "il numero di cifre non va bene per questa simbologia",
+                    errore_len - 1);
+            errore[errore_len - 1] = '\0';
+        }
+        return ZINT_ERROR_INVALID_DATA;
+    }
+    if (zint_simbologia < 0) {
+        if (errore != NULL && errore_len > 0) {
+            errore[0] = '\0';
+        }
+        return ZINT_ERROR_INVALID_OPTION;
+    }
+    return disegna(code, zint_simbologia, pixel, larghezza, altezza, errore, errore_len);
 }
 
 void opencard_free_bitmap(unsigned char *pixel)

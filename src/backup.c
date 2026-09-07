@@ -5,6 +5,9 @@
 
 #include "backup.h"
 
+#include "cripto.h"
+#include "third-party/monocypher/monocypher.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -69,6 +72,69 @@ opencard_esito opencard_backup_esporta(const char *esportato_il, char **testo,
     }
     *testo = stampato;
     return OPENCARD_OK;
+}
+
+opencard_esito opencard_backup_esporta_cifrato(const char *esportato_il,
+                                               const char *password,
+                                               unsigned char **byte, size_t *quanti,
+                                               opencard_errore *errore)
+{
+    char *testo = NULL;
+    opencard_esito esito;
+
+    if (byte == NULL || quanti == NULL) {
+        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+    }
+    *byte = NULL;
+    *quanti = 0;
+    if (password == NULL || password[0] == '\0') {
+        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+    }
+
+    esito = opencard_backup_esporta(esportato_il, &testo, errore);
+    if (esito != OPENCARD_OK) {
+        return esito;
+    }
+
+    esito = opencard_cripto_cifra((const unsigned char *)testo, strlen(testo),
+                                  password, byte, quanti, errore);
+    /* Il JSON in chiaro non deve restare in memoria dopo: qui dentro ci sono
+     * i numeri delle tessere. */
+    crypto_wipe(testo, strlen(testo));
+    opencard_backup_free(testo);
+    return esito;
+}
+
+opencard_esito opencard_backup_leggi_file(const unsigned char *dati, size_t quanti,
+                                          const char *password,
+                                          opencard_lista *out,
+                                          opencard_errore *errore)
+{
+    unsigned char *chiaro = NULL;
+    size_t chiaro_n = 0;
+    opencard_esito esito;
+
+    if (out == NULL || dati == NULL) {
+        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+    }
+    if (!opencard_cripto_e_cifrato(dati, quanti)) {
+        return opencard_backup_leggi((const char *)dati, quanti, out, errore);
+    }
+    if (password == NULL || password[0] == '\0') {
+        memset(out, 0, sizeof(*out));
+        return segnala(errore, OPENCARD_ERR_PASSWORD);
+    }
+
+    esito = opencard_cripto_decifra(dati, quanti, password, &chiaro, &chiaro_n, errore);
+    if (esito != OPENCARD_OK) {
+        memset(out, 0, sizeof(*out));
+        return esito;
+    }
+
+    esito = opencard_backup_leggi((const char *)chiaro, chiaro_n, out, errore);
+    crypto_wipe(chiaro, chiaro_n);
+    opencard_cripto_free(chiaro);
+    return esito;
 }
 
 void opencard_backup_free(char *testo)

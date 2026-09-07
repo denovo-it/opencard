@@ -8,6 +8,8 @@
 
 #include <stddef.h>
 
+#include "store.h"      /* opencard_simbologia */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,6 +31,19 @@ typedef enum {
  * out è troppo piccolo. Serve al massimo len + len/3 + 2 byte.
  */
 int opencard_grouped_code(const char *code, char *out, size_t out_size);
+
+/* La costante zint di una simbologia, oppure -1 se il numero non è una
+ * simbologia. Le simbologie sono quelle di store.h: qui c'è solo la tabella
+ * che le lega a zint, perché è l'unico posto che conosce zint. */
+int opencard_zint_da_simbologia(opencard_simbologia simbologia);
+
+/* Come opencard_render_bitmap, ma con la simbologia decisa da chi chiama.
+ * Un codice che non sta in quella simbologia (un EAN-13 di dodici cifre, un
+ * Codabar senza le lettere agli estremi) torna un errore di zint con il testo
+ * in `errore`: la scelta di cosa dire all'utente resta alla UI. */
+int opencard_render_bitmap_simbologia(const char *code, opencard_simbologia simbologia,
+                                      unsigned char **pixel, int *larghezza,
+                                      int *altezza, char *errore, size_t errore_len);
 
 /* Simbologia zint adatta al codice: EAN-13, EAN-8 o UPC-A se il numero ha la
  * lunghezza giusta, altrimenti Code128. Per i QR ritorna sempre BARCODE_QRCODE.

@@ -27,6 +27,16 @@
 #define FLAG_COLORE     0x04
 #define FLAG_CIFRE      0x08
 #define FLAG_PREFERITA  0x10
+/* Dal formato 2: dopo il colore c'è il blocco con la simbologia e i campi in
+ * più. Una versione che non lo conosce non lo legge, ma nemmeno lo incontra:
+ * chi scrive il bit scrive anche il formato 2 nell'intestazione. */
+#define FLAG_EXTRA      0x20
+
+/* Cosa c'è nel blocco, dopo il byte della simbologia. I due bit alti sono
+ * lasciati alle foto, se un giorno si troverà il modo di farle viaggiare. */
+#define EXTRA_NOTE      0x01
+#define EXTRA_SCADENZA  0x02
+#define EXTRA_SALDO     0x04
 
 static const char ALFABETO[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ$%*+-./:";
 #define BASE 44
@@ -159,10 +169,57 @@ static unsigned int mezzo_byte(char c)
     return 0;
 }
 
+/* Serve il blocco in più? Solo se la carta ha qualcosa che il formato 1 non
+ * saprebbe dire: una simbologia diversa dalle due di sempre, o uno dei campi
+ * nuovi pieno. Le altre carte restano lunghe quanto prima. */
+/* Le interfacce di oggi riempiono solo is_qrcode e lasciano la simbologia a
+ * zero: una carta con il bit QR acceso è un QR, non un Code 128. Finché le
+ * due cose convivono, qui si guarda questa. */
+static opencard_simbologia simbologia_effettiva(const opencard_card *card)
+{
+    if (card->simbologia == OPENCARD_SIM_CODE128 && card->is_qrcode) {
+        return OPENCARD_SIM_QR;
+    }
+    return card->simbologia;
+}
+
+static int vuole_extra(const opencard_card *card)
+{
+    /* Il confronto e' con quello che chi riceve indovinerebbe da solo, non con
+     * il bit del QR: cosi' un EAN-13, che si indovina, non costa un byte, e un
+     * Code 128 scelto a mano su tredici cifre viaggia per esteso invece di
+     * essere reinterpretato all'arrivo. */
+    opencard_simbologia implicita = opencard_simbologia_indovinata(card->code,
+                                                                   card->is_qrcode);
+
+    return simbologia_effettiva(card) != implicita
+           || card->note[0] != '\0'
+           || card->scadenza[0] != '\0'
+           || card->saldo[0] != '\0';
+}
+
 /* Quanto occupa una carta nel formato compatto, nel caso peggiore. */
 static size_t misura_carta(const opencard_card *card)
 {
-    return 1 + 1 + strlen(card->label) + 1 + strlen(card->code) + 3;
+    size_t base = 1 + 1 + strlen(card->label) + 1 + strlen(card->code) + 3;
+
+    if (vuole_extra(card)) {
+        /* simbologia, flag, e ogni campo con un byte di lunghezza davanti */
+        base += 2 + 1 + strlen(card->note) + 1 + strlen(card->scadenza)
+                + 1 + strlen(card->saldo);
+    }
+    return base;
+}
+
+/* Un campo del blocco: lunghezza e byte. Vuoto non si scrive proprio, il bit
+ * nel flag dice se c'è. */
+static size_t scrivi_campo(unsigned char *out, const char *testo)
+{
+    size_t quanti = strlen(testo);
+
+    out[0] = (unsigned char)quanti;
+    memcpy(out + 1, testo, quanti);
+    return 1 + quanti;
 }
 
 static int solo_cifre(const char *s)
@@ -220,7 +277,8 @@ static long scrivi_carte(const opencard_lista *lista, unsigned char *out, size_t
                                | (card->disposable ? FLAG_USA_GETTA : 0)
                                | FLAG_COLORE
                                | (cifre ? FLAG_CIFRE : 0)
-                               | (card->favorite ? FLAG_PREFERITA : 0));
+                               | (card->favorite ? FLAG_PREFERITA : 0)
+                               | (vuole_extra(card) ? FLAG_EXTRA : 0));
         out[scritti++] = flag;
 
         out[scritti++] = (unsigned char)etichetta;
@@ -246,6 +304,25 @@ static long scrivi_carte(const opencard_lista *lista, unsigned char *out, size_t
             out[scritti++] = (unsigned char)((mezzo_byte(colore[1 + j * 2]) << 4)
                                              | mezzo_byte(colore[2 + j * 2]));
         }
+
+        if (flag & FLAG_EXTRA) {
+            unsigned char campi = (unsigned char)
+                ((card->note[0] != '\0' ? EXTRA_NOTE : 0)
+                 | (card->scadenza[0] != '\0' ? EXTRA_SCADENZA : 0)
+                 | (card->saldo[0] != '\0' ? EXTRA_SALDO : 0));
+
+            out[scritti++] = (unsigned char)simbologia_effettiva(card);
+            out[scritti++] = campi;
+            if (campi & EXTRA_NOTE) {
+                scritti += scrivi_campo(out + scritti, card->note);
+            }
+            if (campi & EXTRA_SCADENZA) {
+                scritti += scrivi_campo(out + scritti, card->scadenza);
+            }
+            if (campi & EXTRA_SALDO) {
+                scritti += scrivi_campo(out + scritti, card->saldo);
+            }
+        }
     }
     return (long)scritti;
 }
@@ -257,6 +334,29 @@ static int cifra_esadecimale(unsigned char b, char *out)
     out[0] = cifre[(b >> 4) & 0x0F];
     out[1] = cifre[b & 0x0F];
     return 2;
+}
+
+/* Un campo del blocco. Torna 0 se i byte non ci sono o se il campo non
+ * starebbe nella carta: in tutti e due i casi il pacchetto è rotto e il
+ * passaggio si ferma, che è meglio di una carta troncata a metà. */
+static int leggi_campo(const unsigned char *dati, size_t n, size_t *posizione,
+                       char *out, size_t out_size)
+{
+    size_t quanti;
+
+    if (*posizione + 1 > n) {
+        return 0;
+    }
+    quanti = dati[(*posizione)++];
+    if (*posizione + quanti > n || quanti >= out_size) {
+        return 0;
+    }
+    memcpy(out, dati + *posizione, quanti);
+    out[quanti] = '\0';
+    /* Arriva dall'altro telefono: quello che non è UTF-8 valido si ripara qui. */
+    opencard_utf8_ripara(out);
+    *posizione += quanti;
+    return 1;
 }
 
 static opencard_esito leggi_carte(const unsigned char *dati, size_t n,
@@ -351,6 +451,44 @@ static opencard_esito leggi_carte(const unsigned char *dati, size_t n,
             posizione += 3;
         } else {
             card->color[0] = '\0';
+        }
+
+        /* Senza blocco la carta arriva da un telefono con la 1.0.2, che la
+         * simbologia non la sa: si indovina dal codice, come si fa leggendo un
+         * file di prima. Senza, un EAN-13 arriverebbe come Code 128 e perderebbe
+         * le guardie. */
+        card->simbologia = opencard_simbologia_indovinata(card->code, card->is_qrcode);
+
+        if (flag & FLAG_EXTRA) {
+            unsigned char campi;
+            unsigned char letta;
+
+            if (posizione + 2 > n) {
+                goto rotto;
+            }
+            letta = dati[posizione++];
+            campi = dati[posizione++];
+            /* Una simbologia che questa versione non conosce arriva da un
+             * telefono più aggiornato: la carta si tiene e il codice si
+             * disegna come Code 128, invece di far fallire il passaggio. */
+            card->simbologia = (letta < OPENCARD_SIM_QUANTE)
+                               ? (opencard_simbologia)letta : OPENCARD_SIM_CODE128;
+            card->is_qrcode = (card->simbologia == OPENCARD_SIM_QR
+                               || card->simbologia == OPENCARD_SIM_MICROQR) ? 1 : 0;
+
+            if (campi & EXTRA_NOTE
+                && !leggi_campo(dati, n, &posizione, card->note, sizeof(card->note))) {
+                goto rotto;
+            }
+            if (campi & EXTRA_SCADENZA
+                && !leggi_campo(dati, n, &posizione, card->scadenza,
+                                sizeof(card->scadenza))) {
+                goto rotto;
+            }
+            if (campi & EXTRA_SALDO
+                && !leggi_campo(dati, n, &posizione, card->saldo, sizeof(card->saldo))) {
+                goto rotto;
+            }
         }
         out->n++;
     }
