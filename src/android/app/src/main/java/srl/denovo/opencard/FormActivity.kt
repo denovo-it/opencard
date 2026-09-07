@@ -9,27 +9,41 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Color
-import android.media.ExifInterface
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.text.Editable
+import android.text.TextWatcher
+import android.os.ParcelFileDescriptor
 import android.os.Bundle
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.RadioButton
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.exifinterface.media.ExifInterface
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
+import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.textfield.TextInputLayout
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import java.io.File
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 /**
  * Aggiunta e modifica di una carta.
@@ -48,8 +62,30 @@ class FormActivity : AppCompatActivity() {
 
     private lateinit var nome: EditText
     private lateinit var codice: EditText
-    private lateinit var qrcode: RadioButton
-    private lateinit var barcode: RadioButton
+    private lateinit var simbologia: Spinner
+    private lateinit var nota: EditText
+    private lateinit var scadenza: EditText
+    private lateinit var riquadroScadenza: TextInputLayout
+    private lateinit var saldo: EditText
+    private lateinit var bottoneFronte: Button
+    private lateinit var bottoneRetro: Button
+    private lateinit var anteprimaFronte: ImageView
+    private lateinit var anteprimaRetro: ImageView
+
+    /**
+     * Le foto scelte ma non ancora salvate.
+     *
+     * Per una carta nuova l'id non esiste finché non si preme Salva, e il nome
+     * del file lo contiene: le foto restano qui in memoria e si scrivono su
+     * disco quando l'id c'è. Null vuol dire "non toccata", che è diverso da
+     * "tolta": per quello c'è [fotoTolte].
+     */
+    private var fotoNuove = arrayOfNulls<android.graphics.Bitmap>(2)
+    private val fotoTolte = booleanArrayOf(false, false)
+    /** I nomi che la carta ha adesso, per sapere cosa cancellare. */
+    private var fotoAttuali = arrayOf("", "")
+    /** Quale dei due riquadri ha aperto il selettore. */
+    private var latoInCorso = 0
     private lateinit var casella: MaterialCheckBox
     private lateinit var stella: MaterialCheckBox
     private lateinit var tavolozza: LinearLayout
@@ -73,7 +109,14 @@ class FormActivity : AppCompatActivity() {
         ActivityResultContracts.OpenDocument()
     ) { immagine -> immagine?.let { leggiDaImmagine(it) } }
 
+    private val fotoDaGalleria = registerForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { immagine -> immagine?.let { prendiLaFoto(it) } }
+
     companion object {
+        private const val FRONTE = 0
+        private const val RETRO = 1
+
         private const val EXTRA_ID = "id"
         private const val EXTRA_USA_E_GETTA = "usaEGetta"
 
@@ -103,8 +146,40 @@ class FormActivity : AppCompatActivity() {
 
         nome = findViewById(R.id.nome)
         codice = findViewById(R.id.codice)
-        qrcode = findViewById(R.id.tipo_qrcode)
-        barcode = findViewById(R.id.tipo_barcode)
+        nota = findViewById(R.id.nota)
+        scadenza = findViewById(R.id.scadenza)
+        saldo = findViewById(R.id.saldo)
+        scadenza.setOnClickListener { chiediLaData() }
+        // La X che svuota il campo. Va messa a mano invece di usare
+        // endIconMode="clear_text": quella compare solo quando il campo ha il
+        // fuoco, e questo campo il fuoco non lo prende mai apposta, perche' la
+        // data si sceglie dal calendario e non si scrive.
+        riquadroScadenza = findViewById(R.id.riquadro_scadenza)
+        riquadroScadenza.setEndIconOnClickListener { scadenza.setText("") }
+        scadenza.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(testo: Editable?) {
+                riquadroScadenza.isEndIconVisible = !testo.isNullOrEmpty()
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+        })
+        riquadroScadenza.isEndIconVisible = false
+
+        bottoneFronte = findViewById(R.id.foto_fronte)
+        bottoneRetro = findViewById(R.id.foto_retro)
+        anteprimaFronte = findViewById(R.id.anteprima_fronte)
+        anteprimaRetro = findViewById(R.id.anteprima_retro)
+        bottoneFronte.setOnClickListener { scegliFoto(FRONTE) }
+        bottoneRetro.setOnClickListener { scegliFoto(RETRO) }
+        anteprimaFronte.setOnClickListener { togliFoto(FRONTE) }
+        anteprimaRetro.setOnClickListener { togliFoto(RETRO) }
+        simbologia = findViewById(R.id.simbologia)
+        simbologia.adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            Simbologie.nomi,
+        ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
         casella = findViewById(R.id.usa_e_getta)
         stella = findViewById(R.id.preferita)
         tavolozza = findViewById(R.id.tavolozza)
@@ -122,7 +197,7 @@ class FormActivity : AppCompatActivity() {
             )
         }
         preparaBottone(R.id.da_file, R.string.da_file, R.drawable.ic_file) {
-            daFile.launch(arrayOf("image/*"))
+            daFile.launch(arrayOf("image/*", "application/pdf"))
         }
 
         findViewById<Button>(R.id.annulla).setOnClickListener { finish() }
@@ -161,8 +236,12 @@ class FormActivity : AppCompatActivity() {
             { carta ->
                 nome.setText(carta.label)
                 codice.setText(carta.code)
-                qrcode.isChecked = carta.isQrcode
-                barcode.isChecked = !carta.isQrcode
+                simbologia.setSelection(carta.simbologia)
+                nota.setText(carta.note)
+                scadenza.setText(carta.scadenza)
+                saldo.setText(carta.saldo)
+                fotoAttuali = arrayOf(carta.fotoFronte, carta.fotoRetro)
+                mostraAnteprime()
                 casella.isChecked = carta.disposable
                 stella.isChecked = carta.preferita
                 usaEGetta = carta.disposable
@@ -174,11 +253,120 @@ class FormActivity : AppCompatActivity() {
         )
     }
 
+    /**
+     * Il calendario per la scadenza.
+     *
+     * Il campo non si scrive a mano apposta: una data battuta a mano arriva in
+     * dieci formati diversi e il core ne accetta uno solo. Il calendario parte
+     * dalla data che c'e' gia', o da oggi se il campo e' vuoto, e restituisce
+     * sempre "AAAA-MM-GG".
+     */
+    private fun chiediLaData() {
+        val formato = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        val scritta = scadenza.text.toString().trim()
+        val partenza = try {
+            if (scritta.isEmpty()) MaterialDatePicker.todayInUtcMilliseconds()
+            else formato.parse(scritta)?.time ?: MaterialDatePicker.todayInUtcMilliseconds()
+        } catch (guasto: ParseException) {
+            MaterialDatePicker.todayInUtcMilliseconds()
+        }
+
+        val calendario = MaterialDatePicker.Builder.datePicker()
+            .setTitleText(getString(R.string.scadenza))
+            .setSelection(partenza)
+            .build()
+        calendario.addOnPositiveButtonClickListener { quando ->
+            scadenza.setText(formato.format(Date(quando)))
+        }
+        calendario.show(supportFragmentManager, "scadenza")
+    }
+
+    /**
+     * Le tre funzioni delle foto.
+     *
+     * Sceglierne una la tiene in memoria e basta: il nome del file contiene
+     * l'id, e per una carta nuova l'id arriva solo al salvataggio. Toglierla
+     * segna il lato, senza cancellare niente subito: se poi si esce senza
+     * salvare, la foto che c'era deve essere ancora li'.
+     */
+    private fun scegliFoto(lato: Int) {
+        latoInCorso = lato
+        fotoDaGalleria.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+        )
+    }
+
+    private fun prendiLaFoto(immagine: Uri) {
+        val copia = copiaInCache(immagine)
+        val letta = copia?.let { decodificaRidotta(it) }
+        copia?.delete()
+        if (letta == null) {
+            avvisa(getString(R.string.immagine_non_letta))
+            return
+        }
+        fotoNuove[latoInCorso] = Foto.riduci(letta)
+        fotoTolte[latoInCorso] = false
+        mostraAnteprime()
+    }
+
+    private fun togliFoto(lato: Int) {
+        fotoNuove[lato] = null
+        fotoTolte[lato] = true
+        mostraAnteprime()
+    }
+
+    /** Quello che si vede: la foto appena scelta, quella salvata, o niente. */
+    private fun mostraAnteprime() {
+        for (lato in 0..1) {
+            val vista = if (lato == FRONTE) anteprimaFronte else anteprimaRetro
+            val immagine = fotoNuove[lato]
+                ?: if (fotoTolte[lato]) null else Foto.leggi(this, fotoAttuali[lato], 400)
+            if (immagine == null) {
+                vista.setImageDrawable(null)
+                vista.visibility = View.GONE
+            } else {
+                vista.setImageBitmap(immagine)
+                vista.visibility = View.VISIBLE
+            }
+        }
+        bottoneFronte.setText(if (anteprimaFronte.visibility == View.VISIBLE) R.string.togli_foto else R.string.foto_fronte)
+        bottoneRetro.setText(if (anteprimaRetro.visibility == View.VISIBLE) R.string.togli_foto else R.string.foto_retro)
+    }
+
+    /**
+     * Scrive le foto e torna i due nomi da mettere nella carta. Si chiama a
+     * salvataggio fatto, quando l'id c'e' di sicuro.
+     */
+    private fun salvaLeFoto(id: Int): Array<String> {
+        val nomi = fotoAttuali.copyOf()
+        for (lato in 0..1) {
+            val fronte = lato == FRONTE
+            val nuova = fotoNuove[lato]
+            when {
+                nuova != null -> {
+                    val scritta = Foto.salva(this, nuova, id, fronte)
+                    if (scritta != null) {
+                        nomi[lato] = scritta
+                    }
+                }
+                fotoTolte[lato] -> {
+                    Foto.cancella(this, nomi[lato])
+                    nomi[lato] = ""
+                }
+            }
+        }
+        return nomi
+    }
+
     /** Codice letto, da qualunque strada sia arrivato. */
     private fun accetta(letto: String, eraQr: Boolean) {
         codice.setText(letto)
-        qrcode.isChecked = eraQr
-        barcode.isChecked = !eraQr
+        // La simbologia la propone il core guardando il codice: EAN-13 se le
+        // cifre tornano, QR se e' arrivato da un QR, Code 128 per il resto.
+        // Resta un punto di partenza, l'elenco e' li' per cambiarla.
+        simbologia.setSelection(Core.simbologiaIndovinata(letto, eraQr))
         errore.text = ""
     }
 
@@ -192,15 +380,54 @@ class FormActivity : AppCompatActivity() {
      * tessera fotografata da lontano la riduzione porta le barre a due pixel e
      * il lettore si ferma.
      */
+    /**
+     * Il PDF: la prima pagina diventa un'immagine e poi segue la strada di
+     * sempre.
+     *
+     * Le tessere in PDF arrivano dalle email dei negozi e dai biglietti, e
+     * hanno il codice su una pagina sola. Si rende a 2000 pixel di lato: sotto,
+     * le barre sottili si impastano e il lettore non le riconosce.
+     */
+    private fun bitmapDaPdf(copia: File): Bitmap? = try {
+        ParcelFileDescriptor.open(copia, ParcelFileDescriptor.MODE_READ_ONLY).use { presa ->
+            PdfRenderer(presa).use { lettore ->
+                if (lettore.pageCount < 1) {
+                    null
+                } else {
+                    lettore.openPage(0).use { pagina ->
+                        val scala = 2000f / maxOf(pagina.width, pagina.height).toFloat()
+                        val larghezza = (pagina.width * scala).toInt().coerceAtLeast(1)
+                        val altezza = (pagina.height * scala).toInt().coerceAtLeast(1)
+                        val foglio = Bitmap.createBitmap(larghezza, altezza, Bitmap.Config.ARGB_8888)
+                        // Il PDF disegna solo quello che c'e': il fondo bianco
+                        // lo mettiamo noi, altrimenti resta trasparente e il
+                        // lettore di codici vede nero su nero.
+                        Canvas(foglio).drawColor(Color.WHITE)
+                        pagina.render(foglio, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        foglio
+                    }
+                }
+            }
+        }
+    } catch (guasto: Exception) {
+        null
+    }
+
     private fun leggiDaImmagine(immagine: Uri, senzaRidurre: Boolean = false) {
         val lettore = BarcodeScanning.getClient()
         val copia = copiaInCache(immagine)
+        // Un PDF non si decodifica come immagine: prima si rende la pagina.
+        val eUnPdf = copia != null && contentResolver.getType(immagine) == "application/pdf"
         val bitmap = copia?.let {
-            if (senzaRidurre) decodificaPiena(it) else decodificaRidotta(it)
+            when {
+                eUnPdf -> bitmapDaPdf(it)
+                senzaRidurre -> decodificaPiena(it)
+                else -> decodificaRidotta(it)
+            }
         }
         try {
             val ingresso = if (copia != null && bitmap != null) {
-                InputImage.fromBitmap(bitmap, rotazione(copia))
+                InputImage.fromBitmap(bitmap, if (eUnPdf) 0 else rotazione(copia))
             } else {
                 InputImage.fromFilePath(this, immagine)
             }
@@ -209,7 +436,7 @@ class FormActivity : AppCompatActivity() {
                     val primo = codici.firstOrNull { !it.rawValue.isNullOrEmpty() }
                     if (primo != null) {
                         accetta(primo.rawValue!!, primo.format == Barcode.FORMAT_QR_CODE)
-                    } else if (!senzaRidurre && copia != null && bitmap != null) {
+                    } else if (!senzaRidurre && !eUnPdf && copia != null && bitmap != null) {
                         leggiDaImmagine(immagine, senzaRidurre = true)
                     } else {
                         avvisa(getString(R.string.nessun_codice_nell_immagine))
@@ -362,7 +589,19 @@ class FormActivity : AppCompatActivity() {
             return
         }
 
-        val isQr = qrcode.isChecked
+        val scelta = simbologia.selectedItemPosition
+        val isQr = Simbologie.eQuadrato(scelta)
+        val quandoScade = scadenza.text.toString().trim()
+        // La data la controlla anche il core, che rifiuta la carta: qui si
+        // guarda prima, per dirlo con parole nostre invece che con
+        // un'eccezione, e per non salvare niente a meta'.
+        val dataScritta = quandoScade.length == 10 &&
+            quandoScade[4] == '-' && quandoScade[7] == '-' &&
+            quandoScade.filterIndexed { i, _ -> i != 4 && i != 7 }.all { it.isDigit() }
+        if (quandoScade.isNotEmpty() && !dataScritta) {
+            errore.text = getString(R.string.scadenza_non_valida)
+            return
+        }
         val colore = coloreScelto ?: ""
         val disposable = casella.isChecked
         val preferita = stella.isChecked
@@ -379,6 +618,17 @@ class FormActivity : AppCompatActivity() {
                     id
                 }
                 Core.setPreferita(quale, preferita)
+                // Anche la simbologia si scrive a parte: insert e update sanno
+                // dire solo QR o non QR, e una carta Aztec tornerebbe Code 128.
+                Core.setSimbologia(quale, scelta)
+                Core.setDettagli(
+                    quale,
+                    nota.text.toString().trim(),
+                    quandoScade,
+                    saldo.text.toString().trim(),
+                )
+                val nomiFoto = salvaLeFoto(quale)
+                Core.setFoto(quale, nomiFoto[FRONTE], nomiFoto[RETRO])
             },
             {
                 setResult(Activity.RESULT_OK)
@@ -402,7 +652,12 @@ class FormActivity : AppCompatActivity() {
             .setNegativeButton(R.string.annulla, null)
             .setPositiveButton(R.string.elimina) { _, _ ->
                 Dati.fai(
-                    { Core.delete(id) },
+                    {
+                        Core.delete(id)
+                        // I file delle foto non li guarderebbe piu' nessuno:
+                        // restare li' vorrebbe dire occupare spazio per sempre.
+                        Foto.cancellaDiCarta(this, id)
+                    },
                     {
                         setResult(
                             Activity.RESULT_OK,

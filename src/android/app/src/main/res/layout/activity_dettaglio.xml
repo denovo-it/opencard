@@ -41,14 +41,23 @@
         </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <LinearLayout
+    <!-- La schermata scorre da quando la carta puo' avere due foto: il codice
+         piu' i dettagli piu' fronte e retro non stanno in uno schermo. Con
+         fillViewport la carta senza foto resta centrata come prima. -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/white"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="24dp"
+        android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:minHeight="0dp"
+        android:orientation="vertical"
+        android:padding="24dp">
 
         <!-- Il numero sta attaccato al codice, non in fondo allo schermo: si
              leggono insieme, e alla cassa serve confrontarli a colpo d'occhio. -->
@@ -70,5 +79,69 @@
             android:letterSpacing="0.05"
             android:textColor="@color/ink"
             android:textSize="20sp" />
+
+        <!-- I campi della 1.0.3. Chi non li compila non se li vede: restano
+             invisibili finché non hanno qualcosa dentro, così la carta di chi
+             usa l'app come prima non cambia di una riga. -->
+        <TextView
+            android:id="@+id/dettagli"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:lineSpacingExtra="4sp"
+            android:textColor="@color/muted"
+            android:textSize="15sp"
+            android:visibility="gone" />
+
+        <!-- Fronte e retro nello stesso spazio: si passa da una all'altra
+             scorrendo di lato, come si gira una tessera in mano. Sotto c'e'
+             scritto quale si sta guardando, che con due sole facce dice piu'
+             di due pallini. Senza foto sparisce tutto. -->
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/foto"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:layout_marginTop="20dp"
+            android:visibility="gone" />
+
+        <!-- Sotto le foto: le due frecce dicono che di lato c'e' altro, e si
+             toccano per girare la tessera senza scorrere. Con una foto sola
+             spariscono e resta il nome del lato. -->
+        <LinearLayout
+            android:id="@+id/riga_foto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/foto_indietro"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/foto_fronte"
+                android:src="@drawable/ic_freccia_sinistra" />
+
+            <TextView
+                android:id="@+id/foto_lato"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="120dp"
+                android:textAlignment="center"
+                android:textColor="@color/muted"
+                android:textSize="13sp" />
+
+            <ImageButton
+                android:id="@+id/foto_avanti"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/foto_retro"
+                android:src="@drawable/ic_freccia_destra" />
+        </LinearLayout>
     </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

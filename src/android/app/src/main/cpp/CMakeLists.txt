@@ -23,7 +23,9 @@ add_library(opencardcore SHARED
     "${CORE_DIR}/store.c"
     "${CORE_DIR}/backup.c"
     "${CORE_DIR}/transfer.c"
+    "${CORE_DIR}/cripto.c"
     "${CORE_DIR}/third-party/cJSON.c"
+    "${CORE_DIR}/third-party/monocypher/monocypher.c"
     ${ZINT_SORGENTI}
 )
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- La foto a schermo pieno su fondo nero: due dita la ingrandiscono, un dito
+     la sposta, il doppio tocco fa andata e ritorno. Si chiude con Indietro. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <srl.denovo.opencard.VistaZoom
+        android:id="@+id/foto_grande"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/foto_fronte" />
+</FrameLayout>

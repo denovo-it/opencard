@@ -29,6 +29,7 @@ object Librerie {
     /** (nome, licenza, indirizzo) */
     val NATIVE = listOf(
         Triple("zint", "BSD 3-Clause", "https://www.zint.org.uk"),
+        Triple("Monocypher", "BSD 2-Clause o CC0", "https://monocypher.org"),
         Triple("cJSON", "MIT", "https://github.com/DaveGamble/cJSON"),
     )
 

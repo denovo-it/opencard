@@ -93,25 +93,14 @@
                 android:textColor="@color/muted"
                 android:textSize="13sp" />
 
-            <RadioGroup
+            <!-- Dalla 1.0.3 le simbologie sono diciotto e non due: un elenco a
+                 tendina al posto dei due bottoni. Quella giusta la propone
+                 l'app guardando il codice, e si cambia solo se serve. -->
+            <Spinner
+                android:id="@+id/simbologia"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:id="@+id/tipo_barcode"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="@string/barcode" />
-
-                <RadioButton
-                    android:id="@+id/tipo_qrcode"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="24dp"
-                    android:text="@string/qrcode" />
-            </RadioGroup>
+                android:minHeight="48dp" />
 
             <!-- I tre modi di prendere il codice, stesso peso e stessa riga:
                  dal vivo, da una foto della galleria, da un file. -->
@@ -166,6 +155,123 @@
                     android:orientation="horizontal"
                     android:paddingVertical="8dp" />
             </HorizontalScrollView>
+
+            <!-- I tre campi della 1.0.3. Restano vuoti finché non servono: la
+                 nota si allarga fino a quattro righe, la scadenza vuole la
+                 data scritta come aaaa-mm-gg, il saldo è testo libero perché
+                 c'è chi conta punti e chi conta euro. -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="@string/nota">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/nota"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:maxLength="500"
+                    android:maxLines="4" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:id="@+id/riquadro_scadenza"
+                android:hint="@string/scadenza"
+                app:endIconContentDescription="@string/annulla"
+                app:endIconDrawable="@drawable/ic_chiudi"
+                app:endIconMode="custom">
+
+                <!-- Non si scrive a mano: si tocca e si apre il calendario, cosi'
+                     la data e' sempre nel formato che il core accetta. La X in
+                     fondo la svuota. -->
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/scadenza"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:cursorVisible="false"
+                    android:focusable="false"
+                    android:inputType="none"
+                    android:longClickable="false" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="@string/saldo">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/saldo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:maxLength="30" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Le due foto della carta. Il riquadro si tocca per sceglierne
+                 una, la X la toglie. Vuote non si vedono: restano due bottoni
+                 piatti con il nome del lato. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/foto_fronte"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/foto_fronte" />
+
+                    <ImageView
+                        android:id="@+id/anteprima_fronte"
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        android:layout_marginTop="4dp"
+                        android:adjustViewBounds="true"
+                        android:contentDescription="@string/foto_fronte"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/foto_retro"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/foto_retro" />
+
+                    <ImageView
+                        android:id="@+id/anteprima_retro"
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        android:layout_marginTop="4dp"
+                        android:adjustViewBounds="true"
+                        android:contentDescription="@string/foto_retro"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
 
             <com.google.android.material.checkbox.MaterialCheckBox
                 android:id="@+id/usa_e_getta"

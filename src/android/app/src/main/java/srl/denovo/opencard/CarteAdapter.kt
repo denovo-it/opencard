@@ -59,7 +59,10 @@ class CarteAdapter(
         riquadro.nome.text = carta.label
         riquadro.scheda.setCardBackgroundColor(coloreCarta(carta.colore))
         riquadro.glifo.setImageResource(
-            if (carta.isQrcode) R.drawable.ic_qrcode else R.drawable.ic_barcode
+            // Due icone per diciotto simbologie: quello che conta e' se il
+            // codice e' un quadrato o una fila di barre.
+            if (Simbologie.eQuadrato(carta.simbologia)) R.drawable.ic_qrcode
+            else R.drawable.ic_barcode
         )
         riquadro.cestino.visibility = if (conCestino) View.VISIBLE else View.GONE
         riquadro.cestino.setOnClickListener { suCestino(carta) }

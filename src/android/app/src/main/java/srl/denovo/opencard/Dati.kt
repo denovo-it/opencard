@@ -36,6 +36,33 @@ object Dati {
     fun apri(contesto: Context) {
         recuperaDatiEsistenti(contesto)
         Core.storeInit(contesto.filesDir.absolutePath)
+        // La chiave prima di qualsiasi lettura: un file cifrato senza chiave
+        // non si apre, e senza questa riga l'app direbbe che il file è rotto.
+        // Se il portachiavi non risponde si va avanti in chiaro, come prima:
+        // meglio un file leggibile che un'app che non si apre.
+        Core.storeChiave(ChiaveDati.dammi(contesto))
+        ripristinaDalCloud(contesto)
+    }
+
+    /**
+     * Le carte arrivate con il backup del telefono, se ce ne sono.
+     *
+     * Il ripristino del sistema avviene prima che l'app venga aperta, e lascia
+     * in `filesDir` il JSON scritto da [BackupNelCloud]. Qui si importa e si
+     * cancella: da quel momento le carte stanno nel file dell'app, cifrate con
+     * la chiave di questo telefono.
+     */
+    private fun ripristinaDalCloud(contesto: Context) {
+        val arrivato = File(contesto.filesDir, BackupNelCloud.DA_RIPRISTINARE)
+        if (!arrivato.exists()) return
+        try {
+            Core.backupRipristina(arrivato.readBytes())
+        } catch (guasto: Exception) {
+            // Se il file è rotto non si insiste: le carte non ci sono e
+            // l'app parte vuota, che è quello che succedeva prima.
+        } finally {
+            arrivato.delete()
+        }
     }
 
     /**

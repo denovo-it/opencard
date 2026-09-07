@@ -28,12 +28,15 @@ android {
 
     defaultConfig {
         applicationId = "srl.denovo.opencard"
-        minSdk = 24
+        // Android 6: sotto ci sono numeri di installazioni trascurabili, ma la
+        // soglia la teneva solo android.media.ExifInterface. Con la versione
+        // AndroidX si scende senza toccare altro.
+        minSdk = 23
         targetSdk = 36
 
         // Formato YYYYMMDDnn: nn è il progressivo della giornata. Deve solo
         // crescere, e a colpo d'occhio dice quando è stata costruita.
-        versionCode = 2026083101
+        versionCode = 2026090713
         // Il suffisso -dev dice che è una build di lavorazione: sparisce nel
         // commit che chiude la 1.0.3. Su iOS non si può, App Store Connect
         // vuole solo cifre e punti, quindi lì il numero è già 1.0.3.
@@ -134,6 +137,23 @@ androidComponents {
     }
 }
 
+// Le stringhe stanno una volta sola in src/lingue/<lingua>.json, e da lì
+// escono i file di Android e quelli di iPhone (src/lingue/genera.py). Qui non
+// si genera niente: si controlla soltanto che i file versionati corrispondano
+// ai JSON. Serve perché res/values è una cartella dove viene naturale scrivere
+// a mano, e una modifica fatta lì sparirebbe in silenzio alla prima
+// rigenerazione. Meglio che si fermi la compilazione adesso.
+val controllaLingue = tasks.register<Exec>("controllaLingue") {
+    workingDir = file("../../..")
+    commandLine("python3", "src/lingue/genera.py", "--controlla")
+    inputs.dir("../../../src/lingue").withPropertyName("lingue")
+    inputs.dir("src/main/res").withPropertyName("risorse")
+}
+
+tasks.named("preBuild") {
+    dependsOn(controllaLingue)
+}
+
 // L'APK non si costruisce più: dal 14 agosto 2026 si distribuisce solo dal Play
 // Store, e l'artefatto è il .aab di build/bundle-play.sh. Un APK accanto al
 // bundle serve solo a far caricare in console qualcosa di diverso da quello che
@@ -144,6 +164,9 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.viewpager2:viewpager2:1.1.0")
     implementation("com.google.android.material:material:1.12.0")
+    // Legge l'orientamento EXIF anche prima della 24, e su più formati
+    // di quella di sistema.
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 
     val camerax = "1.5.0"
     implementation("androidx.camera:camera-core:$camerax")

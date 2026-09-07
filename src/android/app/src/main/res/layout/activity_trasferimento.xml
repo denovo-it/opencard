@@ -99,6 +99,17 @@
                 android:textColor="@color/muted"
                 android:textSize="14sp" />
 
+            <!-- I codici su carta: per chi non ha il secondo telefono davanti
+                 adesso, o vuole tenerli da parte. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/salva_qr"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:text="@string/qr_su_file" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

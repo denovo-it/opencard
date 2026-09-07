@@ -23,7 +23,31 @@ data class Carta(
     val disposable: Boolean,
     /** Preferita: compare anche nella scheda con la stella. */
     val preferita: Boolean,
+    /** Quale codice è: l'indice vale quanto l'enum del core, vedi [Simbologie]. */
+    val simbologia: Int,
+    val note: String,
+    /** "AAAA-MM-GG", oppure vuota. */
+    val scadenza: String,
+    val saldo: String,
+    /** Nome del file, non il percorso: le foto stanno in una cartella a parte. */
+    val fotoFronte: String,
+    val fotoRetro: String,
 )
+
+/**
+ * I nomi delle simbologie come si scrivono in elenco. L'ordine è quello
+ * dell'enum del core: la posizione è il valore, quindi non si riordina.
+ */
+object Simbologie {
+    val nomi = listOf(
+        "Code 128", "QR code", "Aztec", "Codabar", "Code 39", "Code 93",
+        "Data Matrix", "EAN-8", "EAN-13", "ITF", "PDF417", "UPC-A", "UPC-E",
+        "Micro QR", "GS1-128", "GS1 DataBar", "DataBar Expanded", "MSI Plessey",
+    )
+
+    /** Vero per le due che si disegnano come quadrato e non come barre. */
+    fun eQuadrato(simbologia: Int) = simbologia == 1 || simbologia == 13
+}
 
 /** Immagine di un codice, come esce dal core: pixel ARGB. */
 class ImmagineCodice(val larghezza: Int, val altezza: Int, val pixel: IntArray) {
@@ -53,6 +77,13 @@ object Core {
     }
 
     @JvmStatic external fun storeInit(directory: String)
+
+    /**
+     * La chiave con cui il file delle carte sta cifrato sul telefono, 32 byte.
+     * Va data subito dopo [storeInit] e prima di leggere qualsiasi cosa.
+     * Null la toglie, e il file torna a scriversi in chiaro.
+     */
+    @JvmStatic external fun storeChiave(chiave: ByteArray?)
     @JvmStatic external fun isFirstRun(): Boolean
     @JvmStatic external fun markFirstRunDone()
 
@@ -77,7 +108,29 @@ object Core {
         colore: String, disposable: Boolean,
     )
 
+    /** Cambia la simbologia e basta: la carta resta com'è. */
+    @JvmStatic external fun setSimbologia(id: Int, simbologia: Int)
+
+    /**
+     * Note, scadenza e saldo. Stringa vuota svuota il campo; la scadenza vuole
+     * "AAAA-MM-GG" e qualsiasi altra cosa fa fallire la chiamata senza
+     * scrivere niente.
+     */
+    @JvmStatic external fun setDettagli(id: Int, note: String, scadenza: String, saldo: String)
+
+    /** I nomi dei file delle due foto. I file li scrive e li cancella la UI. */
+    @JvmStatic external fun setFoto(id: Int, fronte: String, retro: String)
+
+    /** Il codice disegnato con la simbologia scelta, non con quella indovinata. */
+    @JvmStatic external fun renderCodeSimbologia(code: String, simbologia: Int): ImmagineCodice
+
+    /** Quale simbologia proporre per un codice appena letto o scritto. */
+    @JvmStatic external fun simbologiaIndovinata(code: String, isQrcode: Boolean): Int
+
     @JvmStatic external fun delete(id: Int)
+
+    /** Cancella tutte le carte in una scrittura sola. Le foto le toglie la UI. */
+    @JvmStatic external fun azzeraTutto()
     @JvmStatic external fun reorder(disposable: Boolean, ids: IntArray)
 
     @JvmStatic external fun colorForId(id: Int): String
@@ -92,6 +145,30 @@ object Core {
 
     /** Legge un backup e lo applica. Restituisce quante carte sono entrate. */
     @JvmStatic external fun backupRipristina(dati: ByteArray): Int
+
+    /**
+     * Il backup chiuso con una password. Password vuota non si accetta: la
+     * scelta di cifrare o no la fa l'interfaccia, non il core.
+     */
+    @JvmStatic external fun backupEsportaCifrato(quando: String, password: String): ByteArray
+
+    /** Vero se il file letto è un backup cifrato: serve per sapere se chiedere la password. */
+    @JvmStatic external fun backupCifrato(dati: ByteArray): Boolean
+
+    /**
+     * Ripristina da un file che può essere in chiaro o cifrato. Password vuota
+     * per i file in chiaro. Torna quante carte sono entrate.
+     */
+    @JvmStatic external fun backupRipristinaFile(dati: ByteArray, password: String): Int
+
+    /**
+     * Cifra e decifra un pacchetto qualsiasi con la stessa cassaforte del
+     * backup. Servono allo ZIP: dentro ci sono le foto, quindi si chiude tutto
+     * l'archivio invece del solo elenco delle carte.
+     */
+    @JvmStatic external fun backupCifra(dati: ByteArray, password: String): ByteArray
+
+    @JvmStatic external fun backupDecifra(dati: ByteArray, password: String): ByteArray
 
     /* Passaggio delle carte fra due telefoni con i QR. Il formato e il perché
      * delle scelte stanno in src/transfer.h. */

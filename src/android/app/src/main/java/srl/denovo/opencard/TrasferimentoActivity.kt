@@ -8,6 +8,11 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.pdf.PdfDocument
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -107,6 +112,67 @@ class TrasferimentoActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
+    private val salvaCodici = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/pdf")
+    ) { destinazione -> if (destinazione != null) scriviCodici(destinazione) }
+
+    /**
+     * I codici su un PDF, uno per pagina.
+     *
+     * Serve a chi non ha l'altro telefono davanti adesso: si stampa o si tiene
+     * il file, e il passaggio si fa quando capita, inquadrando le pagine.
+     *
+     * Un PDF e non tante immagini perche' i codici vanno letti in fila e nel
+     * loro ordine: file separati si mescolano, e chi riceve non se ne accorge
+     * finche' il pacchetto non torna.
+     */
+    private fun scriviCodici(destinazione: Uri) {
+        if (immagini.isEmpty()) {
+            return
+        }
+        Dati.fai(
+            {
+                val documento = PdfDocument()
+                immagini.forEachIndexed { quale, codice ->
+                    // A4 in punti, la misura che tutti stampano.
+                    val pagina = documento.startPage(
+                        PdfDocument.PageInfo.Builder(595, 842, quale + 1).create()
+                    )
+                    val lato = 595 - 80
+                    val scala = lato.toFloat() / maxOf(codice.width, codice.height)
+                    val largo = (codice.width * scala).toInt()
+                    val alto = (codice.height * scala).toInt()
+                    pagina.canvas.drawColor(Color.WHITE)
+                    pagina.canvas.drawBitmap(
+                        codice,
+                        null,
+                        Rect((595 - largo) / 2, (842 - alto) / 2,
+                             (595 + largo) / 2, (842 + alto) / 2),
+                        null,
+                    )
+                    val etichetta = Paint().apply {
+                        color = Color.DKGRAY
+                        textSize = 14f
+                        textAlign = Paint.Align.CENTER
+                    }
+                    // Il numero sul foglio: chi le stampa deve poterle
+                    // rimettere in ordine se gli cadono di mano.
+                    pagina.canvas.drawText(
+                        getString(R.string.trasferimento_pezzo, quale + 1, immagini.size),
+                        297f, 800f, etichetta,
+                    )
+                    documento.finishPage(pagina)
+                }
+                contentResolver.openOutputStream(destinazione)?.use { documento.writeTo(it) }
+                documento.close()
+            },
+            {
+                avvisa(getString(R.string.qr_salvato))
+            },
+            { messaggio -> avvisa(messaggio) },
+        )
+    }
+
     private fun preparaCodici() {
         Dati.chiedi(
             {
@@ -125,6 +191,10 @@ class TrasferimentoActivity : AppCompatActivity() {
                 mostrato = 0
                 findViewById<View>(R.id.scelta).visibility = View.GONE
                 findViewById<View>(R.id.vetrina).visibility = View.VISIBLE
+                findViewById<View>(R.id.salva_qr).setOnClickListener {
+                    salvaCodici.launch(Core.backupNome(Core.oggi())
+                        .removeSuffix(".json") + "-codici.pdf")
+                }
                 alMassimoLaLuminosita()
                 disegnaCodice()
                 if (immagini.size > 1) {

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Le lingue in cui l'app esiste. Android la legge per far comparire OpenCard
+     fra le app a cui si può cambiare lingua dalle impostazioni di sistema, e
+     AppCompat la usa per il selettore dentro l'app. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="it" />
+</locale-config>

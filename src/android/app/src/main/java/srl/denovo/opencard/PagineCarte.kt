@@ -39,6 +39,24 @@ class PagineCarte(
     var conPreferite = false
         private set
 
+    /** E la stessa regola vale per l'usa e getta: senza carte, senza scheda. */
+    var conUsaEGetta = false
+        private set
+
+    /**
+     * Le schede che ci sono adesso, nell'ordine in cui si vedono.
+     *
+     * Tenere qui l'ordine invece di calcolarlo caso per caso evita la trappola
+     * di prima: con due schede facoltative le combinazioni sono quattro, e una
+     * catena di `if` sbaglia sempre in quella che non si prova.
+     */
+    private val ordine: List<Int>
+        get() = buildList {
+            if (conPreferite) add(PREFERITE)
+            add(CARTE)
+            if (conUsaEGetta) add(USA_E_GETTA)
+        }
+
     companion object {
         const val CARTE = 0
         const val USA_E_GETTA = 1
@@ -53,18 +71,10 @@ class PagineCarte(
      * stella compare o sparisce, e per questo nessuno deve ragionare per numero
      * di pagina: si ragiona per tipo.
      */
-    fun tipoDi(posizione: Int): Int = when {
-        conPreferite && posizione == 0 -> PREFERITE
-        conPreferite -> if (posizione == 1) CARTE else USA_E_GETTA
-        else -> if (posizione == 0) CARTE else USA_E_GETTA
-    }
+    fun tipoDi(posizione: Int): Int = ordine.getOrElse(posizione) { CARTE }
 
     /** Dove sta adesso un tipo di scheda, -1 se non c'è. */
-    fun posizioneDi(tipo: Int): Int = when (tipo) {
-        PREFERITE -> if (conPreferite) 0 else -1
-        CARTE -> if (conPreferite) 1 else 0
-        else -> if (conPreferite) 2 else 1
-    }
+    fun posizioneDi(tipo: Int): Int = ordine.indexOf(tipo)
 
     inner class Pagina(vista: View) : RecyclerView.ViewHolder(vista) {
         val lista: RecyclerView = vista.findViewById(R.id.lista)
@@ -79,12 +89,18 @@ class PagineCarte(
         var presa: ItemTouchHelper? = null
     }
 
-    override fun getItemCount() = if (conPreferite) 3 else 2
+    override fun getItemCount() = ordine.size
 
-    /** Da chiamare prima di [ricarica]. Vero se il numero di schede cambia. */
-    fun mostraPreferite(mostra: Boolean): Boolean {
-        if (conPreferite == mostra) return false
-        conPreferite = mostra
+    /**
+     * Da chiamare prima di [ricarica]. Vero se le schede cambiano di numero,
+     * cioè se chi guarda si ritroverebbe su una pagina diversa.
+     */
+    fun mostraSchede(preferite: Boolean, usaEGetta: Boolean): Boolean {
+        if (conPreferite == preferite && conUsaEGetta == usaEGetta) {
+            return false
+        }
+        conPreferite = preferite
+        conUsaEGetta = usaEGetta
         return true
     }
 

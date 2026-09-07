@@ -15,18 +15,23 @@
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 
-    <!-- allowBackup="false": le carte non vanno nel backup automatico verso il
-         cloud di Google. Su iPhone la scelta è l'opposta, il file rientra nel
-         backup di iCloud, e la privacy policy su denovo.srl dichiara tutte e
-         due le cose. Chi cambia telefono Android porta le carte con il backup
-         su file o con il passaggio a QR. -->
+    <!-- Il backup verso il cloud di Google lo decide chi usa l'app, da
+         Impostazioni, e di partenza è spento. Cosa esce lo stabilisce
+         BackupNelCloud, non queste righe: senza interruttore acceso il sistema
+         chiama l'agente e l'agente non gli dà niente. fullBackupOnly perché il
+         backup a chiave e valore qui non serve. Su iPhone la scelta di
+         partenza è l'opposta, e la privacy policy su denovo.srl dichiara tutte
+         e due le cose. -->
     <application
         android:name=".Applicazione"
-        android:allowBackup="false"
+        android:allowBackup="true"
+        android:backupAgent=".BackupNelCloud"
+        android:fullBackupOnly="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Tema.OpenCard">
+        android:theme="@style/Tema.OpenCard"
+        android:localeConfig="@xml/locales_config">
 
         <activity
             android:name=".SplashActivity"
@@ -39,10 +44,26 @@
 
         <activity android:name=".MainActivity" />
 
+        <!-- La foto a schermo pieno: si apre dalla schermata della carta. -->
+        <activity android:name=".FotoActivity" android:exported="false" android:parentActivityName=".DettaglioActivity" />
+
         <activity android:name=".DettaglioActivity" android:parentActivityName=".MainActivity" />
         <activity android:name=".FormActivity" android:parentActivityName=".MainActivity" />
         <activity android:name=".ScannerActivity" android:parentActivityName=".FormActivity" />
         <activity android:name=".TrasferimentoActivity" android:parentActivityName=".MainActivity" />
         <activity android:name=".InfoActivity" android:parentActivityName=".MainActivity" />
+        <activity android:name=".ImpostazioniActivity" android:parentActivityName=".MainActivity" />
+
+        <!-- Prima di Android 13 la lingua scelta la ricorda AppCompat, e per
+             ricordarla vuole questo servizio dichiarato. Non gira mai: e'
+             solo il posto dove sta scritto "autoStoreLocales". -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
     </application>
 </manifest>

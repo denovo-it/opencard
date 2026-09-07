@@ -9,8 +9,12 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.annotation.SuppressLint
+import android.text.InputType
 import android.view.Menu
+import android.view.View
 import android.view.MenuItem
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -69,9 +73,86 @@ class MainActivity : AppCompatActivity() {
         if (destinazione != null) scriviBackup(destinazione) else avvisa(getString(R.string.backup_annullato))
     }
 
+    /** Il file cifrato non e' JSON: si salva col suo tipo e la sua estensione. */
+    private val salvaBackupCifrato = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { destinazione ->
+        if (destinazione != null) scriviBackup(destinazione) else avvisa(getString(R.string.backup_annullato))
+    }
+
     private val scegliBackup = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { sorgente -> if (sorgente != null) confermaRipristino(sorgente) }
+
+    /** La password scelta per l'esportazione in corso. Vuota vuol dire in chiaro. */
+    private var passwordBackup = ""
+
+    /** Vero se l'esportazione in corso è in CSV invece che in archivio. */
+    private var esportaCsv = false
+
+    /**
+     * Archivio o CSV.
+     *
+     * L'archivio è il modo di casa e porta tutto, foto comprese. Il CSV serve
+     * per uscire: è il formato che leggono le altre app, e chi esporta per
+     * andarsene deve poterlo fare senza chiedere il permesso a nessuno. Nel
+     * CSV non ci stanno le foto, e la domanda lo dice.
+     */
+    private fun chiediFormato(poi: (Boolean) -> Unit) {
+        val scelte = arrayOf(
+            getString(R.string.esporta_archivio),
+            getString(R.string.esporta_csv),
+        )
+        AlertDialog.Builder(this)
+            .setTitle(R.string.esporta_come)
+            .setItems(scelte) { _, quale -> poi(quale == 1) }
+            .setNegativeButton(R.string.annulla, null)
+            .show()
+    }
+
+    /**
+     * Chiede una password, o la conferma di non metterne.
+     *
+     * Si usa in tutti e due i sensi: quando si esporta, dove lasciare vuoto e'
+     * legittimo e vuol dire file leggibile; e quando si apre un file cifrato,
+     * dove vuoto non va bene.
+     */
+    private fun chiediPassword(
+        titolo: Int,
+        spiega: Int,
+        vuotoAmmesso: Boolean,
+        bottone: Int,
+        poi: (String) -> Unit,
+    ) {
+        val campo = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            hint = getString(R.string.password)
+        }
+        val riquadro = FrameLayout(this).apply {
+            val bordo = (24 * resources.displayMetrics.density).toInt()
+            setPadding(bordo, bordo / 2, bordo, 0)
+            addView(campo)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(titolo)
+            .setMessage(spiega)
+            .setView(riquadro)
+            .setNegativeButton(R.string.annulla, null)
+            .apply {
+                if (vuotoAmmesso) {
+                    setNeutralButton(R.string.senza_password) { _, _ -> poi("") }
+                }
+            }
+            .setPositiveButton(bottone) { _, _ ->
+                val scritta = campo.text.toString()
+                if (scritta.isEmpty() && !vuotoAmmesso) {
+                    avvisa(getString(R.string.password_apri_spiega))
+                } else {
+                    poi(scritta)
+                }
+            }
+            .show()
+    }
 
     override fun onCreate(statoSalvato: Bundle?) {
         super.onCreate(statoSalvato)
@@ -165,22 +246,42 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    /**
+     * La lingua dell'app, scelta a mano.
+     *
+     * Di serie la decide il telefono, ed e' quello che vuole quasi tutti. Ma
+     * chi ha il telefono in una lingua e preferisce l'app in un'altra, o chi
+     * vuole leggere l'inglese pur avendo il telefono in italiano, da qui puo'
+     * farlo senza cambiare le impostazioni di sistema.
+     *
+     * Se la sceglie AppCompat, che da Android 13 in su la passa al sistema e
+     * prima se la ricorda da sola: in tutti e due i casi resta dopo il
+     * riavvio, e le schermate si ridisegnano subito.
+     *
+     * In elenco ci sono le sigle, IT e EN, e non si traducono: due lettere si
+     * riconoscono anche se l'app sta parlando una lingua che non si capisce,
+     * che e' esattamente il momento in cui questo menu serve.
+     */
     private fun apri(intento: Intent) = apriForm.launch(intento)
 
     /**
-     * Ricarica le liste e decide se la scheda con la stella ci deve essere.
+     * Ricarica le liste e decide quali schede facoltative ci devono essere.
      *
-     * Quando la scheda compare o sparisce le altre si spostano di posto: chi
+     * Sono due, la stella e l'usa e getta, e valgono la stessa regola: senza
+     * carte dentro, la scheda non si mostra. Una scheda vuota occupa spazio in
+     * cima allo schermo e non serve a niente.
+     *
+     * Quando una scheda compare o sparisce le altre si spostano di posto: chi
      * stava guardando una scheda deve restare su quella, non trovarsi
      * all'improvviso su un'altra. Per questo ci si segna il tipo prima e si
      * ritorna lì dopo.
      */
     private fun ricarica() {
         Dati.chiedi(
-            { Core.getPreferite().isNotEmpty() },
-            { ce ->
+            { Core.getPreferite().isNotEmpty() to Core.getGruppo(true).isNotEmpty() },
+            { (ce, ceUsaEGetta) ->
                 val guardava = carte.tipoDi(pagine.currentItem)
-                if (carte.mostraPreferite(ce)) {
+                if (carte.mostraSchede(ce, ceUsaEGetta)) {
                     // Prima si torna a una posizione che esiste anche dopo, poi
                     // si cambia il numero di schede.
                     pagine.setCurrentItem(0, false)
@@ -190,6 +291,11 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     carte.ricarica()
                 }
+                // Una scheda sola non e' una scheda: non c'e' niente fra cui
+                // scegliere, e la fila in cima allo schermo diventa un
+                // ornamento. Sparisce, e con essa la barra all'apertura di chi
+                // non ha ancora nessuna carta.
+                schede.visibility = if (carte.itemCount > 1) View.VISIBLE else View.GONE
                 apriSullaStella(ce)
             },
             {
@@ -266,6 +372,14 @@ class MainActivity : AppCompatActivity() {
             apri(TrasferimentoActivity.intent(this))
             true
         }
+        R.id.azzera -> {
+            confermaAzzeramento()
+            true
+        }
+        R.id.impostazioni -> {
+            startActivity(Intent(this, ImpostazioniActivity::class.java))
+            true
+        }
         R.id.esci -> {
             chiediUscita { finishAffinity() }
             true
@@ -286,7 +400,26 @@ class MainActivity : AppCompatActivity() {
                 if (quante == 0) {
                     avvisa(getString(R.string.niente_da_esportare))
                 } else {
-                    salvaBackup.launch(Core.backupNome(Core.oggi()))
+                    chiediFormato { csv ->
+                    esportaCsv = csv
+                    chiediPassword(
+                        R.string.password_esporta_titolo,
+                        R.string.password_esporta_spiega,
+                        vuotoAmmesso = true,
+                        bottone = R.string.salva,
+                    ) { password ->
+                        passwordBackup = password
+                        val nome = Core.backupNome(Core.oggi()).removeSuffix(".json")
+                        // Un archivio si chiama .zip, e uno chiuso con la
+                        // password .opencard: l'estensione deve dire cosa
+                        // trova chi apre il file, non cosa c'e' dentro.
+                        if (password.isEmpty()) {
+                            salvaBackupCifrato.launch(nome + if (csv) ".csv" else ".zip")
+                        } else {
+                            salvaBackupCifrato.launch("$nome.opencard")
+                        }
+                    }
+                    }
                 }
             },
             { avvisa(it) },
@@ -294,12 +427,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun scriviBackup(destinazione: Uri) {
+        val password = passwordBackup
         Dati.chiedi(
-            { Core.backupEsporta(Core.adesso()) },
-            { testo ->
+            {
+                // Dentro l'archivio vanno l'elenco e le foto. La password
+                // chiude l'archivio intero: lo zip da solo cifra male, e le
+                // foto resterebbero in chiaro.
+                val contenuto = if (esportaCsv) {
+                    Csv.scrivi(Core.getAll())
+                } else {
+                    Archivio.scrivi(
+                        this,
+                        Core.backupEsporta(Core.adesso()).toByteArray(),
+                        Core.getAll(),
+                    )
+                }
+                if (password.isEmpty()) contenuto else Core.backupCifra(contenuto, password)
+            },
+            { byte ->
                 try {
                     contentResolver.openOutputStream(destinazione)?.use {
-                        it.write(testo.toByteArray())
+                        it.write(byte)
                     } ?: return@chiedi avvisa(getString(R.string.backup_non_scritto))
                     avvisa(getString(R.string.backup_salvato))
                 } catch (e: Exception) {
@@ -311,12 +459,57 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun confermaRipristino(sorgente: Uri) {
+        Dati.chiedi(
+            { Core.getAll().isEmpty() },
+            { vuoto ->
+                // Con zero carte non c'e' niente da sostituire: la domanda
+                // sarebbe solo un passaggio in piu' prima di una cosa che non
+                // toglie nulla a nessuno.
+                if (vuoto) {
+                    ripristina(sorgente)
+                } else {
+                    AlertDialog.Builder(this)
+                        .setTitle(R.string.ripristina_titolo)
+                        .setMessage(R.string.ripristina_avviso)
+                        .setNegativeButton(R.string.annulla, null)
+                        .setPositiveButton(R.string.ripristina_conferma) { _, _ -> ripristina(sorgente) }
+                        .show()
+                }
+            },
+            { avvisa(it) },
+        )
+    }
+
+    /**
+     * Azzera le carte, con la domanda prima.
+     *
+     * La domanda dice due cose: che non si torna indietro, e che il backup si
+     * fa da qui accanto. Chi arriva a questa voce per sbaglio deve trovare la
+     * strada per non perdere niente.
+     */
+    private fun confermaAzzeramento() {
         AlertDialog.Builder(this)
-            .setTitle(R.string.ripristina_titolo)
-            .setMessage(R.string.ripristina_avviso)
+            .setTitle(R.string.azzera_titolo)
+            .setMessage(R.string.azzera_avviso)
             .setNegativeButton(R.string.annulla, null)
-            .setPositiveButton(R.string.ripristina_conferma) { _, _ -> ripristina(sorgente) }
+            .setPositiveButton(R.string.azzera_conferma) { _, _ -> azzera() }
             .show()
+    }
+
+    private fun azzera() {
+        Dati.fai(
+            {
+                Core.azzeraTutto()
+                // Le foto non le tocca il core: senza questa resterebbero
+                // file di carte che non esistono piu'.
+                Foto.cancellaTutte(this)
+            },
+            {
+                ricarica()
+                avvisa(getString(R.string.azzerate))
+            },
+            { avvisa(it) },
+        )
     }
 
     private fun ripristina(sorgente: Uri) {
@@ -326,14 +519,71 @@ class MainActivity : AppCompatActivity() {
         // backup vero pesa qualche decina di kilobyte.
         Dati.chiedi(
             {
-                val dati = try {
+                try {
                     contentResolver.openInputStream(sorgente)?.use { leggiConTetto(it) }
                 } catch (e: OpenCardException) {
                     throw e
                 } catch (e: Exception) {
                     null
                 } ?: throw OpenCardException(getString(R.string.backup_non_letto))
-                Core.backupRipristina(dati)
+            },
+            { dati ->
+                // La password si chiede solo se il file ce l'ha: chi non l'ha
+                // mai usata non vede niente di nuovo.
+                if (Core.backupCifrato(dati)) {
+                    chiediPassword(
+                        R.string.password_apri_titolo,
+                        R.string.password_apri_spiega,
+                        vuotoAmmesso = false,
+                        // Qui non si salva niente: si apre un file che c'e' gia'.
+                        bottone = R.string.apri,
+                    ) { password -> scriviLeCarte(dati, password) }
+                } else {
+                    scriviLeCarte(dati, "")
+                }
+            },
+            { avvisa(it) },
+        )
+    }
+
+    /** Le carte di un CSV entrano una per una, con i campi che portano. */
+    private fun aggiungiDaCsv(carte: List<Csv.Letta>): Int {
+        for (carta in carte) {
+            val id = Core.insert(
+                carta.label,
+                carta.code,
+                Simbologie.eQuadrato(carta.simbologia),
+                carta.colore,
+                false,
+            )
+            Core.setSimbologia(id, carta.simbologia)
+            Core.setDettagli(id, carta.note, carta.scadenza, carta.saldo)
+            if (carta.preferita) {
+                Core.setPreferita(id, true)
+            }
+        }
+        return carte.size
+    }
+
+    private fun scriviLeCarte(dati: ByteArray, password: String) {
+        Dati.chiedi(
+            {
+                // Tre forme, in ordine di quanto sono recenti: archivio chiuso
+                // con la password, archivio in chiaro, e il solo JSON dei
+                // backup fatti prima delle foto.
+                val aperto = if (password.isEmpty()) dati else Core.backupDecifra(dati, password)
+                when {
+                    Archivio.eArchivio(aperto) -> {
+                        val elenco = Archivio.leggi(this, aperto)
+                            ?: throw OpenCardException(getString(R.string.backup_non_letto))
+                        Core.backupRipristina(elenco)
+                    }
+                    // Il CSV non sostituisce: si aggiunge in fondo. Chi arriva
+                    // da un'altra app di solito ha gia' qualcosa qui dentro, e
+                    // cancellarglielo sarebbe un modo brutto di dare il benvenuto.
+                    Csv.eCsv(aperto) -> aggiungiDaCsv(Csv.leggi(aperto))
+                    else -> Core.backupRipristinaFile(aperto, "")
+                }
             },
             { quante ->
                 ricarica()

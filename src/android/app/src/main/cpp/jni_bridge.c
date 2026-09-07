@@ -15,6 +15,7 @@
 
 #include "codegen.h"
 #include "backup.h"
+#include "cripto.h"
 #include "store.h"
 #include "transfer.h"
 
@@ -142,6 +143,7 @@ static jobject carta_a_java(JNIEnv *env, jclass classe, jmethodID costruttore,
 {
     char colore[OPENCARD_COLOR_MAX];
     jstring label, code, color;
+    jstring note, scadenza, saldo, foto_fronte, foto_retro;
     jobject oggetto;
 
     opencard_card_color(card, colore, sizeof(colore));
@@ -151,6 +153,11 @@ static jobject carta_a_java(JNIEnv *env, jclass classe, jmethodID costruttore,
     label = stringa_verso_java(env, card->label);
     code = stringa_verso_java(env, card->code);
     color = (*env)->NewStringUTF(env, colore);
+    note = stringa_verso_java(env, card->note);
+    scadenza = (*env)->NewStringUTF(env, card->scadenza);
+    saldo = stringa_verso_java(env, card->saldo);
+    foto_fronte = stringa_verso_java(env, card->foto_fronte);
+    foto_retro = stringa_verso_java(env, card->foto_retro);
 
     /* `coloreScelto` dice se il colore è stato deciso dall'utente: serve al
      * form, che altrimenti non saprebbe se mostrare la scelta o il predefinito. */
@@ -160,11 +167,18 @@ static jobject carta_a_java(JNIEnv *env, jclass classe, jmethodID costruttore,
                                 color,
                                 (jboolean)(card->color[0] != '\0' ? JNI_TRUE : JNI_FALSE),
                                 (jboolean)(card->disposable ? JNI_TRUE : JNI_FALSE),
-                                (jboolean)(card->favorite ? JNI_TRUE : JNI_FALSE));
+                                (jboolean)(card->favorite ? JNI_TRUE : JNI_FALSE),
+                                (jint)card->simbologia,
+                                note, scadenza, saldo, foto_fronte, foto_retro);
 
     (*env)->DeleteLocalRef(env, label);
     (*env)->DeleteLocalRef(env, code);
     (*env)->DeleteLocalRef(env, color);
+    (*env)->DeleteLocalRef(env, note);
+    (*env)->DeleteLocalRef(env, scadenza);
+    (*env)->DeleteLocalRef(env, saldo);
+    (*env)->DeleteLocalRef(env, foto_fronte);
+    (*env)->DeleteLocalRef(env, foto_retro);
     return oggetto;
 }
 
@@ -179,7 +193,10 @@ static jobjectArray lista_a_java(JNIEnv *env, const opencard_lista *lista)
         return NULL;
     }
     costruttore = (*env)->GetMethodID(env, classe, "<init>",
-                                      "(ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ZZZ)V");
+                                      "(ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ZZZI"
+                                      "Ljava/lang/String;Ljava/lang/String;"
+                                      "Ljava/lang/String;Ljava/lang/String;"
+                                      "Ljava/lang/String;)V");
     if (costruttore == NULL) {
         return NULL;
     }
@@ -285,7 +302,10 @@ Java_srl_denovo_opencard_Core_get(JNIEnv *env, jclass classe, jint id)
         return NULL;
     }
     costruttore = (*env)->GetMethodID(env, classe_carta, "<init>",
-                                      "(ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ZZZ)V");
+                                      "(ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ZZZI"
+                                      "Ljava/lang/String;Ljava/lang/String;"
+                                      "Ljava/lang/String;Ljava/lang/String;"
+                                      "Ljava/lang/String;)V");
     if (costruttore == NULL) {
         return NULL;
     }
@@ -420,9 +440,10 @@ Java_srl_denovo_opencard_Core_groupedCode(JNIEnv *env, jclass classe, jstring co
     return stringa_verso_java(env, uscita);
 }
 
-JNIEXPORT jobject JNICALL
-Java_srl_denovo_opencard_Core_renderCode(JNIEnv *env, jclass classe, jstring code,
-                                         jboolean isQrcode)
+/* Il disegno vero. `simbologia` a -1 vuol dire "decidila dal tipo", che e' il
+ * comportamento di sempre; da zero in su e' la simbologia scelta a mano. */
+static jobject disegna_codice(JNIEnv *env, jstring code, jboolean isQrcode,
+                              jint simbologia)
 {
     const char *ingresso;
     char *testo;
@@ -436,7 +457,6 @@ Java_srl_denovo_opencard_Core_renderCode(JNIEnv *env, jclass classe, jstring cod
     jint *buffer;
     long totale, i;
 
-    (void)classe;
     /* Il testo si prende com'è, senza copiarlo in un buffer di lunghezza
      * fissa: i QR del passaggio fra due telefoni arrivano a 1425 caratteri,
      * quasi tre volte OPENCARD_CODE_MAX, e tagliarli qui darebbe un QR che chi
@@ -458,9 +478,15 @@ Java_srl_denovo_opencard_Core_renderCode(JNIEnv *env, jclass classe, jstring cod
         return NULL;
     }
     opencard_utf8_ripara(testo);
-    esito = opencard_render_bitmap(testo,
-                                   isQrcode == JNI_TRUE ? OPENCARD_QRCODE : OPENCARD_BARCODE,
-                                   &pixel, &larghezza, &altezza, messaggio, sizeof(messaggio));
+    if (simbologia >= 0) {
+        esito = opencard_render_bitmap_simbologia(testo, (opencard_simbologia)simbologia,
+                                                  &pixel, &larghezza, &altezza,
+                                                  messaggio, sizeof(messaggio));
+    } else {
+        esito = opencard_render_bitmap(testo,
+                                       isQrcode == JNI_TRUE ? OPENCARD_QRCODE : OPENCARD_BARCODE,
+                                       &pixel, &larghezza, &altezza, messaggio, sizeof(messaggio));
+    }
     free(testo);
     if (esito != 0) {
         jclass eccezione = (*env)->FindClass(env, CLASSE_ECCEZIONE);
@@ -779,4 +805,291 @@ Java_srl_denovo_opencard_Core_setPreferita(JNIEnv *env, jclass classe, jint id,
     if (opencard_set_favorite((int)id, preferita == JNI_TRUE ? 1 : 0, &errore) != OPENCARD_OK) {
         lancia(env, &errore);
     }
+}
+
+JNIEXPORT jobject JNICALL
+Java_srl_denovo_opencard_Core_renderCode(JNIEnv *env, jclass classe, jstring code,
+                                         jboolean isQrcode)
+{
+    (void)classe;
+    return disegna_codice(env, code, isQrcode, -1);
+}
+
+JNIEXPORT jobject JNICALL
+Java_srl_denovo_opencard_Core_renderCodeSimbologia(JNIEnv *env, jclass classe,
+                                                   jstring code, jint simbologia)
+{
+    (void)classe;
+    return disegna_codice(env, code, JNI_FALSE, simbologia);
+}
+
+JNIEXPORT jint JNICALL
+Java_srl_denovo_opencard_Core_simbologiaIndovinata(JNIEnv *env, jclass classe,
+                                                   jstring code, jboolean isQrcode)
+{
+    char ingresso[OPENCARD_CODE_MAX];
+
+    (void)classe;
+    if (!stringa(env, code, ingresso, sizeof(ingresso))) {
+        return 0;
+    }
+    return (jint)opencard_simbologia_indovinata(ingresso,
+                                                isQrcode == JNI_TRUE ? 1 : 0);
+}
+
+JNIEXPORT void JNICALL
+Java_srl_denovo_opencard_Core_setSimbologia(JNIEnv *env, jclass classe, jint id,
+                                            jint simbologia)
+{
+    opencard_errore errore;
+
+    (void)classe;
+    if (opencard_set_simbologia((int)id, (opencard_simbologia)simbologia,
+                                &errore) != OPENCARD_OK) {
+        lancia(env, &errore);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_srl_denovo_opencard_Core_setDettagli(JNIEnv *env, jclass classe, jint id,
+                                          jstring note, jstring scadenza, jstring saldo)
+{
+    char note_c[OPENCARD_NOTE_MAX];
+    char scadenza_c[OPENCARD_DATA_MAX];
+    char saldo_c[OPENCARD_SALDO_MAX];
+    opencard_errore errore;
+
+    (void)classe;
+    if (!stringa(env, note, note_c, sizeof(note_c))
+        || !stringa(env, scadenza, scadenza_c, sizeof(scadenza_c))
+        || !stringa(env, saldo, saldo_c, sizeof(saldo_c))) {
+        return;
+    }
+    if (opencard_set_dettagli((int)id, note_c, scadenza_c, saldo_c, &errore) != OPENCARD_OK) {
+        lancia(env, &errore);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_srl_denovo_opencard_Core_setFoto(JNIEnv *env, jclass classe, jint id,
+                                      jstring fronte, jstring retro)
+{
+    char fronte_c[OPENCARD_FOTO_MAX];
+    char retro_c[OPENCARD_FOTO_MAX];
+    opencard_errore errore;
+
+    (void)classe;
+    if (!stringa(env, fronte, fronte_c, sizeof(fronte_c))
+        || !stringa(env, retro, retro_c, sizeof(retro_c))) {
+        return;
+    }
+    if (opencard_set_foto((int)id, fronte_c, retro_c, &errore) != OPENCARD_OK) {
+        lancia(env, &errore);
+    }
+}
+
+JNIEXPORT jbyteArray JNICALL
+Java_srl_denovo_opencard_Core_backupEsportaCifrato(JNIEnv *env, jclass classe,
+                                                   jstring quando, jstring password)
+{
+    char quando_c[64];
+    char password_c[256];
+    unsigned char *pacchetto = NULL;
+    size_t quanti = 0;
+    opencard_errore errore;
+    jbyteArray fuori;
+
+    (void)classe;
+    if (!stringa(env, quando, quando_c, sizeof(quando_c))
+        || !stringa(env, password, password_c, sizeof(password_c))) {
+        return NULL;
+    }
+    if (opencard_backup_esporta_cifrato(quando_c, password_c, &pacchetto, &quanti,
+                                        &errore) != OPENCARD_OK) {
+        lancia(env, &errore);
+        return NULL;
+    }
+    fuori = (*env)->NewByteArray(env, (jsize)quanti);
+    if (fuori != NULL) {
+        (*env)->SetByteArrayRegion(env, fuori, 0, (jsize)quanti, (const jbyte *)pacchetto);
+    }
+    opencard_cripto_free(pacchetto);
+    return fuori;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_srl_denovo_opencard_Core_backupCifrato(JNIEnv *env, jclass classe, jbyteArray dati)
+{
+    jsize quanti;
+    jbyte *byte;
+    jboolean risposta;
+
+    (void)classe;
+    if (dati == NULL) {
+        return JNI_FALSE;
+    }
+    quanti = (*env)->GetArrayLength(env, dati);
+    byte = (*env)->GetByteArrayElements(env, dati, NULL);
+    if (byte == NULL) {
+        return JNI_FALSE;
+    }
+    risposta = opencard_cripto_e_cifrato((const unsigned char *)byte, (size_t)quanti)
+               ? JNI_TRUE : JNI_FALSE;
+    (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
+    return risposta;
+}
+
+JNIEXPORT jint JNICALL
+Java_srl_denovo_opencard_Core_backupRipristinaFile(JNIEnv *env, jclass classe,
+                                                   jbyteArray dati, jstring password)
+{
+    char password_c[256];
+    jsize quanti;
+    jbyte *byte;
+    opencard_lista lista;
+    opencard_errore errore;
+    jint quante = -1;
+
+    (void)classe;
+    if (dati == NULL || !stringa(env, password, password_c, sizeof(password_c))) {
+        return -1;
+    }
+    quanti = (*env)->GetArrayLength(env, dati);
+    byte = (*env)->GetByteArrayElements(env, dati, NULL);
+    if (byte == NULL) {
+        lancia_memoria(env);
+        return -1;
+    }
+
+    if (opencard_backup_leggi_file((const unsigned char *)byte, (size_t)quanti,
+                                   password_c, &lista, &errore) != OPENCARD_OK) {
+        (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
+        lancia(env, &errore);
+        return -1;
+    }
+    (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
+
+    if (opencard_replace_all(&lista, &errore) != OPENCARD_OK) {
+        opencard_lista_free(&lista);
+        lancia(env, &errore);
+        return -1;
+    }
+    quante = (jint)lista.n;
+    opencard_lista_free(&lista);
+    return quante;
+}
+
+JNIEXPORT jbyteArray JNICALL
+Java_srl_denovo_opencard_Core_backupDecifra(JNIEnv *env, jclass classe,
+                                            jbyteArray dati, jstring password)
+{
+    char password_c[256];
+    jsize quanti;
+    jbyte *byte;
+    unsigned char *chiaro = NULL;
+    size_t chiaro_n = 0;
+    opencard_errore errore;
+    jbyteArray fuori;
+
+    (void)classe;
+    if (dati == NULL || !stringa(env, password, password_c, sizeof(password_c))) {
+        return NULL;
+    }
+    quanti = (*env)->GetArrayLength(env, dati);
+    byte = (*env)->GetByteArrayElements(env, dati, NULL);
+    if (byte == NULL) {
+        lancia_memoria(env);
+        return NULL;
+    }
+    if (opencard_cripto_decifra((const unsigned char *)byte, (size_t)quanti, password_c,
+                                &chiaro, &chiaro_n, &errore) != OPENCARD_OK) {
+        (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
+        lancia(env, &errore);
+        return NULL;
+    }
+    (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
+
+    fuori = (*env)->NewByteArray(env, (jsize)chiaro_n);
+    if (fuori != NULL) {
+        (*env)->SetByteArrayRegion(env, fuori, 0, (jsize)chiaro_n, (const jbyte *)chiaro);
+    }
+    opencard_cripto_free(chiaro);
+    return fuori;
+}
+
+JNIEXPORT jbyteArray JNICALL
+Java_srl_denovo_opencard_Core_backupCifra(JNIEnv *env, jclass classe,
+                                          jbyteArray dati, jstring password)
+{
+    char password_c[256];
+    jsize quanti;
+    jbyte *byte;
+    unsigned char *pacchetto = NULL;
+    size_t pacchetto_n = 0;
+    opencard_errore errore;
+    jbyteArray fuori;
+
+    (void)classe;
+    if (dati == NULL || !stringa(env, password, password_c, sizeof(password_c))) {
+        return NULL;
+    }
+    quanti = (*env)->GetArrayLength(env, dati);
+    byte = (*env)->GetByteArrayElements(env, dati, NULL);
+    if (byte == NULL) {
+        lancia_memoria(env);
+        return NULL;
+    }
+    if (opencard_cripto_cifra((const unsigned char *)byte, (size_t)quanti, password_c,
+                              &pacchetto, &pacchetto_n, &errore) != OPENCARD_OK) {
+        (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
+        lancia(env, &errore);
+        return NULL;
+    }
+    (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
+
+    fuori = (*env)->NewByteArray(env, (jsize)pacchetto_n);
+    if (fuori != NULL) {
+        (*env)->SetByteArrayRegion(env, fuori, 0, (jsize)pacchetto_n, (const jbyte *)pacchetto);
+    }
+    opencard_cripto_free(pacchetto);
+    return fuori;
+}
+
+JNIEXPORT void JNICALL
+Java_srl_denovo_opencard_Core_azzeraTutto(JNIEnv *env, jclass classe)
+{
+    opencard_lista vuota;
+    opencard_errore errore;
+
+    (void)classe;
+    memset(&vuota, 0, sizeof(vuota));
+    /* Una scrittura sola: cancellare carta per carta riscriverebbe il file
+     * tante volte quante sono le carte, e ognuna e' un momento in cui il
+     * telefono puo' spegnersi lasciando meta' lavoro fatto. */
+    if (opencard_replace_all(&vuota, &errore) != OPENCARD_OK) {
+        lancia(env, &errore);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_srl_denovo_opencard_Core_storeChiave(JNIEnv *env, jclass classe, jbyteArray chiave)
+{
+    jbyte *byte;
+
+    (void)classe;
+    if (chiave == NULL) {
+        opencard_store_chiave(NULL);
+        return;
+    }
+    if ((*env)->GetArrayLength(env, chiave) != OPENCARD_CRIPTO_CHIAVE_N) {
+        return;
+    }
+    byte = (*env)->GetByteArrayElements(env, chiave, NULL);
+    if (byte == NULL) {
+        return;
+    }
+    opencard_store_chiave((const unsigned char *)byte);
+    /* JNI_ABORT: la copia non si riscrive nell'array di Java, che tanto non e'
+     * cambiata, e si libera subito. */
+    (*env)->ReleaseByteArrayElements(env, chiave, byte, JNI_ABORT);
 }
