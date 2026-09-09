@@ -53,7 +53,6 @@
 - (void)importa;
 - (void)esporta;
 - (void)trasferisci;
-- (void)azzera;
 - (void)apriImpostazioni;
 @end
 
@@ -165,16 +164,11 @@
                                               image:[UIImage systemImageNamed:@"qrcode"]
                                          identifier:nil
                                             handler:^(UIAction *azione) { [debole trasferisci]; }];
-        UIAction *azzera = [UIAction actionWithTitle:NSLocalizedString(@"azzera", nil)
-                                              image:[UIImage systemImageNamed:@"trash"]
-                                         identifier:nil
-                                            handler:^(UIAction *azione) { [debole azzera]; }];
-        azzera.attributes = UIMenuElementAttributesDestructive;
         UIAction *impostazioni = [UIAction actionWithTitle:NSLocalizedString(@"impostazioni", nil)
                                                     image:[UIImage systemImageNamed:@"gearshape"]
                                                identifier:nil
                                                   handler:^(UIAction *azione) { [debole apriImpostazioni]; }];
-        backup.menu = [UIMenu menuWithTitle:@"" children:@[importa, esporta, passa, azzera, impostazioni]];
+        backup.menu = [UIMenu menuWithTitle:@"" children:@[importa, esporta, passa, impostazioni]];
         backup.target = nil;
         backup.action = nil;
     }
@@ -519,9 +513,6 @@
     [menu addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"trasferisci", nil)
                                              style:UIAlertActionStyleDefault
                                            handler:^(UIAlertAction *azione) { [self trasferisci]; }]];
-    [menu addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"azzera", nil)
-                                             style:UIAlertActionStyleDestructive
-                                           handler:^(UIAlertAction *azione) { [self azzera]; }]];
     [menu addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"impostazioni", nil)
                                              style:UIAlertActionStyleDefault
                                            handler:^(UIAlertAction *azione) { [self apriImpostazioni]; }]];
@@ -836,34 +827,11 @@
                   NSLocalizedString(@"carte_ripristinate", nil), (long)quante]];
 }
 
-/// Butta via tutte le carte, con una domanda prima.
-- (void)azzera
-{
-    UIAlertController *domanda = [UIAlertController
-        alertControllerWithTitle:NSLocalizedString(@"azzera_titolo", nil)
-                         message:NSLocalizedString(@"azzera_avviso", nil)
-                  preferredStyle:UIAlertControllerStyleAlert];
-
-    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
-                                                style:UIAlertActionStyleCancel handler:nil]];
-    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"azzera_conferma", nil)
-                                                style:UIAlertActionStyleDestructive
-                                              handler:^(UIAlertAction *azione) {
-        NSError *errore = nil;
-        if (![OCCore azzeraTutto:&errore]) {
-            [self avvisa:errore.localizedDescription];
-            return;
-        }
-        [self ricaricaTutto];
-        [self avvisa:NSLocalizedString(@"azzerate", nil)];
-    }]];
-
-    [self presentViewController:domanda animated:YES completion:nil];
-}
-
 - (void)apriImpostazioni
 {
     OCImpostazioniViewController *schermo = [OCImpostazioniViewController new];
+    __weak typeof(self) debole = self;
+    schermo.suCarteAzzerate = ^{ [debole ricaricaTutto]; };
     UINavigationController *contenitore =
         [[UINavigationController alloc] initWithRootViewController:schermo];
     [self presentViewController:contenitore animated:YES completion:nil];

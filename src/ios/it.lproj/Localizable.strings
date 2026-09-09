@@ -33,6 +33,7 @@
 "widget_scegli" = "Quale carta mostra questo widget";
 "widget_tocca" = "Tocca per aprirla";
 "widget_carta_sparita" = "Questa carta non c'è più";
+"azzera_sottotitolo" = "Toglie tutte le carte da questo telefono";
 "tipo_di_codice" = "Tipo di codice";
 "simbologia_auto" = "Automatico";
 "barcode" = "Barcode";

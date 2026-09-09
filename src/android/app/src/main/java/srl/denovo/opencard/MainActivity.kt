@@ -376,10 +376,6 @@ class MainActivity : AppCompatActivity() {
             apri(TrasferimentoActivity.intent(this))
             true
         }
-        R.id.azzera -> {
-            confermaAzzeramento()
-            true
-        }
         R.id.impostazioni -> {
             startActivity(Intent(this, ImpostazioniActivity::class.java))
             true
@@ -479,39 +475,6 @@ class MainActivity : AppCompatActivity() {
                         .setPositiveButton(R.string.ripristina_conferma) { _, _ -> ripristina(sorgente) }
                         .show()
                 }
-            },
-            { avvisa(it) },
-        )
-    }
-
-    /**
-     * Azzera le carte, con la domanda prima.
-     *
-     * La domanda dice due cose: che non si torna indietro, e che il backup si
-     * fa da qui accanto. Chi arriva a questa voce per sbaglio deve trovare la
-     * strada per non perdere niente.
-     */
-    private fun confermaAzzeramento() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.azzera_titolo)
-            .setMessage(R.string.azzera_avviso)
-            .setNegativeButton(R.string.annulla, null)
-            .setPositiveButton(R.string.azzera_conferma) { _, _ -> azzera() }
-            .show()
-    }
-
-    private fun azzera() {
-        Dati.fai(
-            {
-                Core.azzeraTutto()
-                // Le foto non le tocca il core: senza questa resterebbero
-                // file di carte che non esistono piu'.
-                Foto.cancellaTutte(this)
-            },
-            {
-                ricarica()
-                WidgetCarta.aggiornaTutti(this)
-                avvisa(getString(R.string.azzerate))
             },
             { avvisa(it) },
         )

@@ -21,10 +21,6 @@
                 android:icon="@drawable/ic_qrcode"
                 android:title="@string/trasferisci" />
             <item
-                android:id="@+id/azzera"
-                android:icon="@drawable/ic_cestino"
-                android:title="@string/azzera" />
-            <item
                 android:id="@+id/impostazioni"
                 android:title="@string/impostazioni" />
         </menu>

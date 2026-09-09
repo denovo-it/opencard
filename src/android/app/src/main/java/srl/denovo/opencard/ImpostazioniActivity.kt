@@ -14,9 +14,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.snackbar.Snackbar
 
 /**
- * Le impostazioni: il backup nel cloud e la lingua.
+ * Le impostazioni: il backup nel cloud, la lingua e l'azzeramento.
  *
  * La riga sotto l'interruttore cambia con la scelta invece di stare ferma:
  * quello che succede acceso e quello che succede spento sono due cose diverse,
@@ -44,6 +45,46 @@ class ImpostazioniActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.riga_lingua).setOnClickListener { scegliLingua() }
         mostraLingua()
+
+        findViewById<View>(R.id.riga_azzera).setOnClickListener { confermaAzzeramento() }
+    }
+
+    /**
+     * Azzera le carte, con la domanda prima.
+     *
+     * La domanda dice due cose: che non si torna indietro, e che il backup si
+     * fa dal menu dell'elenco. Chi arriva a questa voce per sbaglio deve
+     * trovare la strada per non perdere niente.
+     */
+    private fun confermaAzzeramento() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.azzera_titolo)
+            .setMessage(R.string.azzera_avviso)
+            .setNegativeButton(R.string.annulla, null)
+            .setPositiveButton(R.string.azzera_conferma) { _, _ -> azzera() }
+            .show()
+    }
+
+    private fun azzera() {
+        Dati.fai(
+            {
+                Core.azzeraTutto()
+                // Le foto non le tocca il core: senza questa resterebbero file
+                // di carte che non esistono piu'.
+                Foto.cancellaTutte(this)
+            },
+            {
+                // L'elenco si rilegge da solo tornando indietro, perche'
+                // MainActivity ricarica in onResume.
+                WidgetCarta.aggiornaTutti(this)
+                avvisa(getString(R.string.azzerate))
+            },
+            { avvisa(it) },
+        )
+    }
+
+    private fun avvisa(messaggio: String) {
+        Snackbar.make(findViewById(R.id.radice), messaggio, Snackbar.LENGTH_LONG).show()
     }
 
     /** Le sigle, non i nomi per esteso: due lettere si riconoscono sempre. */

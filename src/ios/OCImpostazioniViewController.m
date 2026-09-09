@@ -72,8 +72,29 @@
     comeSiCambia.textColor = [OCTema attenuato];
     comeSiCambia.numberOfLines = 0;
 
+    UIView *linea2 = [UIView new];
+    linea2.backgroundColor = [UIColor separatorColor];
+    [linea2.heightAnchor constraintEqualToConstant:1].active = YES;
+
+    // Ultima voce, e l'unica che toglie qualcosa: sta in fondo e lontana dalle
+    // altre apposta, e la domanda prima di eseguire dice dove si fa il backup.
+    UIButton *azzera = [UIButton buttonWithType:UIButtonTypeSystem];
+    [azzera setTitle:NSLocalizedString(@"azzera", nil) forState:UIControlStateNormal];
+    [azzera setTitleColor:[OCTema pericolo] forState:UIControlStateNormal];
+    azzera.titleLabel.font = [UIFont systemFontOfSize:16];
+    azzera.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeading;
+    [azzera addTarget:self action:@selector(azzera)
+     forControlEvents:UIControlEventTouchUpInside];
+
+    UILabel *cosaFa = [UILabel new];
+    cosaFa.text = NSLocalizedString(@"azzera_sottotitolo", nil);
+    cosaFa.font = [UIFont systemFontOfSize:13];
+    cosaFa.textColor = [OCTema attenuato];
+    cosaFa.numberOfLines = 0;
+
     UIStackView *colonna = [[UIStackView alloc] initWithArrangedSubviews:@[
         titoloBackup, riga, self.spiegazione, linea, lingua, comeSiCambia,
+        linea2, azzera, cosaFa,
     ]];
     colonna.axis = UILayoutConstraintAxisVertical;
     colonna.spacing = 12;
@@ -81,6 +102,9 @@
     [colonna setCustomSpacing:24 afterView:self.spiegazione];
     [colonna setCustomSpacing:24 afterView:linea];
     [colonna setCustomSpacing:4 afterView:lingua];
+    [colonna setCustomSpacing:24 afterView:comeSiCambia];
+    [colonna setCustomSpacing:24 afterView:linea2];
+    [colonna setCustomSpacing:4 afterView:azzera];
     [self.view addSubview:colonna];
 
     UILayoutGuide *area = self.view.safeAreaLayoutGuide;
@@ -119,6 +143,51 @@
     if (dove != nil) {
         [[UIApplication sharedApplication] openURL:dove options:@{} completionHandler:nil];
     }
+}
+
+/// Butta via tutte le carte, con una domanda prima.
+///
+/// La domanda dice due cose: che non si torna indietro, e che il backup si fa
+/// dal menu dell'elenco. Chi arriva a questa voce per sbaglio deve trovare la
+/// strada per non perdere niente.
+- (void)azzera
+{
+    UIAlertController *domanda = [UIAlertController
+        alertControllerWithTitle:NSLocalizedString(@"azzera_titolo", nil)
+                         message:NSLocalizedString(@"azzera_avviso", nil)
+                  preferredStyle:UIAlertControllerStyleAlert];
+
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
+                                                style:UIAlertActionStyleCancel handler:nil]];
+    [domanda addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"azzera_conferma", nil)
+                                                style:UIAlertActionStyleDestructive
+                                              handler:^(UIAlertAction *azione) {
+        NSError *errore = nil;
+        if (![OCCore azzeraTutto:&errore]) {
+            [self avvisa:errore.localizedDescription];
+            return;
+        }
+        if (self.suCarteAzzerate != nil) {
+            self.suCarteAzzerate();
+        }
+        [self avvisa:NSLocalizedString(@"azzerate", nil)];
+    }]];
+
+    [self presentViewController:domanda animated:YES completion:nil];
+}
+
+/// Un messaggio che resta il tempo di leggerlo, senza pulsanti da premere.
+- (void)avvisa:(NSString *)messaggio
+{
+    UIAlertController *avviso = [UIAlertController alertControllerWithTitle:nil
+                                                                   message:messaggio
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [self presentViewController:avviso animated:YES completion:^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.6 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+            [avviso dismissViewControllerAnimated:YES completion:nil];
+        });
+    }];
 }
 
 - (void)chiudi
