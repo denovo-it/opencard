@@ -333,7 +333,11 @@ class MainActivity : AppCompatActivity() {
             .setMessage(getString(R.string.elimina_domanda, carta.label))
             .setNegativeButton(R.string.annulla, null)
             .setPositiveButton(R.string.elimina) { _, _ ->
-                Dati.fai({ Core.delete(carta.id) }, { ricarica() }, { avvisa(it) })
+                Dati.fai(
+                    { Core.delete(carta.id) },
+                    { ricarica(); WidgetCarta.aggiornaTutti(this) },
+                    { avvisa(it) },
+                )
             }
             .show()
     }
@@ -506,6 +510,7 @@ class MainActivity : AppCompatActivity() {
             },
             {
                 ricarica()
+                WidgetCarta.aggiornaTutti(this)
                 avvisa(getString(R.string.azzerate))
             },
             { avvisa(it) },

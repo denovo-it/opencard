@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- updatePeriodMillis a zero: il sistema non ha niente da aggiornare da solo,
+     perche' il widget cambia solo quando cambia la carta, e in quel momento e'
+     l'app a rifarlo. Un giro periodico sveglierebbe il telefono per niente. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="srl.denovo.opencard.WidgetConfigActivity"
+    android:description="@string/widget_descrizione"
+    android:initialLayout="@layout/widget_carta"
+    android:minHeight="40dp"
+    android:minWidth="110dp"
+    android:previewLayout="@layout/widget_carta"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

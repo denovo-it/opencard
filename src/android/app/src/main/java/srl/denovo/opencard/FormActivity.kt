@@ -747,6 +747,9 @@ class FormActivity : AppCompatActivity() {
                 Core.setFoto(quale, nomiFoto[FRONTE], nomiFoto[RETRO])
             },
             {
+                // Un nome o un colore cambiati si vedono anche sulla schermata
+                // iniziale, se quella carta ci sta.
+                WidgetCarta.aggiornaTutti(this)
                 setResult(Activity.RESULT_OK)
                 finish()
             },
@@ -775,6 +778,7 @@ class FormActivity : AppCompatActivity() {
                         Foto.cancellaDiCarta(this, id)
                     },
                     {
+                        WidgetCarta.aggiornaTutti(this)
                         setResult(
                             Activity.RESULT_OK,
                             Intent().putExtra(EXTRA_ELIMINATA, true),

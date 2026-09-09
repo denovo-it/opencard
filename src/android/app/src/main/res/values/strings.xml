@@ -30,6 +30,10 @@
     <string name="esci_domanda">Do you want to close the app?</string>
     <string name="etichetta">Label</string>
     <string name="codice">Code</string>
+    <string name="widget_descrizione">One card on the home screen: tap it and it opens.</string>
+    <string name="widget_scegli">Which card this widget shows</string>
+    <string name="widget_tocca">Tap to open it</string>
+    <string name="widget_carta_sparita">This card is gone</string>
     <string name="tipo_di_codice">Code type</string>
     <string name="simbologia_auto">Automatic</string>
     <string name="barcode">Barcode</string>

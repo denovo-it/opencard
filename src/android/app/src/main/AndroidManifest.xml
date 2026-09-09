@@ -54,6 +54,26 @@
         <activity android:name=".InfoActivity" android:parentActivityName=".MainActivity" />
         <activity android:name=".ImpostazioniActivity" android:parentActivityName=".MainActivity" />
 
+        <!-- La carta sulla schermata iniziale. Il ricevitore non e' esportato:
+             l'aggiornamento glielo manda il sistema al componente, e l'app al
+             proprio. La schermata di scelta invece si': la apre il sistema
+             quando si appoggia il widget, e senza il suo risultato il widget
+             non compare. -->
+        <receiver android:name=".WidgetCarta" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_carta_info" />
+        </receiver>
+
+        <activity android:name=".WidgetConfigActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <!-- Prima di Android 13 la lingua scelta la ricorda AppCompat, e per
              ricordarla vuole questo servizio dichiarato. Non gira mai: e'
              solo il posto dove sta scritto "autoStoreLocales". -->

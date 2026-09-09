@@ -30,6 +30,10 @@
     <string name="esci_domanda">Vuoi chiudere l\'app?</string>
     <string name="etichetta">Etichetta</string>
     <string name="codice">Codice</string>
+    <string name="widget_descrizione">Una carta sulla schermata iniziale: si tocca e si apre.</string>
+    <string name="widget_scegli">Quale carta mostra questo widget</string>
+    <string name="widget_tocca">Tocca per aprirla</string>
+    <string name="widget_carta_sparita">Questa carta non c\'è più</string>
     <string name="tipo_di_codice">Tipo di codice</string>
     <string name="simbologia_auto">Automatico</string>
     <string name="barcode">Barcode</string>
