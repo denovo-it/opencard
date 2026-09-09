@@ -8,7 +8,7 @@
 #import "OCScannerViewController.h"
 #import "OCTema.h"
 
-@interface OCTrasferimentoViewController ()
+@interface OCTrasferimentoViewController () <UIDocumentPickerDelegate>
 @property (nonatomic, strong) UIStackView *scelta;
 @property (nonatomic, strong) UIStackView *vetrina;
 @property (nonatomic, strong) UIImageView *codice;
@@ -113,6 +113,12 @@
     avviso.font = [UIFont systemFontOfSize:14];
     avviso.textColor = [OCTema attenuato];
 
+    // I codici su carta: per chi non ha il secondo telefono davanti adesso, o
+    // vuole tenerli da parte.
+    UIButton *suFile = [self pulsante:NSLocalizedString(@"qr_su_file", nil)
+                                pieno:NO
+                               azione:@selector(salvaCodici)];
+
     UILabel *privacy = [UILabel new];
     privacy.text = NSLocalizedString(@"trasferimento_privacy", nil);
     privacy.numberOfLines = 0;
@@ -121,7 +127,7 @@
     privacy.textColor = [OCTema tenue];
 
     self.vetrina = [[UIStackView alloc]
-        initWithArrangedSubviews:@[self.codice, self.contatore, avviso, privacy]];
+        initWithArrangedSubviews:@[self.codice, self.contatore, avviso, suFile, privacy]];
     self.vetrina.axis = UILayoutConstraintAxisVertical;
     self.vetrina.spacing = 12;
     self.vetrina.hidden = YES;
@@ -206,6 +212,80 @@
 }
 
 #pragma mark - Chi riceve
+
+/// I codici su un PDF, uno per pagina.
+///
+/// Serve a chi non ha l'altro telefono davanti adesso: si stampa o si tiene il
+/// file, e il passaggio si fa quando capita, inquadrando le pagine.
+///
+/// Un PDF e non tante immagini perché i codici vanno letti in fila e nel loro
+/// ordine: file separati si mescolano, e chi riceve non se ne accorge finché il
+/// pacchetto non torna.
+- (void)salvaCodici
+{
+    if (self.immagini.count == 0) {
+        return;
+    }
+
+    // A4 in punti, la misura che tutti stampano.
+    CGRect foglio = CGRectMake(0, 0, 595, 842);
+    UIGraphicsPDFRenderer *stampante =
+        [[UIGraphicsPDFRenderer alloc] initWithBounds:foglio];
+
+    NSDictionary *stile = @{
+        NSFontAttributeName: [UIFont systemFontOfSize:14],
+        NSForegroundColorAttributeName: [UIColor darkGrayColor],
+    };
+
+    NSData *pdf = [stampante PDFDataWithActions:^(UIGraphicsPDFRendererContext *contesto) {
+        for (NSUInteger quale = 0; quale < self.immagini.count; quale++) {
+            UIImage *codice = self.immagini[quale];
+            [contesto beginPage];
+
+            [[UIColor whiteColor] setFill];
+            UIRectFill(foglio);
+
+            CGFloat lato = 595 - 80;
+            CGFloat scala = lato / MAX(codice.size.width, codice.size.height);
+            CGFloat largo = codice.size.width * scala;
+            CGFloat alto = codice.size.height * scala;
+            [codice drawInRect:CGRectMake((595 - largo) / 2, (842 - alto) / 2, largo, alto)];
+
+            // Il numero sul foglio: chi le stampa deve poterle rimettere in
+            // ordine se gli cadono di mano.
+            NSString *etichetta = [NSString stringWithFormat:
+                NSLocalizedString(@"trasferimento_pezzo", nil),
+                (long)(quale + 1), (long)self.immagini.count];
+            CGSize misura = [etichetta sizeWithAttributes:stile];
+            [etichetta drawAtPoint:CGPointMake((595 - misura.width) / 2, 792)
+                    withAttributes:stile];
+        }
+    }];
+
+    NSString *nudo = [[OCCore nomeBackup] stringByDeletingPathExtension];
+    NSString *percorso = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                          [nudo stringByAppendingString:@"-codici.pdf"]];
+    if (![pdf writeToFile:percorso atomically:YES]) {
+        [self avvisa:NSLocalizedString(@"backup_non_scritto", nil)];
+        return;
+    }
+
+    // Come il backup: il file si scrive nei temporanei e poi lo prende il
+    // selettore di sistema, così l'utente sceglie dove metterlo e l'app non
+    // chiede nessun permesso sui documenti.
+    UIDocumentPickerViewController *selettore = [[UIDocumentPickerViewController alloc]
+        initWithURL:[NSURL fileURLWithPath:percorso] inMode:UIDocumentPickerModeExportToService];
+    selettore.delegate = self;
+    [self presentViewController:selettore animated:YES completion:nil];
+}
+
+- (void)documentPicker:(UIDocumentPickerViewController *)selettore
+didPickDocumentsAtURLs:(NSArray<NSURL *> *)indirizzi
+{
+    (void)selettore;
+    (void)indirizzi;
+    [self avvisa:NSLocalizedString(@"qr_salvato", nil)];
+}
 
 - (void)apriLettore
 {

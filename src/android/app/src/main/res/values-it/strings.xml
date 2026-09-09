@@ -138,6 +138,7 @@
     <string name="core_trasferimento_rotto">I codici letti non tornano. Ricomincia il passaggio delle carte.</string>
     <string name="core_trasferimento_versione">Il codice arriva da una versione più recente di OpenCard (formato %1$d). Aggiorna l\'app su questo telefono.</string>
     <string name="core_trasferimento_troppe">Le carte sono troppe per il passaggio con i QR. Usa l\'esportazione su file.</string>
+    <string name="core_password">La password non apre questo backup, oppure il file è stato modificato.</string>
     <string name="nota">Nota</string>
     <string name="scadenza">Scadenza</string>
     <string name="saldo">Saldo</string>

@@ -22,7 +22,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.3</string>
 	<key>CFBundleVersion</key>
-	<string>2026090903</string>
+	<string>2026090904</string>
 	<!-- Nessuna crittografia: l'app non chiama niente di cifrato e non usa la
 	     rete. Senza questa chiave App Store Connect ripete la domanda sulla
 	     conformità all'esportazione a ogni caricamento. -->

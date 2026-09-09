@@ -142,6 +142,7 @@
   "core_trasferimento_rotto": "The codes read don't add up. Start the card transfer again.",
   "core_trasferimento_versione": "The code comes from a newer version of OpenCard (format {1:intero}). Update the app on this phone.",
   "core_trasferimento_troppe": "There are too many cards for the QR transfer. Use export to file.",
+  "core_password": "The password does not open this backup, or the file has been changed.",
   "nota": "Note",
   "scadenza": "Expiry",
   "saldo": "Balance",

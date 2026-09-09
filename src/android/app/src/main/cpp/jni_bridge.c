@@ -5,8 +5,9 @@
  * Ponte fra il core in C e Kotlin.
  *
  * Qui dentro non c'è logica: si traducono soltanto stringhe, array e oggetti.
- * Ogni funzione che può fallire lancia OpenCardException con il messaggio già
- * pronto per l'utente, così il lato Kotlin non deve conoscere i codici.
+ * Ogni funzione che può fallire lancia OpenCardException con il codice e i
+ * pezzi che servono a scrivere la frase. La frase la scrive Kotlin, che sa in
+ * che lingua sta parlando l'app.
  */
 
 #include <jni.h>
@@ -79,30 +80,38 @@ static jstring stringa_verso_java(JNIEnv *env, const char *utf8)
     return risultato;
 }
 
+/* L'eccezione porta il codice e i pezzi, non la frase.
+ *
+ * La frase la scrive Kotlin pescandola dai file di lingua: il core le ha in
+ * italiano e basta, e su un telefono inglese l'app rispondeva in italiano
+ * appena qualcosa andava storto. */
 static void lancia(JNIEnv *env, const opencard_errore *errore)
 {
-    char messaggio[512];
     jclass classe = (*env)->FindClass(env, CLASSE_ECCEZIONE);
     jmethodID costruttore;
-    jstring testo;
+    jstring dettaglio;
     jthrowable eccezione;
 
-    opencard_errore_testo(errore, messaggio, sizeof(messaggio));
-    if (messaggio[0] == '\0') {
-        strcpy(messaggio, "Errore imprevisto.");
-    }
     if (classe == NULL) {
         return;     /* FindClass ha già messo in coda il suo errore */
     }
-    /* Non si passa da ThrowNew, che vuole il modified UTF-8: il messaggio può
-     * contenere il nome di una carta, emoji comprese. */
-    costruttore = (*env)->GetMethodID(env, classe, "<init>", "(Ljava/lang/String;)V");
-    testo = costruttore != NULL ? stringa_verso_java(env, messaggio) : NULL;
-    if (testo == NULL) {
+    costruttore = (*env)->GetMethodID(env, classe, "<init>", "(IILjava/lang/String;I)V");
+    if (costruttore == NULL) {
+        return;
+    }
+    /* Non si passa da ThrowNew, che vuole il modified UTF-8: il dettaglio è il
+     * nome di una carta, emoji comprese. */
+    dettaglio = stringa_verso_java(env, errore != NULL ? errore->dettaglio : "");
+    if (dettaglio == NULL) {
         (*env)->ThrowNew(env, classe, "Errore imprevisto.");
         return;
     }
-    eccezione = (jthrowable)(*env)->NewObject(env, classe, costruttore, testo);
+    eccezione = (jthrowable)(*env)->NewObject(
+        env, classe, costruttore,
+        (jint)(errore != NULL ? errore->codice : 0),
+        (jint)(errore != NULL ? errore->posizione : 0),
+        dettaglio,
+        (jint)(errore != NULL ? errore->schema_trovato : 0));
     if (eccezione != NULL) {
         (*env)->Throw(env, eccezione);
     }

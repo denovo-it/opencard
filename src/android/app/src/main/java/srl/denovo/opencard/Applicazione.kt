@@ -14,8 +14,23 @@ import android.util.Log
  * da una schermata qualunque, per esempio dopo averla chiusa per memoria.
  */
 class Applicazione : Application() {
+
+    companion object {
+        /**
+         * Il contesto dell'applicazione, per chi non ne ha uno.
+         *
+         * Serve a [Errori], che compone i messaggi del core pescandoli dai file
+         * di lingua: un'eccezione non ha una schermata da cui partire. È il
+         * contesto dell'applicazione e non quello di una schermata, quindi non
+         * trattiene niente che debba morire.
+         */
+        var contesto: Application? = null
+            private set
+    }
+
     override fun onCreate() {
         super.onCreate()
+        contesto = this
 
         // Per primo, così raccoglie anche gli errori dell'avvio.
         Diagnostica.installa(this)

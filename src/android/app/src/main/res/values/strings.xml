@@ -138,6 +138,7 @@
     <string name="core_trasferimento_rotto">The codes read don\'t add up. Start the card transfer again.</string>
     <string name="core_trasferimento_versione">The code comes from a newer version of OpenCard (format %1$d). Update the app on this phone.</string>
     <string name="core_trasferimento_troppe">There are too many cards for the QR transfer. Use export to file.</string>
+    <string name="core_password">The password does not open this backup, or the file has been changed.</string>
     <string name="nota">Note</string>
     <string name="scadenza">Expiry</string>
     <string name="saldo">Balance</string>

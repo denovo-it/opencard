@@ -136,6 +136,7 @@
 "core_trasferimento_rotto" = "I codici letti non tornano. Ricomincia il passaggio delle carte.";
 "core_trasferimento_versione" = "Il codice arriva da una versione più recente di OpenCard (formato %1$ld). Aggiorna l'app su questo telefono.";
 "core_trasferimento_troppe" = "Le carte sono troppe per il passaggio con i QR. Usa l'esportazione su file.";
+"core_password" = "La password non apre questo backup, oppure il file è stato modificato.";
 "nota" = "Nota";
 "scadenza" = "Scadenza";
 "saldo" = "Saldo";

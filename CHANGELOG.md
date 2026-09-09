@@ -10,11 +10,12 @@
 - Ogni carta può avere la foto del fronte e del retro, per leggere quello che sulla tessera è stampato e nel codice non c'è. Si passa da una faccia all'altra scorrendo di lato o con le due frecce, e toccandola si apre a schermo pieno, dove si ingrandisce con due dita.
 - Il backup su file adesso è un archivio con dentro le carte e le foto, e si può chiudere con una password.
 - Le carte si esportano anche in CSV, il formato che leggono le altre app, e un CSV di Catima si importa qui.
-- Su Android i codici del passaggio fra telefoni si salvano su un PDF, uno per pagina, da usare quando l'altro telefono non c'è.
+- I codici del passaggio fra telefoni si salvano su un PDF, uno per pagina, da usare quando l'altro telefono non c'è.
 - In fondo a Impostazioni c'è «Cancella tutti i tuoi dati», in rosso: toglie da questo telefono le carte, le loro foto e i file temporanei, con una domanda prima. Prima era «Azzera le carte» e stava nel menu dell'elenco, in mezzo alle cose che si usano tutti i giorni.
 - Una tessera si aggiunge anche da un PDF, oltre che dalla fotocamera, da una foto e a mano.
 - La scheda «Usa & getta» compare solo quando c'è almeno una carta dentro, come già faceva quella con la stella, e la fila delle schede sparisce quando ne resta una sola.
 - L'app parla anche inglese: la lingua la sceglie il telefono. Su Android si può anche cambiare a mano da Impostazioni, su iPhone si cambia dalle impostazioni del telefono, come per ogni app.
+- In inglese sono in inglese anche i messaggi di errore: prima l'app parlava inglese finché qualcosa non andava storto, e a quel punto rispondeva in italiano.
 - Funziona da Android 6 in su, prima serviva Android 7.
 - Nella schermata Informazioni c'è l'indirizzo della pagina di OpenCard sul sito, accanto al codice sorgente.
 - Il file delle carte sul telefono adesso è cifrato: chi lo tira fuori da un telefono spento, o da un backup, trova byte a caso.

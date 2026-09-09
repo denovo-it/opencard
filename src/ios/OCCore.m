@@ -35,18 +35,66 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 #pragma mark - Errori
 
 /// Trasforma un errore del core in un NSError col messaggio già pronto.
+/// Il messaggio da mostrare, nella lingua in cui sta parlando l'app.
+///
+/// Il core torna un codice, non una frase. Le frasi stanno nei file di lingua
+/// insieme a tutte le altre: `opencard_errore_testo()` in `store.c` le ha in
+/// italiano e basta, e su un telefono inglese l'app rispondeva in italiano
+/// appena qualcosa andava storto. Quella funzione resta per il banco di prova,
+/// che gira su Linux e non ha file di lingua.
++ (NSString *)testoDi:(const opencard_errore *)errore
+{
+    if (errore == NULL) {
+        return NSLocalizedString(@"errore_imprevisto", nil);
+    }
+
+    switch (errore->codice) {
+    case OPENCARD_ERR_IO:
+        return NSLocalizedString(@"core_io", nil);
+    case OPENCARD_ERR_JSON:
+        return NSLocalizedString(@"core_json", nil);
+    case OPENCARD_ERR_FORMATO:
+        return NSLocalizedString(@"core_formato", nil);
+    case OPENCARD_ERR_SCHEMA:
+        return [NSString stringWithFormat:NSLocalizedString(@"core_schema", nil),
+                (long)errore->schema_trovato, (long)OPENCARD_SCHEMA_VERSION];
+    case OPENCARD_ERR_CARTA:
+        if (errore->dettaglio[0] != '\0') {
+            NSString *nome = [NSString stringWithUTF8String:errore->dettaglio] ?: @"";
+            return [NSString stringWithFormat:NSLocalizedString(@"core_carta", nil),
+                    (long)errore->posizione, nome];
+        }
+        return [NSString stringWithFormat:
+                NSLocalizedString(@"core_carta_senza_dettaglio", nil),
+                (long)errore->posizione];
+    case OPENCARD_ERR_MEMORIA:
+        return NSLocalizedString(@"core_memoria", nil);
+    case OPENCARD_ERR_NON_TROVATA:
+        return NSLocalizedString(@"core_non_trovata", nil);
+    case OPENCARD_ERR_ALTRO_TRASF:
+        return NSLocalizedString(@"core_altro_trasferimento", nil);
+    case OPENCARD_ERR_TRASF_INCOMPLETO:
+        return NSLocalizedString(@"core_trasferimento_incompleto", nil);
+    case OPENCARD_ERR_TRASF_ROTTO:
+        return NSLocalizedString(@"core_trasferimento_rotto", nil);
+    case OPENCARD_ERR_TRASF_VERSIONE:
+        return [NSString stringWithFormat:
+                NSLocalizedString(@"core_trasferimento_versione", nil),
+                (long)errore->schema_trovato];
+    case OPENCARD_ERR_TRASF_TROPPE:
+        return NSLocalizedString(@"core_trasferimento_troppe", nil);
+    case OPENCARD_ERR_PASSWORD:
+        return NSLocalizedString(@"core_password", nil);
+    default:
+        return NSLocalizedString(@"errore_imprevisto", nil);
+    }
+}
+
 + (NSError *)erroreDa:(const opencard_errore *)errore
 {
-    char messaggio[512];
-    opencard_errore_testo(errore, messaggio, sizeof(messaggio));
-
-    NSString *testo = messaggio[0] != '\0'
-        ? [NSString stringWithUTF8String:messaggio]
-        : NSLocalizedString(@"errore_imprevisto", nil);
-
     return [NSError errorWithDomain:OCDominioErrore
                                code:(errore ? errore->codice : -1)
-                           userInfo:@{NSLocalizedDescriptionKey: testo}];
+                           userInfo:@{NSLocalizedDescriptionKey: [self testoDi:errore]}];
 }
 
 + (void)riporta:(NSError **)destinazione da:(const opencard_errore *)errore
