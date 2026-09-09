@@ -69,6 +69,16 @@ class FormActivity : AppCompatActivity() {
 
     /** Vero se la riga rossa sta mostrando l'avviso sul tipo di codice. */
     private var avvisoSimbologia = false
+
+    /**
+     * L'ultimo codice di cui si sa il tipo per certo, e qual e'.
+     *
+     * Lo riempie il lettore quando misura un codice, e la carta quando si apre
+     * per modificarla. Automatico se ne serve finche' il codice resta quello:
+     * e' un'informazione vera, e batte qualsiasi regola sulle cifre.
+     */
+    private var codiceNoto = ""
+    private var simbologiaNota = Simbologie.AUTO
     private lateinit var nota: EditText
     private lateinit var scadenza: EditText
     private lateinit var riquadroScadenza: TextInputLayout
@@ -264,6 +274,8 @@ class FormActivity : AppCompatActivity() {
             { Core.get(id) },
             { carta ->
                 nome.setText(carta.label)
+                codiceNoto = carta.code.trim()
+                simbologiaNota = carta.simbologia
                 codice.setText(carta.code)
                 mostraSimbologia(carta.simbologia)
                 nota.setText(carta.note)
@@ -427,12 +439,22 @@ class FormActivity : AppCompatActivity() {
      * errore, perché è la voce di chi non vuole scegliere.
      */
     private fun automatica(codice: String): Int {
+        // Quello che il lettore ha misurato, o quello con cui la carta era
+        // salvata: e' un fatto, non una supposizione, e vale finche' il codice
+        // non cambia. Senza questo un QR letto dalla fotocamera, lasciato su
+        // Automatico, tornerebbe un Code 128 solo perche' il suo contenuto ci
+        // sta dentro.
+        if (codice == codiceNoto && simbologiaNota != Simbologie.AUTO) {
+            return simbologiaNota
+        }
         val proposta = Core.simbologiaIndovinata(codice, false)
         return if (Core.codiceSta(codice, proposta)) proposta else Simbologie.QR
     }
 
     /** Codice letto, da qualunque strada sia arrivato. */
     private fun accetta(letto: String, letta: Int) {
+        codiceNoto = letto.trim()
+        simbologiaNota = letta
         codice.setText(letto)
         // Il lettore ha misurato che codice era: si scrive quello nell'elenco,
         // cosi' chi ha inquadrato la tessera vede subito cosa ha preso e non

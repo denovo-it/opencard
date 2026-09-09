@@ -80,6 +80,11 @@ static const NSUInteger OCLimiteCodice = 500;
 @property (nonatomic, assign) NSInteger simbologiaScelta;
 /// Vero se la riga rossa sta mostrando l'avviso sul tipo di codice.
 @property (nonatomic, assign) BOOL avvisoSimbologia;
+/// L'ultimo codice di cui si sa il tipo per certo, e qual è. Lo riempie il
+/// lettore quando misura un codice, e la carta quando si apre per modificarla:
+/// Automatico se ne serve finché il codice resta quello.
+@property (nonatomic, copy) NSString *codiceNoto;
+@property (nonatomic, assign) NSInteger simbologiaNota;
 
 @property (nonatomic, strong) UITextView *note;
 @property (nonatomic, strong) UIDatePicker *scadenza;
@@ -118,6 +123,9 @@ static const NSUInteger OCLimiteCodice = 500;
         _identificativo = 0;
         _usaEGetta = usaEGetta;
         _coloreProposto = [OCCore colorePerId:[OCCore prossimoId]];
+        // Zero sarebbe Code 128, che qui vorrebbe dire «lo so» quando non lo
+        // sappiamo ancora.
+        _simbologiaNota = OCSimbologiaAuto;
     }
     return self;
 }
@@ -128,6 +136,7 @@ static const NSUInteger OCLimiteCodice = 500;
     if (self != nil) {
         _identificativo = identificativo;
         _coloreProposto = @"#E6642B";
+        _simbologiaNota = OCSimbologiaAuto;
     }
     return self;
 }
@@ -766,6 +775,9 @@ static const NSUInteger OCLimiteCodice = 500;
 
     self.nome.text = carta.etichetta;
     self.codice.text = carta.codice;
+    self.codiceNoto = [carta.codice stringByTrimmingCharactersInSet:
+                       [NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    self.simbologiaNota = carta.simbologia;
     self.simbologiaScelta = carta.simbologia;
     [self aggiornaSimbologia];
     self.note.text = carta.note;
@@ -814,9 +826,18 @@ static const NSUInteger OCLimiteCodice = 500;
     // scegliere.
     NSInteger simbologia = self.simbologiaScelta;
     if (simbologia == OCSimbologiaAuto) {
-        simbologia = [OCCore simbologiaIndovinata:valore qrcode:NO];
-        if (![OCCore codiceSta:valore simbologia:simbologia]) {
-            simbologia = OPENCARD_SIM_QR;
+        // Quello che il lettore ha misurato, o quello con cui la carta era
+        // salvata, è un fatto e non una supposizione: vale finché il codice non
+        // cambia. Senza, un QR letto dalla fotocamera e lasciato su Automatico
+        // tornerebbe un Code 128 solo perché il suo contenuto ci sta dentro.
+        if ([valore isEqualToString:self.codiceNoto] &&
+            self.simbologiaNota != OCSimbologiaAuto) {
+            simbologia = self.simbologiaNota;
+        } else {
+            simbologia = [OCCore simbologiaIndovinata:valore qrcode:NO];
+            if (![OCCore codiceSta:valore simbologia:simbologia]) {
+                simbologia = OPENCARD_SIM_QR;
+            }
         }
     }
     // Una simbologia scelta a mano invece può non contenere il codice, e finora
@@ -983,6 +1004,9 @@ static const NSUInteger OCLimiteCodice = 500;
 
 - (void)accetta:(NSString *)letto simbologia:(NSInteger)letta
 {
+    self.codiceNoto = [letto stringByTrimmingCharactersInSet:
+                       [NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    self.simbologiaNota = letta;
     self.codice.text = letto;
     // Il lettore ha misurato che codice era: si scrive quello nell'elenco, così
     // chi ha inquadrato la tessera vede subito cosa ha preso e non deve
