@@ -99,6 +99,10 @@ static const NSInteger OCSimbologiaAuto = -1;
                                  qrcode:(BOOL)qrcode
                                  errore:(NSError **)errore;
 
+/// Dove sta il file delle carte. Serve a chi deve svuotare i temporanei senza
+/// rischiare di portarsi via i dati, nel caso limite in cui finiscano li'.
++ (NSString *)directoryDati;
+
 /// Nome proposto per il file di backup.
 + (NSString *)nomeBackup;
 

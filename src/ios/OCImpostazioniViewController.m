@@ -167,6 +167,7 @@
             [self avvisa:errore.localizedDescription];
             return;
         }
+        [self svuotaTemporanei];
         if (self.suCarteAzzerate != nil) {
             self.suCarteAzzerate();
         }
@@ -174,6 +175,29 @@
     }]];
 
     [self presentViewController:domanda animated:YES completion:nil];
+}
+
+/// I file temporanei.
+///
+/// Il backup appena esportato passa di qui prima di finire dove lo mette
+/// l'utente, e se qualcosa si è interrotto può restare. Le carte non ci sono
+/// mai state, ma chi chiede di cancellare tutto intende anche questi.
+///
+/// La guardia serve al caso limite in cui la cartella dei dati sia proprio
+/// questa: succede solo se il sistema non dà Application Support, e allora
+/// svuotare qui vorrebbe dire cancellare il file delle carte due volte, la
+/// seconda senza che il core lo sappia.
+- (void)svuotaTemporanei
+{
+    NSString *temporanei = NSTemporaryDirectory();
+    if (temporanei.length == 0 || [[OCCore directoryDati] hasPrefix:temporanei]) {
+        return;
+    }
+    NSFileManager *schedario = [NSFileManager defaultManager];
+    for (NSString *nome in [schedario contentsOfDirectoryAtPath:temporanei error:NULL]) {
+        [schedario removeItemAtPath:[temporanei stringByAppendingPathComponent:nome]
+                              error:NULL];
+    }
 }
 
 /// Un messaggio che resta il tempo di leggerlo, senza pulsanti da premere.

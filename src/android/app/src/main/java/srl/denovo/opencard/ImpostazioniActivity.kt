@@ -72,6 +72,11 @@ class ImpostazioniActivity : AppCompatActivity() {
                 // Le foto non le tocca il core: senza questa resterebbero file
                 // di carte che non esistono piu'.
                 Foto.cancellaTutte(this)
+                // E i file temporanei: le copie delle immagini da cui si legge
+                // un codice finiscono in cache, e se una lettura si interrompe
+                // possono restare li'. Le carte non ci sono mai state, ma chi
+                // chiede di cancellare tutto intende anche quelli.
+                cacheDir.listFiles()?.forEach { it.deleteRecursively() }
             },
             {
                 // L'elenco si rilegge da solo tornando indietro, perche'

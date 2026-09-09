@@ -34,7 +34,7 @@
     <string name="widget_scegli">Quale carta mostra questo widget</string>
     <string name="widget_tocca">Tocca per aprirla</string>
     <string name="widget_carta_sparita">Questa carta non c\'è più</string>
-    <string name="azzera_sottotitolo">Toglie tutte le carte da questo telefono</string>
+    <string name="azzera_sottotitolo">Toglie da questo telefono le carte, le foto e i file temporanei. Denovo non ne ha copia.</string>
     <string name="tipo_di_codice">Tipo di codice</string>
     <string name="simbologia_auto">Automatico</string>
     <string name="barcode">Barcode</string>
@@ -156,11 +156,11 @@
     <string name="apri">Apri</string>
     <string name="lingua">Lingua</string>
     <string name="lingua_sistema">Come il telefono</string>
-    <string name="azzera">Azzera le carte</string>
-    <string name="azzera_titolo">Cancellare tutte le carte?</string>
-    <string name="azzera_avviso">Spariscono da questo telefono e non si torna indietro. Se ti servono, esporta prima un backup.</string>
+    <string name="azzera">Cancella tutti i tuoi dati</string>
+    <string name="azzera_titolo">Cancellare tutti i tuoi dati?</string>
+    <string name="azzera_avviso">Spariscono da questo telefono le carte, le loro foto e i file temporanei, e non si torna indietro. Se le carte ti servono, esporta prima un backup.</string>
     <string name="azzera_conferma">Cancella tutto</string>
-    <string name="azzerate">Carte cancellate.</string>
+    <string name="azzerate">Dati cancellati.</string>
     <string name="esporta_come">Come esportare</string>
     <string name="esporta_archivio">Archivio con le foto</string>
     <string name="esporta_csv">CSV per altre app</string>

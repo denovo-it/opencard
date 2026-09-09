@@ -33,7 +33,7 @@
 "widget_scegli" = "Which card this widget shows";
 "widget_tocca" = "Tap to open it";
 "widget_carta_sparita" = "This card is gone";
-"azzera_sottotitolo" = "Removes every card from this phone";
+"azzera_sottotitolo" = "Removes your cards, their photos and temporary files from this phone. Denovo holds no copy.";
 "tipo_di_codice" = "Code type";
 "simbologia_auto" = "Automatic";
 "barcode" = "Barcode";
@@ -154,11 +154,11 @@
 "apri" = "Open";
 "lingua" = "Language";
 "lingua_sistema" = "Same as the phone";
-"azzera" = "Delete all cards";
-"azzera_titolo" = "Delete all cards?";
-"azzera_avviso" = "They disappear from this phone and there's no going back. If you need them, export a backup first.";
+"azzera" = "Delete all your data";
+"azzera_titolo" = "Delete all your data?";
+"azzera_avviso" = "Your cards, their photos and temporary files disappear from this phone, and there's no going back. If you need the cards, export a backup first.";
 "azzera_conferma" = "Delete everything";
-"azzerate" = "Cards deleted.";
+"azzerate" = "Data deleted.";
 "esporta_come" = "How to export";
 "esporta_archivio" = "Archive with the photos";
 "esporta_csv" = "CSV for other apps";
