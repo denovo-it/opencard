@@ -18,6 +18,7 @@ import android.text.TextWatcher
 import android.os.ParcelFileDescriptor
 import android.os.Bundle
 import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
@@ -36,7 +37,6 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.textfield.TextInputLayout
 import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import java.io.File
 import java.text.ParseException
@@ -63,6 +63,12 @@ class FormActivity : AppCompatActivity() {
     private lateinit var nome: EditText
     private lateinit var codice: EditText
     private lateinit var simbologia: Spinner
+
+    /** Il tipo di codice della carta, l'unico posto dove sta scritto. */
+    private var simbologiaScelta = Simbologie.AUTO
+
+    /** Vero se la riga rossa sta mostrando l'avviso sul tipo di codice. */
+    private var avvisoSimbologia = false
     private lateinit var nota: EditText
     private lateinit var scadenza: EditText
     private lateinit var riquadroScadenza: TextInputLayout
@@ -96,8 +102,10 @@ class FormActivity : AppCompatActivity() {
     ) { esito ->
         if (esito.resultCode == Activity.RESULT_OK) {
             val letto = esito.data?.getStringExtra(ScannerActivity.EXTRA_CODICE)
-            val eraQr = esito.data?.getBooleanExtra(ScannerActivity.EXTRA_QRCODE, false) ?: false
-            if (letto != null) accetta(letto, eraQr)
+            val letta = esito.data?.getIntExtra(
+                ScannerActivity.EXTRA_SIMBOLOGIA, Simbologie.AUTO
+            ) ?: Simbologie.AUTO
+            if (letto != null) accetta(letto, letta)
         }
     }
 
@@ -175,15 +183,36 @@ class FormActivity : AppCompatActivity() {
         anteprimaFronte.setOnClickListener { togliFoto(FRONTE) }
         anteprimaRetro.setOnClickListener { togliFoto(RETRO) }
         simbologia = findViewById(R.id.simbologia)
+        // Automatico è la prima voce ed è quella di partenza: chi aggiunge una
+        // tessera non sa che codice ha in mano, e non deve saperlo.
         simbologia.adapter = ArrayAdapter(
             this,
             android.R.layout.simple_spinner_item,
-            Simbologie.nomi,
+            listOf(getString(R.string.simbologia_auto)) + Simbologie.nomi,
         ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+        simbologia.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                elenco: AdapterView<*>?, vista: View?, posizione: Int, quale: Long,
+            ) {
+                simbologiaScelta = Simbologie.simbologiaDellaVoce(posizione)
+                controllaSimbologia()
+            }
+
+            override fun onNothingSelected(elenco: AdapterView<*>?) = Unit
+        }
         casella = findViewById(R.id.usa_e_getta)
         stella = findViewById(R.id.preferita)
         tavolozza = findViewById(R.id.tavolozza)
         errore = findViewById(R.id.errore)
+
+        // L'avviso sul tipo di codice segue anche il codice: cambiandolo a mano
+        // una scelta che prima non ci stava puo' andare bene, e viceversa.
+        codice.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(testo: Editable?) = controllaSimbologia()
+
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+        })
 
         id = intent.getIntExtra(EXTRA_ID, 0)
         usaEGetta = intent.getBooleanExtra(EXTRA_USA_E_GETTA, false)
@@ -236,7 +265,7 @@ class FormActivity : AppCompatActivity() {
             { carta ->
                 nome.setText(carta.label)
                 codice.setText(carta.code)
-                simbologia.setSelection(carta.simbologia)
+                mostraSimbologia(carta.simbologia)
                 nota.setText(carta.note)
                 scadenza.setText(carta.scadenza)
                 saldo.setText(carta.saldo)
@@ -360,14 +389,59 @@ class FormActivity : AppCompatActivity() {
         return nomi
     }
 
+    /** Scrive il tipo di codice nell'elenco, e con lui il valore vero. */
+    private fun mostraSimbologia(quale: Int) {
+        simbologiaScelta = quale
+        simbologia.setSelection(Simbologie.voce(quale))
+        controllaSimbologia()
+    }
+
+    /**
+     * L'avviso quando il tipo scelto non puo' contenere il codice che c'e'.
+     *
+     * Arriva scegliendo, non premendo Salva: cosi' si vede subito che quella
+     * strada non porta da nessuna parte, e si vede anche aprendo una carta
+     * salvata storta da una versione precedente. Salva poi si rifiuta lo stesso.
+     *
+     * Con Automatico non compare mai: quella strada una simbologia buona la
+     * trova sempre.
+     */
+    private fun controllaSimbologia() {
+        val valore = codice.text.toString().trim()
+        val quale = simbologiaScelta
+
+        if (valore.isEmpty() || quale == Simbologie.AUTO || Core.codiceSta(valore, quale)) {
+            if (avvisoSimbologia) mostraErrore("")
+            return
+        }
+        mostraErrore(getString(R.string.simbologia_non_ci_sta, Simbologie.nomi[quale]))
+        avvisoSimbologia = true
+    }
+
+    /**
+     * La simbologia che sceglie l'app quando l'elenco è su Automatico.
+     *
+     * Si parte da quella che si ricava dal codice, che è la regola di sempre.
+     * Se il codice non ci sta si ripiega sul QR, che tiene tutto: il contenuto
+     * di un QR in un Code 128 non entra, e Automatico non deve mai finire in un
+     * errore, perché è la voce di chi non vuole scegliere.
+     */
+    private fun automatica(codice: String): Int {
+        val proposta = Core.simbologiaIndovinata(codice, false)
+        return if (Core.codiceSta(codice, proposta)) proposta else Simbologie.QR
+    }
+
     /** Codice letto, da qualunque strada sia arrivato. */
-    private fun accetta(letto: String, eraQr: Boolean) {
+    private fun accetta(letto: String, letta: Int) {
         codice.setText(letto)
-        // La simbologia la propone il core guardando il codice: EAN-13 se le
-        // cifre tornano, QR se e' arrivato da un QR, Code 128 per il resto.
-        // Resta un punto di partenza, l'elenco e' li' per cambiarla.
-        simbologia.setSelection(Core.simbologiaIndovinata(letto, eraQr))
-        errore.text = ""
+        // Il lettore ha misurato che codice era: si scrive quello nell'elenco,
+        // cosi' chi ha inquadrato la tessera vede subito cosa ha preso e non
+        // deve decidere niente. Resta cambiabile a mano.
+        //
+        // Se il formato non e' fra quelli che sappiamo disegnare si resta su
+        // Automatico, e la simbologia la sceglie il salvataggio.
+        mostraSimbologia(letta)
+        mostraErrore("")
     }
 
     /**
@@ -435,7 +509,10 @@ class FormActivity : AppCompatActivity() {
                 .addOnSuccessListener { codici ->
                     val primo = codici.firstOrNull { !it.rawValue.isNullOrEmpty() }
                     if (primo != null) {
-                        accetta(primo.rawValue!!, primo.format == Barcode.FORMAT_QR_CODE)
+                        accetta(
+                            primo.rawValue!!,
+                            ScannerActivity.simbologiaDelFormato(primo.format),
+                        )
                     } else if (!senzaRidurre && !eUnPdf && copia != null && bitmap != null) {
                         leggiDaImmagine(immagine, senzaRidurre = true)
                     } else {
@@ -581,15 +658,32 @@ class FormActivity : AppCompatActivity() {
         val valore = codice.text.toString().trim()
 
         if (etichetta.isEmpty()) {
-            errore.text = getString(R.string.manca_etichetta)
+            mostraErrore(getString(R.string.manca_etichetta))
             return
         }
         if (valore.isEmpty()) {
-            errore.text = getString(R.string.manca_codice)
+            mostraErrore(getString(R.string.manca_codice))
             return
         }
 
-        val scelta = simbologia.selectedItemPosition
+        // Automatico non e' una simbologia: e' l'app che ne sceglie una al
+        // posto dell'utente. Qui si scioglie, guardando il codice come faceva
+        // l'app prima che l'elenco esistesse, e nel file finisce la simbologia
+        // vera: una carta salvata sa sempre come si disegna.
+        val scelta = if (simbologiaScelta == Simbologie.AUTO) {
+            automatica(valore)
+        } else {
+            simbologiaScelta
+        }
+        // Un contenuto letto da un QR in un Code 128 non ci sta, e finora la
+        // carta si salvava lo stesso: il codice si scopriva mancante aprendola,
+        // con un avviso che spariva da solo. Si dice qui, prima di salvare.
+        // Con Automatico non succede: quella strada una simbologia buona la
+        // trova sempre.
+        if (!Core.codiceSta(valore, scelta)) {
+            mostraErrore(getString(R.string.simbologia_non_ci_sta, Simbologie.nomi[scelta]))
+            return
+        }
         val isQr = Simbologie.eQuadrato(scelta)
         val quandoScade = scadenza.text.toString().trim()
         // La data la controlla anche il core, che rifiuta la carta: qui si
@@ -599,7 +693,7 @@ class FormActivity : AppCompatActivity() {
             quandoScade[4] == '-' && quandoScade[7] == '-' &&
             quandoScade.filterIndexed { i, _ -> i != 4 && i != 7 }.all { it.isDigit() }
         if (quandoScade.isNotEmpty() && !dataScritta) {
-            errore.text = getString(R.string.scadenza_non_valida)
+            mostraErrore(getString(R.string.scadenza_non_valida))
             return
         }
         val colore = coloreScelto ?: ""
@@ -677,7 +771,19 @@ class FormActivity : AppCompatActivity() {
     }
 
     private fun avvisa(messaggio: String) {
+        mostraErrore(messaggio)
+    }
+
+    /**
+     * Il messaggio di errore, o niente se la stringa e' vuota.
+     *
+     * Da vuoto il riquadro sparisce invece di restare alto zero: sta fra i
+     * pulsanti e il primo campo, e un margine appeso li' si vedrebbe.
+     */
+    private fun mostraErrore(messaggio: String) {
+        avvisoSimbologia = false
         errore.text = messaggio
+        errore.visibility = if (messaggio.isEmpty()) View.GONE else View.VISIBLE
     }
 }
 

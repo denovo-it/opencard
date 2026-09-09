@@ -1,7 +1,10 @@
 ## 1.0.3-dev (in lavorazione)
 
-- I tipi di codice passano da 5 a 18: Aztec, Data Matrix, PDF417, Micro QR e gli altri si scelgono da un elenco quando si aggiunge una carta. Quello giusto lo propone l'app guardando il codice.
+- I tipi di codice passano da 5 a 18: Aztec, Data Matrix, PDF417, Micro QR e gli altri si scelgono da un elenco quando si aggiunge una carta. L'elenco parte da Automatico, e chi non sa che codice ha in mano non deve sceglierlo: inquadrando la tessera il tipo lo riconosce il lettore, e scrivendo il codice a mano lo decide l'app.
 - Ogni carta può avere una nota, una scadenza e un saldo. Restano vuoti finché non servono.
+- Un codice lungo disegnato come codice a barre adesso si vede. Capitava con le carte lette da un QR e poi cambiate in codice a barre: l'immagine veniva costruita così larga che parecchi telefoni Android non la mostravano affatto, e al posto delle barre restava il solo testo del codice.
+- Scegliendo un tipo di codice che non può contenere quel codice, l'app lo dice subito, appena si sceglie, e poi si rifiuta di salvare: prima la carta si salvava e non mostrava niente. L'avviso compare anche aprendo una carta che è già in quello stato. Con Automatico non capita mai: se il codice non sta in un codice a barre viene disegnato come QR.
+- Quando manca l'etichetta o il codice, Salva dice perché non salva: il messaggio è passato in cima al modulo, sotto i due pulsanti. In fondo alla schermata restava fuori dallo schermo e sembrava che Salva non funzionasse.
 - La scadenza si sceglie dal calendario, senza scriverla a mano.
 - Ogni carta può avere la foto del fronte e del retro, per leggere quello che sulla tessera è stampato e nel codice non c'è. Si passa da una faccia all'altra scorrendo di lato o con le due frecce, e toccandola si apre a schermo pieno, dove si ingrandisce con due dita.
 - Il backup su file adesso è un archivio con dentro le carte e le foto, e si può chiudere con una password.

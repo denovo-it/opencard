@@ -823,6 +823,20 @@ Java_srl_denovo_opencard_Core_renderCodeSimbologia(JNIEnv *env, jclass classe,
     return disegna_codice(env, code, JNI_FALSE, simbologia);
 }
 
+JNIEXPORT jboolean JNICALL
+Java_srl_denovo_opencard_Core_codiceSta(JNIEnv *env, jclass classe,
+                                        jstring code, jint simbologia)
+{
+    char ingresso[OPENCARD_CODE_MAX];
+
+    (void)classe;
+    if (!stringa(env, code, ingresso, sizeof(ingresso))) {
+        return JNI_FALSE;
+    }
+    return opencard_codice_sta(ingresso, (opencard_simbologia)simbologia)
+        ? JNI_TRUE : JNI_FALSE;
+}
+
 JNIEXPORT jint JNICALL
 Java_srl_denovo_opencard_Core_simbologiaIndovinata(JNIEnv *env, jclass classe,
                                                    jstring code, jboolean isQrcode)

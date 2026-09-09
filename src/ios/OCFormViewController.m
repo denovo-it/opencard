@@ -20,6 +20,46 @@ static NSArray<NSString *> *OCColoriScelta(void)
              @"#6D4C41", @"#039BE5", @"#D81B60", @"#3949AB", @"#00ACC1", @"#7CB342"];
 }
 
+/// La simbologia del core che corrisponde a un formato di Vision, che è il
+/// lettore delle immagini già scattate. I nomi non sono quelli di AVFoundation,
+/// che legge dal vivo: sono due elenchi diversi per la stessa cosa.
+///
+/// Vale lo stesso della fotocamera: il lettore sa già che codice ha letto, e
+/// dirlo è meglio che ricavarlo dal testo. Un formato che non sappiamo
+/// disegnare torna `OCSimbologiaAuto` e la scelta resta all'app.
+///
+/// MSI Plessey resta fuori: la sua costante esiste da iOS 17 e sotto vale nil,
+/// che dentro un dizionario letterale fa cadere l'app. Il DataBar resta fuori
+/// perché il testo che torna da Vision non è quello che zint vuole in ingresso.
+static NSInteger OCSimbologiaDiVision(VNBarcodeSymbology simbologia)
+{
+    static NSDictionary<VNBarcodeSymbology, NSNumber *> *tabella = nil;
+    static dispatch_once_t unaVolta;
+    dispatch_once(&unaVolta, ^{
+        tabella = @{
+            VNBarcodeSymbologyCode128: @(OPENCARD_SIM_CODE128),
+            VNBarcodeSymbologyQR: @(OPENCARD_SIM_QR),
+            VNBarcodeSymbologyAztec: @(OPENCARD_SIM_AZTEC),
+            VNBarcodeSymbologyCodabar: @(OPENCARD_SIM_CODABAR),
+            VNBarcodeSymbologyCode39: @(OPENCARD_SIM_CODE39),
+            VNBarcodeSymbologyCode39Checksum: @(OPENCARD_SIM_CODE39),
+            VNBarcodeSymbologyCode93: @(OPENCARD_SIM_CODE93),
+            VNBarcodeSymbologyCode93i: @(OPENCARD_SIM_CODE93),
+            VNBarcodeSymbologyDataMatrix: @(OPENCARD_SIM_DATAMATRIX),
+            VNBarcodeSymbologyEAN8: @(OPENCARD_SIM_EAN8),
+            VNBarcodeSymbologyEAN13: @(OPENCARD_SIM_EAN13),
+            VNBarcodeSymbologyITF14: @(OPENCARD_SIM_ITF),
+            VNBarcodeSymbologyI2of5: @(OPENCARD_SIM_ITF),
+            VNBarcodeSymbologyI2of5Checksum: @(OPENCARD_SIM_ITF),
+            VNBarcodeSymbologyPDF417: @(OPENCARD_SIM_PDF417),
+            VNBarcodeSymbologyUPCE: @(OPENCARD_SIM_UPCE),
+            VNBarcodeSymbologyMicroQR: @(OPENCARD_SIM_MICROQR),
+        };
+    });
+    NSNumber *quale = simbologia != nil ? tabella[simbologia] : nil;
+    return quale != nil ? quale.integerValue : OCSimbologiaAuto;
+}
+
 /// Gli stessi limiti del form Android (`activity_form.xml`): oltre, il core
 /// taglierebbe in silenzio e la carta arriverebbe monca senza che si veda.
 static const NSUInteger OCLimiteNome = 120;
@@ -38,6 +78,8 @@ static const NSUInteger OCLimiteCodice = 500;
 /// Quale sia scelta sta in `simbologiaScelta`, non nel titolo del pulsante.
 @property (nonatomic, strong) UIButton *tipo;
 @property (nonatomic, assign) NSInteger simbologiaScelta;
+/// Vero se la riga rossa sta mostrando l'avviso sul tipo di codice.
+@property (nonatomic, assign) BOOL avvisoSimbologia;
 
 @property (nonatomic, strong) UITextView *note;
 @property (nonatomic, strong) UIDatePicker *scadenza;
@@ -180,6 +222,11 @@ static const NSUInteger OCLimiteCodice = 500;
     self.nome.returnKeyType = UIReturnKeyNext;
     self.codice.returnKeyType = UIReturnKeyDone;
 
+    // L'avviso sul tipo di codice segue anche il codice: cambiandolo a mano una
+    // scelta che prima non ci stava può andare bene, e viceversa.
+    [self.codice addTarget:self action:@selector(codiceCambiato)
+          forControlEvents:UIControlEventEditingChanged];
+
     // Barre o quadrato non basta più: le simbologie sono 18, e quale sia
     // cambia il disegno alla cassa. Un pulsante che apre l'elenco occupa una
     // riga sola, dove un segmentato a 18 voci non ci starebbe.
@@ -196,7 +243,9 @@ static const NSUInteger OCLimiteCodice = 500;
         self.tipo.configuration = configurazione;
     }
     [self.tipo.heightAnchor constraintEqualToConstant:44].active = YES;
-    self.simbologiaScelta = OPENCARD_SIM_CODE128;
+    // Automatico è il punto di partenza: chi aggiunge una tessera non sa che
+    // codice ha in mano, e non deve saperlo.
+    self.simbologiaScelta = OCSimbologiaAuto;
     [self aggiornaSimbologia];
 
     UIStackView *acquisizione = [[UIStackView alloc] initWithArrangedSubviews:@[
@@ -306,6 +355,7 @@ static const NSUInteger OCLimiteCodice = 500;
     self.errore.font = [UIFont systemFontOfSize:13];
     self.errore.textColor = [OCTema pericolo];
     self.errore.numberOfLines = 0;
+    self.errore.hidden = YES;
 
     // In fondo e lontano da Salva: si vede solo modificando una carta che
     // esiste già, e chiede conferma prima di cancellare.
@@ -322,13 +372,16 @@ static const NSUInteger OCLimiteCodice = 500;
            forControlEvents:UIControlEventTouchUpInside];
 
     UIStackView *colonna = [[UIStackView alloc] initWithArrangedSubviews:@[
+        // L'errore sta in cima e non in fondo: Salva è nella barra, sempre
+        // sotto gli occhi, mentre il modulo può essere scorso fin dove si vuole,
+        // e un messaggio in fondo non lo leggeva nessuno. Da vuoto è `hidden`,
+        // e una vista nascosta esce dal conto della colonna: niente buco.
+        self.errore,
         self.nome, self.codice, [self titoletto:NSLocalizedString(@"tipo_di_codice", nil)], self.tipo, acquisizione,
         [self titoletto:NSLocalizedString(@"colore", nil)], scorrevoleColori,
         [self titoletto:NSLocalizedString(@"nota", nil)], self.note,
         rigaScadenza, self.saldo, rigaFoto,
-        // L'errore sta sotto Elimina e non sopra: da vuoto occupa comunque una
-        // riga, e in mezzo faceva un buco fra la preferita e il pulsante.
-        rigaUsaEGetta, spiegazione, rigaStella, self.elimina, self.errore,
+        rigaUsaEGetta, spiegazione, rigaStella, self.elimina,
     ]];
     colonna.axis = UILayoutConstraintAxisVertical;
     colonna.spacing = 16;
@@ -405,43 +458,84 @@ static const NSUInteger OCLimiteCodice = 500;
 
 /// Rifà il titolo e l'elenco, con la spunta su quella scelta. L'elenco si
 /// ricostruisce ogni volta perché la spunta sta dentro le voci.
+///
+/// Scegliendo un tipo che non contiene il codice l'avviso arriva subito, senza
+/// aspettare Salva.
 - (void)aggiornaSimbologia
 {
-    NSArray<NSString *> *nomi = [OCCore nomiSimbologie];
+    // In cima c'è Automatico, che non è una simbologia del core: l'elenco è
+    // quello del core con una voce in più davanti, e i numeri restano quelli.
+    NSArray<NSString *> *nomi = [@[NSLocalizedString(@"simbologia_auto", nil)]
+                                 arrayByAddingObjectsFromArray:[OCCore nomiSimbologie]];
     NSInteger scelta = self.simbologiaScelta;
 
-    if (scelta < 0 || scelta >= (NSInteger)nomi.count) {
-        scelta = OPENCARD_SIM_CODE128;
+    if (scelta < OCSimbologiaAuto || scelta >= (NSInteger)nomi.count - 1) {
+        scelta = OCSimbologiaAuto;
         self.simbologiaScelta = scelta;
     }
     // Con una configurazione addosso il titolo lo tiene lei: setTitle: non
     // farebbe niente e il pulsante resterebbe vuoto.
     if (@available(iOS 15.0, *)) {
         UIButtonConfiguration *configurazione = self.tipo.configuration;
-        configurazione.title = nomi[scelta];
+        configurazione.title = nomi[scelta + 1];
         self.tipo.configuration = configurazione;
     } else {
-        [self.tipo setTitle:nomi[scelta] forState:UIControlStateNormal];
+        [self.tipo setTitle:nomi[scelta + 1] forState:UIControlStateNormal];
     }
 
     NSMutableArray<UIAction *> *voci = [NSMutableArray arrayWithCapacity:nomi.count];
     __weak typeof(self) debole = self;
 
     for (NSUInteger i = 0; i < nomi.count; i++) {
-        NSUInteger quale = i;
+        NSInteger quale = (NSInteger)i - 1;
         UIAction *voce = [UIAction actionWithTitle:nomi[i]
                                              image:nil
                                         identifier:nil
                                            handler:^(__kindof UIAction *azione) {
             (void)azione;
-            debole.simbologiaScelta = (NSInteger)quale;
+            debole.simbologiaScelta = quale;
             [debole aggiornaSimbologia];
         }];
-        voce.state = ((NSInteger)i == scelta) ? UIMenuElementStateOn : UIMenuElementStateOff;
+        voce.state = (quale == scelta) ? UIMenuElementStateOn : UIMenuElementStateOff;
         [voci addObject:voce];
     }
     self.tipo.menu = [UIMenu menuWithTitle:NSLocalizedString(@"tipo_di_codice", nil)
                                   children:voci];
+    [self controllaSimbologia];
+}
+
+/// L'avviso quando il tipo scelto non può contenere il codice che c'è.
+///
+/// Arriva scegliendo, non premendo Salva: così si vede subito che quella strada
+/// non porta da nessuna parte, e si vede anche aprendo una carta salvata storta
+/// da una versione precedente. Salva poi si rifiuta lo stesso.
+///
+/// Con Automatico non compare mai: quella strada una simbologia buona la trova
+/// sempre.
+- (void)controllaSimbologia
+{
+    NSString *valore = [self.codice.text stringByTrimmingCharactersInSet:
+                        [NSCharacterSet whitespaceAndNewlineCharacterSet]] ?: @"";
+    NSInteger quale = self.simbologiaScelta;
+
+    if (valore.length == 0 || quale == OCSimbologiaAuto ||
+        [OCCore codiceSta:valore simbologia:quale]) {
+        if (self.avvisoSimbologia) {
+            [self mostraErrore:@""];
+        }
+        return;
+    }
+    [self mostraErrore:[NSString stringWithFormat:
+                        NSLocalizedString(@"simbologia_non_ci_sta", nil),
+                        [OCCore nomiSimbologie][quale]]];
+    self.avvisoSimbologia = YES;
+}
+
+/// Il codice cambiato a mano può rendere buona una scelta che non lo era, o il
+/// contrario.
+- (void)codiceCambiato
+{
+    [self controllaSimbologia];
 }
 
 #pragma mark - Scadenza
@@ -666,7 +760,7 @@ static const NSUInteger OCLimiteCodice = 500;
     OCCarta *carta = [OCCore cartaConId:self.identificativo errore:&errore];
 
     if (carta == nil) {
-        self.errore.text = errore.localizedDescription;
+        [self mostraErrore:errore.localizedDescription];
         return;
     }
 
@@ -701,15 +795,42 @@ static const NSUInteger OCLimiteCodice = 500;
                         [NSCharacterSet whitespaceAndNewlineCharacterSet]] ?: @"";
 
     if (etichetta.length == 0) {
-        self.errore.text = NSLocalizedString(@"manca_etichetta", nil);
+        [self mostraErrore:NSLocalizedString(@"manca_etichetta", nil)];
         return;
     }
     if (valore.length == 0) {
-        self.errore.text = NSLocalizedString(@"manca_codice", nil);
+        [self mostraErrore:NSLocalizedString(@"manca_codice", nil)];
         return;
     }
 
-    BOOL qrcode = [OCCore simbologiaQuadrata:self.simbologiaScelta];
+    // Automatico non è una simbologia: è l'app che ne sceglie una al posto
+    // dell'utente. Qui si scioglie, guardando il codice come faceva l'app prima
+    // che l'elenco esistesse, e nel file finisce la simbologia vera: una carta
+    // salvata sa sempre come si disegna.
+    //
+    // Se quella che si ricava dal codice non lo contiene si ripiega sul QR, che
+    // tiene tutto: il contenuto di un QR in un Code 128 non entra, e Automatico
+    // non deve mai finire in un errore, perché è la voce di chi non vuole
+    // scegliere.
+    NSInteger simbologia = self.simbologiaScelta;
+    if (simbologia == OCSimbologiaAuto) {
+        simbologia = [OCCore simbologiaIndovinata:valore qrcode:NO];
+        if (![OCCore codiceSta:valore simbologia:simbologia]) {
+            simbologia = OPENCARD_SIM_QR;
+        }
+    }
+    // Una simbologia scelta a mano invece può non contenere il codice, e finora
+    // la carta si salvava lo stesso: il codice si scopriva mancante aprendola.
+    // Si dice qui, prima di salvare.
+    if (![OCCore codiceSta:valore simbologia:simbologia]) {
+        NSArray<NSString *> *nomi = [OCCore nomiSimbologie];
+        [self mostraErrore:[NSString stringWithFormat:
+                            NSLocalizedString(@"simbologia_non_ci_sta", nil),
+                            nomi[simbologia]]];
+        return;
+    }
+
+    BOOL qrcode = [OCCore simbologiaQuadrata:simbologia];
     NSString *colore = self.coloreScelto ?: @"";
     NSError *errore = nil;
     BOOL esito;
@@ -727,7 +848,7 @@ static const NSUInteger OCLimiteCodice = 500;
     }
 
     if (!esito) {
-        self.errore.text = errore.localizedDescription;
+        [self mostraErrore:errore.localizedDescription];
         return;
     }
 
@@ -735,14 +856,14 @@ static const NSUInteger OCLimiteCodice = 500;
     // quelle due lasciano stare il campo apposta, così modificare una carta
     // non le toglie la preferenza.
     if (![OCCore impostaPreferita:quale accesa:self.stella.isOn errore:&errore]) {
-        self.errore.text = errore.localizedDescription;
+        [self mostraErrore:errore.localizedDescription];
         return;
     }
 
     // Come la stella: inserisci e aggiorna lasciano stare questi campi, così
     // modificare l'etichetta di una carta non le cancella la nota.
-    if (![OCCore impostaSimbologia:quale simbologia:self.simbologiaScelta errore:&errore]) {
-        self.errore.text = errore.localizedDescription;
+    if (![OCCore impostaSimbologia:quale simbologia:simbologia errore:&errore]) {
+        [self mostraErrore:errore.localizedDescription];
         return;
     }
     if (![OCCore impostaDettagli:quale
@@ -750,11 +871,11 @@ static const NSUInteger OCLimiteCodice = 500;
                         scadenza:[self scadenzaScritta]
                            saldo:self.saldo.text ?: @""
                           errore:&errore]) {
-        self.errore.text = errore.localizedDescription;
+        [self mostraErrore:errore.localizedDescription];
         return;
     }
     if (![self salvaLeFotoDi:quale errore:&errore]) {
-        self.errore.text = errore.localizedDescription;
+        [self mostraErrore:errore.localizedDescription];
         return;
     }
 
@@ -825,7 +946,7 @@ static const NSUInteger OCLimiteCodice = 500;
                                               handler:^(UIAlertAction *azione) {
         NSError *errore = nil;
         if (![OCCore elimina:self.identificativo errore:&errore]) {
-            self.errore.text = errore.localizedDescription;
+            [self mostraErrore:errore.localizedDescription];
             return;
         }
         void (^avvisa)(void) = self.suEliminazione;
@@ -844,24 +965,42 @@ static const NSUInteger OCLimiteCodice = 500;
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
+/// Il messaggio di errore, o niente se la stringa è vuota.
+///
+/// Riporta anche il modulo in cima: Salva sta nella barra e si preme da
+/// qualsiasi punto del modulo, quindi il messaggio può essere fuori schermo.
+- (void)mostraErrore:(NSString *)messaggio
+{
+    self.avvisoSimbologia = NO;
+    self.errore.text = messaggio;
+    self.errore.hidden = messaggio.length == 0;
+    if (messaggio.length > 0) {
+        [self.scorrevole setContentOffset:CGPointZero animated:YES];
+    }
+}
+
 #pragma mark - Acquisizione del codice
 
-- (void)accetta:(NSString *)letto qrcode:(BOOL)qrcode
+- (void)accetta:(NSString *)letto simbologia:(NSInteger)letta
 {
     self.codice.text = letto;
-    // La simbologia la propone il core guardando il codice: EAN-13 se le cifre
-    // sono tredici e il controllo torna, e via così. Resta cambiabile a mano.
-    self.simbologiaScelta = [OCCore simbologiaIndovinata:letto qrcode:qrcode];
+    // Il lettore ha misurato che codice era: si scrive quello nell'elenco, così
+    // chi ha inquadrato la tessera vede subito cosa ha preso e non deve
+    // decidere niente. Resta cambiabile a mano.
+    //
+    // Se il formato non è fra quelli che sappiamo disegnare si resta su
+    // Automatico, e la simbologia la sceglie il salvataggio.
+    self.simbologiaScelta = letta;
     [self aggiornaSimbologia];
-    self.errore.text = @"";
+    [self mostraErrore:@""];
 }
 
 - (void)daFotocamera
 {
     OCScannerViewController *scanner = [OCScannerViewController new];
     __weak typeof(self) debole = self;
-    scanner.suLettura = ^(NSString *codice, BOOL qrcode) {
-        [debole accetta:codice qrcode:qrcode];
+    scanner.suLettura = ^(NSString *codice, NSInteger simbologia) {
+        [debole accetta:codice simbologia:simbologia];
     };
 
     UINavigationController *contenitore = [[UINavigationController alloc]
@@ -981,7 +1120,7 @@ static const NSUInteger OCLimiteCodice = 500;
         immagine = [self paginaDaPdf:contenuto];
     }
     if (immagine == nil) {
-        self.errore.text = NSLocalizedString(@"immagine_non_letta", nil);
+        [self mostraErrore:NSLocalizedString(@"immagine_non_letta", nil)];
         return;
     }
     [self leggiDaImmagine:immagine];
@@ -992,7 +1131,7 @@ static const NSUInteger OCLimiteCodice = 500;
 - (void)leggiDaImmagine:(UIImage *)immagine
 {
     if (immagine.CGImage == NULL) {
-        self.errore.text = NSLocalizedString(@"immagine_non_letta", nil);
+        [self mostraErrore:NSLocalizedString(@"immagine_non_letta", nil)];
         return;
     }
 
@@ -1000,8 +1139,8 @@ static const NSUInteger OCLimiteCodice = 500;
         initWithCompletionHandler:^(VNRequest *fatta, NSError *guasto) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (guasto != nil) {
-                self.errore.text = [NSString stringWithFormat:NSLocalizedString(@"lettura_non_riuscita", nil),
-                                    guasto.localizedDescription];
+                [self mostraErrore:[NSString stringWithFormat:NSLocalizedString(@"lettura_non_riuscita", nil),
+                                    guasto.localizedDescription]];
                 return;
             }
 
@@ -1009,11 +1148,11 @@ static const NSUInteger OCLimiteCodice = 500;
                 if (trovato.payloadStringValue.length == 0) {
                     continue;
                 }
-                BOOL qrcode = [trovato.symbology isEqualToString:VNBarcodeSymbologyQR];
-                [self accetta:trovato.payloadStringValue qrcode:qrcode];
+                [self accetta:trovato.payloadStringValue
+                   simbologia:OCSimbologiaDiVision(trovato.symbology)];
                 return;
             }
-            self.errore.text = NSLocalizedString(@"nessun_codice_nell_immagine", nil);
+            [self mostraErrore:NSLocalizedString(@"nessun_codice_nell_immagine", nil)];
         });
     }];
 

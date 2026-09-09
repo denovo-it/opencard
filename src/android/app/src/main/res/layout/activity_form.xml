@@ -56,6 +56,19 @@
                     android:text="@string/salva" />
             </LinearLayout>
 
+            <!-- Il messaggio sta qui e non in fondo: Salva e' in cima, e chi lo
+                 preme deve leggere subito perche' non e' successo niente. In
+                 fondo alla schermata restava fuori dallo schermo. Da vuoto e'
+                 gone, cosi' non lascia un buco fra i pulsanti e l'etichetta. -->
+            <TextView
+                android:id="@+id/errore"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/danger"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -94,8 +107,10 @@
                 android:textSize="13sp" />
 
             <!-- Dalla 1.0.3 le simbologie sono diciotto e non due: un elenco a
-                 tendina al posto dei due bottoni. Quella giusta la propone
-                 l'app guardando il codice, e si cambia solo se serve. -->
+                 tendina al posto dei due bottoni. L'elenco parte da Automatico
+                 e si cambia solo se serve, anche su una carta gia' salvata.
+                 Scegliendone una che non contiene il codice l'avviso arriva
+                 subito, senza aspettare Salva. -->
             <Spinner
                 android:id="@+id/simbologia"
                 android:layout_width="match_parent"
@@ -314,13 +329,6 @@
                 app:rippleColor="@color/danger"
                 app:strokeColor="@color/danger" />
 
-            <TextView
-                android:id="@+id/errore"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="@color/danger"
-                android:textSize="13sp" />
         </LinearLayout>
     </ScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

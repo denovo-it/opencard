@@ -37,6 +37,18 @@ int opencard_grouped_code(const char *code, char *out, size_t out_size);
  * che le lega a zint, perché è l'unico posto che conosce zint. */
 int opencard_zint_da_simbologia(opencard_simbologia simbologia);
 
+/* Se un codice si può disegnare in una simbologia, senza disegnarlo.
+ *
+ * Serve al modulo di inserimento: una scelta che non porta da nessuna parte va
+ * detta mentre si salva, non scoperta più tardi aprendo la carta e trovando il
+ * posto del codice vuoto. Un contenuto da QR, per esempio, in Code 128 non ci
+ * sta: quella simbologia arriva a 99 caratteri di simbolo e basta.
+ *
+ * Ritorna 1 se ci sta, 0 se no. Il messaggio da mostrare lo compone la UI, che
+ * sa in che lingua sta parlando.
+ */
+int opencard_codice_sta(const char *code, opencard_simbologia simbologia);
+
 /* Come opencard_render_bitmap, ma con la simbologia decisa da chi chiama.
  * Un codice che non sta in quella simbologia (un EAN-13 di dodici cifre, un
  * Codabar senza le lettere agli estremi) torna un errore di zint con il testo

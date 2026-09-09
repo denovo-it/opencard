@@ -45,8 +45,30 @@ object Simbologie {
         "Micro QR", "GS1-128", "GS1 DataBar", "DataBar Expanded", "MSI Plessey",
     )
 
+    /** I due numeri del core che servono per nome anche qui fuori. */
+    const val QR = 1
+    const val MICROQR = 13
+
     /** Vero per le due che si disegnano come quadrato e non come barre. */
-    fun eQuadrato(simbologia: Int) = simbologia == 1 || simbologia == 13
+    fun eQuadrato(simbologia: Int) = simbologia == QR || simbologia == MICROQR
+
+    /**
+     * Nessuna scelta dell'utente: la simbologia la decide l'app.
+     *
+     * Non è un valore che il core conosce e non finisce mai nel file: al
+     * salvataggio diventa la simbologia letta dal lettore, o quella che si
+     * ricava dal codice. Nel file una carta ha sempre scritto come si disegna.
+     */
+    const val AUTO = -1
+
+    /**
+     * L'elenco che si vede ha Automatico in cima, quindi le posizioni sono
+     * spostate di uno rispetto ai numeri del core. Le due conversioni stanno
+     * qui e non sparse per le schermate.
+     */
+    fun voce(simbologia: Int) = simbologia + 1
+
+    fun simbologiaDellaVoce(voce: Int) = voce - 1
 }
 
 /** Immagine di un codice, come esce dal core: pixel ARGB. */
@@ -126,6 +148,15 @@ object Core {
 
     /** Quale simbologia proporre per un codice appena letto o scritto. */
     @JvmStatic external fun simbologiaIndovinata(code: String, isQrcode: Boolean): Int
+
+    /**
+     * Se un codice si può disegnare in una simbologia, senza disegnarlo.
+     *
+     * Il modulo lo chiede prima di salvare: una scelta che non porta da nessuna
+     * parte va detta subito, non scoperta più tardi aprendo la carta e trovando
+     * il posto del codice vuoto.
+     */
+    @JvmStatic external fun codiceSta(code: String, simbologia: Int): Boolean
 
     @JvmStatic external fun delete(id: Int)
 

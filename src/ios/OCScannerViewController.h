@@ -13,8 +13,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface OCScannerViewController : UIViewController
 
-/// Chiamato una volta sola, al primo codice riconosciuto.
-@property (nonatomic, copy, nullable) void (^suLettura)(NSString *codice, BOOL qrcode);
+/// Chiamato una volta sola, al primo codice riconosciuto. `simbologia` è quella
+/// che il lettore ha riconosciuto, oppure `OCSimbologiaAuto` per un formato che
+/// non sappiamo disegnare: in quel caso la sceglie l'app.
+@property (nonatomic, copy, nullable) void (^suLettura)(NSString *codice, NSInteger simbologia);
 
 /// Acceso, la schermata non si chiude al primo codice: mette insieme i pezzi
 /// di un passaggio di carte, che possono essere più d'uno e arrivare in

@@ -39,6 +39,13 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) NSString *fotoRetro;
 @end
 
+/// Nessuna scelta dell'utente: la simbologia la decide l'app.
+///
+/// Non è un valore che il core conosce e non finisce mai nel file: al
+/// salvataggio diventa la simbologia letta dal lettore, o quella che si ricava
+/// dal codice. Nel file una carta ha sempre scritto come si disegna.
+static const NSInteger OCSimbologiaAuto = -1;
+
 @interface OCCore : NSObject
 
 /// Va chiamata una volta all'avvio, prima di tutto il resto.
@@ -113,6 +120,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// Quale codice sembra, guardando il testo. È quella che l'app propone quando
 /// si aggiunge una carta, e che il core usa per i file scritti prima della 1.0.3.
 + (NSInteger)simbologiaIndovinata:(NSString *)codice qrcode:(BOOL)qrcode;
+
+/// Se un codice si può disegnare in una simbologia, senza disegnarlo.
+///
+/// Il modulo lo chiede prima di salvare: una scelta che non porta da nessuna
+/// parte va detta subito, non scoperta più tardi aprendo la carta e trovando il
+/// posto del codice vuoto.
++ (BOOL)codiceSta:(NSString *)codice simbologia:(NSInteger)simbologia;
 
 + (BOOL)impostaSimbologia:(NSInteger)identificativo
                simbologia:(NSInteger)simbologia

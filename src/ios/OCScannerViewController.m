@@ -9,6 +9,8 @@
 #import "OCCore.h"
 #import "OCTema.h"
 
+#include "store.h"
+
 @interface OCScannerViewController () <AVCaptureMetadataOutputObjectsDelegate>
 @property (nonatomic, strong) AVCaptureSession *sessione;
 @property (nonatomic, strong) AVCaptureVideoPreviewLayer *anteprima;
@@ -30,6 +32,38 @@
 /// Quando è partita la scansione, per l'avviso a chi non conclude.
 @property (nonatomic, assign) NSTimeInterval inizioScansione;
 @end
+
+/// La simbologia del core che corrisponde a un formato di AVFoundation.
+///
+/// Il lettore sa già che codice ha letto, e dirlo è meglio che ricavarlo dal
+/// testo: dalle cifre non si distingue un ITF da un EAN-13, e un Code 39
+/// diventerebbe Code 128, cioè barre diverse da quelle stampate sulla tessera.
+///
+/// Un formato che non sappiamo disegnare torna `OCSimbologiaAuto`: la scelta
+/// resta all'app, che ci arriva dal codice come faceva prima.
+static NSInteger OCSimbologiaDelTipo(AVMetadataObjectType tipo)
+{
+    static NSDictionary<AVMetadataObjectType, NSNumber *> *tabella = nil;
+    static dispatch_once_t unaVolta;
+    dispatch_once(&unaVolta, ^{
+        tabella = @{
+            AVMetadataObjectTypeCode128Code: @(OPENCARD_SIM_CODE128),
+            AVMetadataObjectTypeQRCode: @(OPENCARD_SIM_QR),
+            AVMetadataObjectTypeAztecCode: @(OPENCARD_SIM_AZTEC),
+            AVMetadataObjectTypeCode39Code: @(OPENCARD_SIM_CODE39),
+            AVMetadataObjectTypeCode93Code: @(OPENCARD_SIM_CODE93),
+            AVMetadataObjectTypeDataMatrixCode: @(OPENCARD_SIM_DATAMATRIX),
+            AVMetadataObjectTypeEAN8Code: @(OPENCARD_SIM_EAN8),
+            AVMetadataObjectTypeEAN13Code: @(OPENCARD_SIM_EAN13),
+            AVMetadataObjectTypeITF14Code: @(OPENCARD_SIM_ITF),
+            AVMetadataObjectTypeInterleaved2of5Code: @(OPENCARD_SIM_ITF),
+            AVMetadataObjectTypePDF417Code: @(OPENCARD_SIM_PDF417),
+            AVMetadataObjectTypeUPCECode: @(OPENCARD_SIM_UPCE),
+        };
+    });
+    NSNumber *quale = tipo != nil ? tabella[tipo] : nil;
+    return quale != nil ? quale.integerValue : OCSimbologiaAuto;
+}
 
 /// Letture identiche di fila che rendono buono un codice.
 static const NSInteger OCScannerConferme = 3;
@@ -296,9 +330,8 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
     if (self.conferme >= OCScannerConferme &&
         adesso - self.primaLettura >= OCScannerAttesaMinima) {
         self.giaLetto = YES;
-        BOOL qrcode = [codice.type isEqualToString:AVMetadataObjectTypeQRCode];
         if (self.suLettura != nil) {
-            self.suLettura(codice.stringValue, qrcode);
+            self.suLettura(codice.stringValue, OCSimbologiaDelTipo(codice.type));
         }
         [self chiudi];
     }

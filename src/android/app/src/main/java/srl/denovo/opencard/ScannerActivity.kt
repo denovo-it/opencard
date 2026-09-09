@@ -29,8 +29,8 @@ import java.util.concurrent.Executors
  * Lettura di codici con la fotocamera, in due modi.
  *
  * Normale: chiude appena riconosce qualcosa e restituisce il codice a chi
- * l'ha aperta, insieme al tipo, così il form non deve indovinare se è un QR
- * o un barcode.
+ * l'ha aperta, insieme alla simbologia che il lettore ha riconosciuto, così
+ * il form non deve indovinarla dal testo.
  *
  * Raccolta: resta aperta e mette insieme i codici di un passaggio di carte,
  * che possono essere più d'uno e arrivare in qualsiasi ordine. Chiude quando
@@ -84,13 +84,46 @@ class ScannerActivity : AppCompatActivity() {
         private const val AVVISO_MS = 2500L
 
         const val EXTRA_CODICE = "codice"
-        const val EXTRA_QRCODE = "qrcode"
+
+        /** La simbologia letta, o [Simbologie.AUTO] se non la sappiamo tradurre. */
+        const val EXTRA_SIMBOLOGIA = "simbologia"
 
         /** Acceso, la schermata raccoglie i pezzi invece di chiudersi al primo. */
         const val EXTRA_TRASFERIMENTO = "trasferimento"
 
         /** I testi dei QR raccolti, restituiti a passaggio completo. */
         const val EXTRA_PEZZI = "pezzi"
+
+        /**
+         * La simbologia del core che corrisponde a un formato di ML Kit.
+         *
+         * Il lettore sa già che codice ha letto, e dirlo è meglio che
+         * ricavarlo dal testo: dalle cifre non si distingue un ITF da un
+         * EAN-13, e un Code 39 o un Codabar diventerebbero Code 128, cioè
+         * barre diverse da quelle stampate sulla tessera.
+         *
+         * Un formato che non sappiamo disegnare torna [Simbologie.AUTO]: la
+         * scelta resta all'app, che ci arriva dal codice come faceva prima.
+         *
+         * I numeri sono le posizioni di [Simbologie.nomi], che sono i valori
+         * dell'enum del core.
+         */
+        fun simbologiaDelFormato(formato: Int): Int = when (formato) {
+            Barcode.FORMAT_CODE_128 -> 0
+            Barcode.FORMAT_QR_CODE -> 1
+            Barcode.FORMAT_AZTEC -> 2
+            Barcode.FORMAT_CODABAR -> 3
+            Barcode.FORMAT_CODE_39 -> 4
+            Barcode.FORMAT_CODE_93 -> 5
+            Barcode.FORMAT_DATA_MATRIX -> 6
+            Barcode.FORMAT_EAN_8 -> 7
+            Barcode.FORMAT_EAN_13 -> 8
+            Barcode.FORMAT_ITF -> 9
+            Barcode.FORMAT_PDF417 -> 10
+            Barcode.FORMAT_UPC_A -> 11
+            Barcode.FORMAT_UPC_E -> 12
+            else -> Simbologie.AUTO
+        }
 
         fun intentTrasferimento(contesto: android.content.Context) =
             Intent(contesto, ScannerActivity::class.java)
@@ -232,7 +265,7 @@ class ScannerActivity : AppCompatActivity() {
         conferme++
         if (conferme >= CONFERME && adesso - primaLettura >= ATTESA_MINIMA_MS) {
             giaLetto = true
-            restituisci(valore, codice.format == Barcode.FORMAT_QR_CODE)
+            restituisci(valore, simbologiaDelFormato(codice.format))
         }
     }
 
@@ -298,10 +331,10 @@ class ScannerActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun restituisci(codice: String, qrcode: Boolean) {
+    private fun restituisci(codice: String, simbologia: Int) {
         val esito = Intent()
             .putExtra(EXTRA_CODICE, codice)
-            .putExtra(EXTRA_QRCODE, qrcode)
+            .putExtra(EXTRA_SIMBOLOGIA, simbologia)
         setResult(Activity.RESULT_OK, esito)
         finish()
     }

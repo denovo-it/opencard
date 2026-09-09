@@ -174,6 +174,29 @@ int opencard_symbology(const char *code, opencard_tipo tipo)
     return BARCODE_CODE128;
 }
 
+/* Oltre questa larghezza l'immagine non arriva sullo schermo.
+ *
+ * Un codice lungo disegnato a scala 4 diventa larghissimo: cinquanta caratteri
+ * in Code 128 passano i 4.600 px. Su parecchi telefoni Android il massimo di
+ * una texture è 4.096 px, e sopra quel limite il sistema non disegna niente:
+ * niente errore, niente immagine, solo una riga nel log. Nella schermata della
+ * carta resta il vuoto, e il numero scritto sotto sale al posto del codice.
+ *
+ * Larghi così non servono comunque: l'immagine viene comunque ridotta alla
+ * larghezza dello schermo. Quindi si abbassa la scala finché ci sta.
+ *
+ * 3.072 e non meno: sotto, un Code 128 vicino al suo massimo uscirebbe più
+ * stretto dello schermo di un telefono grande e verrebbe ingrandito, e le
+ * barre ingrandite si sfocano. Così resta sempre da rimpicciolire.
+ */
+#define OPENCARD_LARGHEZZA_MASSIMA 3072
+
+/* Sotto questa scala un modulo diventa meno di un pixel e le barre si
+ * impastano. La scala si abbassa a passi di mezzo perché zint disegna due
+ * pixel per modulo per ogni punto di scala: così un modulo resta un numero
+ * intero di pixel e le barre non si sfrangiano. */
+#define OPENCARD_SCALA_MINIMA 0.5f
+
 /* Il motore vero: la simbologia arriva già decisa, in costanti di zint. */
 static int disegna(const char *code, int zint_simbologia,
                    unsigned char **pixel, int *larghezza, int *altezza,
@@ -204,7 +227,17 @@ static int disegna(const char *code, int zint_simbologia,
     simbolo->show_hrt = 0;      /* il testo lo disegna la UI, raggruppato a tre */
     simbolo->scale = 4.0f;
 
-    esito = ZBarcode_Encode_and_Buffer(simbolo, (const unsigned char *)s, (int)n, 0);
+    /* Codifica e disegno sono due passi apposta: fra i due `simbolo->width` dice
+     * quanti moduli sono venuti fuori, che è l'unico modo di sapere quanto
+     * verrebbe larga l'immagine prima di allocarla. */
+    esito = ZBarcode_Encode(simbolo, (const unsigned char *)s, (int)n);
+    if (esito < ZINT_ERROR) {
+        while (simbolo->scale > OPENCARD_SCALA_MINIMA &&
+               (float)simbolo->width * 2.0f * simbolo->scale > OPENCARD_LARGHEZZA_MASSIMA) {
+            simbolo->scale -= 0.5f;
+        }
+        esito = ZBarcode_Buffer(simbolo, 0);
+    }
 
     if (esito >= ZINT_ERROR || simbolo->bitmap == NULL) {
         if (errore != NULL && errore_len > 0) {
@@ -272,6 +305,36 @@ static int lunghezza_adatta(opencard_simbologia simbologia, const char *code)
     default:
         return 1;
     }
+}
+
+int opencard_codice_sta(const char *code, opencard_simbologia simbologia)
+{
+    struct zint_symbol *simbolo;
+    const char *s;
+    size_t n;
+    int zint_simbologia = opencard_zint_da_simbologia(simbologia);
+    int esito;
+
+    if (zint_simbologia < 0 || code == NULL) {
+        return 0;
+    }
+    if (!lunghezza_adatta(simbologia, code)) {
+        return 0;
+    }
+    estremi(code, &s, &n);
+    if (n == 0) {
+        return 0;
+    }
+    simbolo = ZBarcode_Create();
+    if (simbolo == NULL) {
+        return 0;
+    }
+    simbolo->symbology = zint_simbologia;
+    /* Solo la codifica, niente disegno: qui interessa la risposta sì o no, e
+     * l'immagine costa memoria che poi si butterebbe. */
+    esito = ZBarcode_Encode(simbolo, (const unsigned char *)s, (int)n);
+    ZBarcode_Delete(simbolo);
+    return esito < ZINT_ERROR;
 }
 
 int opencard_render_bitmap_simbologia(const char *code, opencard_simbologia simbologia,

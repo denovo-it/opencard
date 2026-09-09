@@ -31,6 +31,7 @@
     <string name="etichetta">Label</string>
     <string name="codice">Code</string>
     <string name="tipo_di_codice">Code type</string>
+    <string name="simbologia_auto">Automatic</string>
     <string name="barcode">Barcode</string>
     <string name="qrcode">QR code</string>
     <string name="colore">Color</string>
@@ -38,6 +39,7 @@
     <string name="usa_e_getta_spiega">It goes in the second tab, with a trash icon to remove it as soon as you\'ve used it.</string>
     <string name="manca_etichetta">The label is required.</string>
     <string name="manca_codice">The code is required.</string>
+    <string name="simbologia_non_ci_sta">The %1$s type cannot hold this code: it is too long, or it contains characters that type does not allow. Choose Automatic or another type.</string>
     <string name="da_fotocamera">Photo</string>
     <string name="da_galleria">Gallery</string>
     <string name="da_file">File</string>

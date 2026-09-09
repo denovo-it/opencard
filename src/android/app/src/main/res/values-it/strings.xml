@@ -31,6 +31,7 @@
     <string name="etichetta">Etichetta</string>
     <string name="codice">Codice</string>
     <string name="tipo_di_codice">Tipo di codice</string>
+    <string name="simbologia_auto">Automatico</string>
     <string name="barcode">Barcode</string>
     <string name="qrcode">QR code</string>
     <string name="colore">Colore</string>
@@ -38,6 +39,7 @@
     <string name="usa_e_getta_spiega">Finisce nella seconda scheda, con il cestino per toglierla appena l\'hai usata.</string>
     <string name="manca_etichetta">L\'etichetta è obbligatoria.</string>
     <string name="manca_codice">Il codice è obbligatorio.</string>
+    <string name="simbologia_non_ci_sta">Il tipo %1$s non può contenere questo codice: è troppo lungo, oppure ha caratteri che quel tipo non prevede. Scegli Automatico o un altro tipo.</string>
     <string name="da_fotocamera">Foto</string>
     <string name="da_galleria">Galleria</string>
     <string name="da_file">File</string>

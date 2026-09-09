@@ -485,6 +485,12 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     return (NSInteger)opencard_simbologia_indovinata(codice.UTF8String, qrcode ? 1 : 0);
 }
 
++ (BOOL)codiceSta:(NSString *)codice simbologia:(NSInteger)simbologia
+{
+    return opencard_codice_sta(codice.UTF8String,
+                               (opencard_simbologia)simbologia) != 0;
+}
+
 + (BOOL)impostaSimbologia:(NSInteger)identificativo
                simbologia:(NSInteger)simbologia
                    errore:(NSError **)errore
