@@ -142,6 +142,7 @@
 "saldo" = "Balance";
 "scadenza_aiuto" = "yyyy-mm-dd";
 "scadenza_non_valida" = "Write the expiry date as yyyy-mm-dd.";
+"scadenza_nessuna" = "None";
 "foto_fronte" = "Front photo";
 "foto_retro" = "Back photo";
 "togli_foto" = "Remove photo";
@@ -171,4 +172,4 @@
 "backup_cloud" = "Include the cards in the phone backup";
 "backup_cloud_acceso_ios" = "The cards are included in the phone backup: if iCloud is on they go there too, along with other apps' data, and you get them back on a new iPhone.";
 "backup_cloud_spento_ios" = "The cards stay on this phone and are left out of the backup. To take them elsewhere use Export to file or the QR transfer.";
-"lingua_impostazioni_ios" = "Change it from the phone settings.";
+"lingua_riapri_ios" = "The new language shows up the next time OpenCard opens: close it from the App Switcher by swiping it up, then open it again.";

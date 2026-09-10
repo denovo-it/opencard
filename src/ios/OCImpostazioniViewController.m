@@ -10,6 +10,9 @@
 @interface OCImpostazioniViewController ()
 @property (nonatomic, strong) UISwitch *interruttore;
 @property (nonatomic, strong) UILabel *spiegazione;
+@property (nonatomic, strong) UIButton *lingua;
+/// Sotto la voce Lingua, la scelta di adesso, come su Android.
+@property (nonatomic, strong) UILabel *linguaAdesso;
 @end
 
 @implementation OCImpostazioniViewController
@@ -57,20 +60,20 @@
     linea.backgroundColor = [UIColor separatorColor];
     [linea.heightAnchor constraintEqualToConstant:1].active = YES;
 
-    // La lingua su iPhone la sceglie il sistema, app per app: qui c'è la strada
-    // per arrivarci, non una seconda impostazione che direbbe il contrario.
-    UIButton *lingua = [UIButton buttonWithType:UIButtonTypeSystem];
-    [lingua setTitle:NSLocalizedString(@"lingua", nil) forState:UIControlStateNormal];
-    lingua.titleLabel.font = [UIFont systemFontOfSize:16];
-    lingua.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeading;
-    [lingua addTarget:self action:@selector(apriImpostazioniDiSistema)
-     forControlEvents:UIControlEventTouchUpInside];
+    // La lingua si sceglie come su Android: come il telefono, IT o EN. Su
+    // iPhone però la scelta vale dalla prossima apertura, e un'app non si può
+    // chiudere da sola: lo dice l'avviso che segue la scelta.
+    self.lingua = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.lingua setTitle:NSLocalizedString(@"lingua", nil) forState:UIControlStateNormal];
+    self.lingua.titleLabel.font = [UIFont systemFontOfSize:16];
+    self.lingua.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeading;
+    self.lingua.showsMenuAsPrimaryAction = YES;
 
-    UILabel *comeSiCambia = [UILabel new];
-    comeSiCambia.text = NSLocalizedString(@"lingua_impostazioni_ios", nil);
-    comeSiCambia.font = [UIFont systemFontOfSize:13];
-    comeSiCambia.textColor = [OCTema attenuato];
-    comeSiCambia.numberOfLines = 0;
+    self.linguaAdesso = [UILabel new];
+    self.linguaAdesso.font = [UIFont systemFontOfSize:13];
+    self.linguaAdesso.textColor = [OCTema attenuato];
+    self.linguaAdesso.numberOfLines = 0;
+    [self aggiornaLingua];
 
     UIView *linea2 = [UIView new];
     linea2.backgroundColor = [UIColor separatorColor];
@@ -93,7 +96,7 @@
     cosaFa.numberOfLines = 0;
 
     UIStackView *colonna = [[UIStackView alloc] initWithArrangedSubviews:@[
-        titoloBackup, riga, self.spiegazione, linea, lingua, comeSiCambia,
+        titoloBackup, riga, self.spiegazione, linea, self.lingua, self.linguaAdesso,
         linea2, azzera, cosaFa,
     ]];
     colonna.axis = UILayoutConstraintAxisVertical;
@@ -101,8 +104,8 @@
     colonna.translatesAutoresizingMaskIntoConstraints = NO;
     [colonna setCustomSpacing:24 afterView:self.spiegazione];
     [colonna setCustomSpacing:24 afterView:linea];
-    [colonna setCustomSpacing:4 afterView:lingua];
-    [colonna setCustomSpacing:24 afterView:comeSiCambia];
+    [colonna setCustomSpacing:4 afterView:self.lingua];
+    [colonna setCustomSpacing:24 afterView:self.linguaAdesso];
     [colonna setCustomSpacing:24 afterView:linea2];
     [colonna setCustomSpacing:4 afterView:azzera];
     [self.view addSubview:colonna];
@@ -137,12 +140,77 @@
     [self mostraSpiegazione];
 }
 
-- (void)apriImpostazioniDiSistema
+#pragma mark - Lingua
+
+/// La lingua scelta dentro l'app: "it", "en", oppure "" se decide il telefono.
+///
+/// Si legge nel dominio dell'app: `objectForKey:`, senza una scelta,
+/// risponderebbe con le lingue del telefono e sembrerebbe una scelta fatta.
+- (NSString *)linguaScelta
 {
-    NSURL *dove = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
-    if (dove != nil) {
-        [[UIApplication sharedApplication] openURL:dove options:@{} completionHandler:nil];
+    NSString *app = [NSBundle mainBundle].bundleIdentifier;
+    NSArray *lingue = [[NSUserDefaults standardUserDefaults]
+                       persistentDomainForName:app][@"AppleLanguages"];
+    NSString *prima = lingue.firstObject;
+    if (![prima isKindOfClass:[NSString class]]) {
+        return @"";
     }
+    // "en-IT" vale come "en".
+    return [prima componentsSeparatedByString:@"-"].firstObject;
+}
+
+/// Le stesse tre voci di Android, con le sigle: due lettere si riconoscono
+/// sempre, anche in una lingua che non si legge.
+- (void)aggiornaLingua
+{
+    NSArray<NSString *> *codici = @[@"", @"it", @"en"];
+    NSArray<NSString *> *nomi = @[NSLocalizedString(@"lingua_sistema", nil), @"IT", @"EN"];
+    NSUInteger scelta = [codici indexOfObject:[self linguaScelta]];
+    if (scelta == NSNotFound) {
+        scelta = 0;
+    }
+    self.linguaAdesso.text = nomi[scelta];
+
+    NSMutableArray<UIAction *> *voci = [NSMutableArray arrayWithCapacity:codici.count];
+    __weak typeof(self) debole = self;
+    for (NSUInteger i = 0; i < codici.count; i++) {
+        NSString *codice = codici[i];
+        UIAction *voce = [UIAction actionWithTitle:nomi[i]
+                                             image:nil
+                                        identifier:nil
+                                           handler:^(__kindof UIAction *azione) {
+            (void)azione;
+            [debole cambiaLingua:codice];
+        }];
+        voce.state = (i == scelta) ? UIMenuElementStateOn : UIMenuElementStateOff;
+        [voci addObject:voce];
+    }
+    self.lingua.menu = [UIMenu menuWithTitle:NSLocalizedString(@"lingua", nil) children:voci];
+}
+
+/// Scrive la scelta dove iPhone la cerca all'avvio. Le schermate aperte restano
+/// nella lingua di prima finché l'app non riparte, e l'avviso lo dice.
+- (void)cambiaLingua:(NSString *)codice
+{
+    if ([codice isEqualToString:[self linguaScelta]]) {
+        return;
+    }
+    NSUserDefaults *preferenze = [NSUserDefaults standardUserDefaults];
+    if (codice.length == 0) {
+        [preferenze removeObjectForKey:@"AppleLanguages"];
+    } else {
+        [preferenze setObject:@[codice] forKey:@"AppleLanguages"];
+    }
+    [self aggiornaLingua];
+
+    UIAlertController *avviso = [UIAlertController
+        alertControllerWithTitle:nil
+                         message:NSLocalizedString(@"lingua_riapri_ios", nil)
+                  preferredStyle:UIAlertControllerStyleAlert];
+    [avviso addAction:[UIAlertAction actionWithTitle:@"OK"
+                                               style:UIAlertActionStyleDefault
+                                             handler:nil]];
+    [self presentViewController:avviso animated:YES completion:nil];
 }
 
 /// Butta via tutte le carte, con una domanda prima.

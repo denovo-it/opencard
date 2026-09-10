@@ -148,6 +148,7 @@
   "saldo": "Saldo",
   "scadenza_aiuto": "aaaa-mm-gg",
   "scadenza_non_valida": "La scadenza va scritta come aaaa-mm-gg.",
+  "scadenza_nessuna": "Nessuna",
   "foto_fronte": "Foto fronte",
   "foto_retro": "Foto retro",
   "togli_foto": "Togli la foto",
@@ -179,5 +180,5 @@
   "backup_cloud_spento_android": "Le carte restano su questo telefono e non escono. Per portarle altrove usa Esporta su file oppure il passaggio a QR.",
   "backup_cloud_acceso_ios": "Le carte rientrano nel backup del telefono: se hai acceso iCloud ci finiscono anche loro, insieme ai dati delle altre app, e cambiando iPhone le ritrovi.",
   "backup_cloud_spento_ios": "Le carte restano su questo telefono e non entrano nel backup. Per portarle altrove usa Esporta su file oppure il passaggio a QR.",
-  "lingua_impostazioni_ios": "Si cambia dalle impostazioni del telefono."
+  "lingua_riapri_ios": "La lingua nuova arriva alla prossima apertura: chiudi OpenCard dal selettore app, scorrendola verso l'alto, e riaprila."
 }

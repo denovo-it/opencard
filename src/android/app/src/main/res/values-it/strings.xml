@@ -144,6 +144,7 @@
     <string name="saldo">Saldo</string>
     <string name="scadenza_aiuto">aaaa-mm-gg</string>
     <string name="scadenza_non_valida">La scadenza va scritta come aaaa-mm-gg.</string>
+    <string name="scadenza_nessuna">Nessuna</string>
     <string name="foto_fronte">Foto fronte</string>
     <string name="foto_retro">Foto retro</string>
     <string name="togli_foto">Togli la foto</string>

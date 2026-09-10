@@ -144,6 +144,7 @@
     <string name="saldo">Balance</string>
     <string name="scadenza_aiuto">yyyy-mm-dd</string>
     <string name="scadenza_non_valida">Write the expiry date as yyyy-mm-dd.</string>
+    <string name="scadenza_nessuna">None</string>
     <string name="foto_fronte">Front photo</string>
     <string name="foto_retro">Back photo</string>
     <string name="togli_foto">Remove photo</string>

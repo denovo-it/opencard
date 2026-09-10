@@ -87,10 +87,11 @@ static const NSUInteger OCLimiteCodice = 500;
 @property (nonatomic, assign) NSInteger simbologiaNota;
 
 @property (nonatomic, strong) UITextView *note;
-@property (nonatomic, strong) UIDatePicker *scadenza;
+/// La riga della scadenza: dice «Nessuna» o la data, e toccata apre il calendario.
+@property (nonatomic, strong) UIButton *scadenza;
 @property (nonatomic, strong) UIButton *togliScadenza;
-/// Il calendario una data ce l'ha sempre: questa dice se l'ha messa l'utente.
-@property (nonatomic, assign) BOOL scadenzaMessa;
+/// La data scelta, o nil finché la carta non ne ha una.
+@property (nonatomic, strong, nullable) NSDate *dataScadenza;
 @property (nonatomic, strong) UITextField *saldo;
 
 /// Le foto scelte, in memoria finché non si salva: una carta nuova il suo id
@@ -292,31 +293,40 @@ static const NSUInteger OCLimiteCodice = 500;
     self.note.layer.cornerRadius = 8;
     [self.note.heightAnchor constraintEqualToConstant:88].active = YES;
 
-    self.scadenza = [UIDatePicker new];
-    self.scadenza.datePickerMode = UIDatePickerModeDate;
-    self.scadenza.preferredDatePickerStyle = UIDatePickerStyleCompact;
-    [self.scadenza addTarget:self action:@selector(scadenzaToccata)
-            forControlEvents:UIControlEventValueChanged];
+    // Un pulsante e non il calendario compatto di iOS: quello una data la
+    // mostra sempre, e una carta senza scadenza sembrava scadere oggi. Il
+    // calendario si apre toccando la riga.
+    self.scadenza = [UIButton buttonWithType:UIButtonTypeSystem];
+    self.scadenza.titleLabel.font = [UIFont systemFontOfSize:16];
+    self.scadenza.contentHorizontalAlignment = UIControlContentHorizontalAlignmentTrailing;
+    [self.scadenza addTarget:self action:@selector(scegliScadenza)
+            forControlEvents:UIControlEventTouchUpInside];
 
     // La X per togliere la data: senza, una scadenza messa per sbaglio non si
-    // toglie più, perché il calendario una data ce l'ha sempre.
+    // toglie più.
     self.togliScadenza = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.togliScadenza setImage:[UIImage systemImageNamed:@"xmark.circle.fill"]
                         forState:UIControlStateNormal];
     self.togliScadenza.tintColor = [OCTema attenuato];
-    self.togliScadenza.hidden = YES;
+    [self.togliScadenza setContentHuggingPriority:UILayoutPriorityRequired
+                                          forAxis:UILayoutConstraintAxisHorizontal];
     [self.togliScadenza addTarget:self action:@selector(scadenzaTolta)
                  forControlEvents:UIControlEventTouchUpInside];
 
     UILabel *etichettaScadenza = [UILabel new];
     etichettaScadenza.text = NSLocalizedString(@"scadenza", nil);
     etichettaScadenza.font = [UIFont systemFontOfSize:16];
+    // Lo spazio che avanza va al pulsante della data, così si tocca la riga e
+    // non solo la parola.
+    [etichettaScadenza setContentHuggingPriority:UILayoutPriorityDefaultHigh
+                                         forAxis:UILayoutConstraintAxisHorizontal];
 
     UIStackView *rigaScadenza = [[UIStackView alloc] initWithArrangedSubviews:@[
         etichettaScadenza, self.scadenza, self.togliScadenza,
     ]];
     rigaScadenza.axis = UILayoutConstraintAxisHorizontal;
     rigaScadenza.spacing = 8;
+    [self aggiornaScadenza];
 
     self.saldo = [self campoConSegnaposto:NSLocalizedString(@"saldo", nil)];
     self.saldo.returnKeyType = UIReturnKeyDone;
@@ -549,29 +559,82 @@ static const NSUInteger OCLimiteCodice = 500;
 
 #pragma mark - Scadenza
 
-- (void)scadenzaToccata
+/// Il calendario in un foglio, con Annulla e Fine. La data cambia solo con
+/// Fine, così aprirlo per guardare non mette una scadenza. Parte dalla data
+/// della carta, o da oggi se non ne ha.
+- (void)scegliScadenza
 {
-    self.scadenzaMessa = YES;
-    self.togliScadenza.hidden = NO;
+    [self chiudiTastiera];
+
+    UIDatePicker *calendario = [UIDatePicker new];
+    calendario.datePickerMode = UIDatePickerModeDate;
+    calendario.preferredDatePickerStyle = UIDatePickerStyleInline;
+    calendario.date = self.dataScadenza ?: [NSDate date];
+    calendario.translatesAutoresizingMaskIntoConstraints = NO;
+
+    UIViewController *pagina = [UIViewController new];
+    pagina.title = NSLocalizedString(@"scadenza", nil);
+    pagina.view.backgroundColor = [UIColor systemBackgroundColor];
+    [pagina.view addSubview:calendario];
+
+    UILayoutGuide *area = pagina.view.safeAreaLayoutGuide;
+    [NSLayoutConstraint activateConstraints:@[
+        [calendario.topAnchor constraintEqualToAnchor:area.topAnchor constant:8],
+        [calendario.leadingAnchor constraintEqualToAnchor:area.leadingAnchor constant:16],
+        [calendario.trailingAnchor constraintEqualToAnchor:area.trailingAnchor constant:-16],
+    ]];
+
+    __weak typeof(self) debole = self;
+    pagina.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
+        initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
+                      primaryAction:[UIAction actionWithHandler:^(__kindof UIAction *azione) {
+        (void)azione;
+        [debole dismissViewControllerAnimated:YES completion:nil];
+    }]];
+    pagina.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]
+        initWithBarButtonSystemItem:UIBarButtonSystemItemDone
+                      primaryAction:[UIAction actionWithHandler:^(__kindof UIAction *azione) {
+        (void)azione;
+        debole.dataScadenza = calendario.date;
+        [debole aggiornaScadenza];
+        [debole dismissViewControllerAnimated:YES completion:nil];
+    }]];
+
+    UINavigationController *contenitore = [[UINavigationController alloc]
+                                           initWithRootViewController:pagina];
+    [self presentViewController:contenitore animated:YES completion:nil];
 }
 
 - (void)scadenzaTolta
 {
-    self.scadenzaMessa = NO;
-    self.togliScadenza.hidden = YES;
-    self.scadenza.date = [NSDate date];
+    self.dataScadenza = nil;
+    [self aggiornaScadenza];
+}
+
+/// La riga dice «Nessuna» o la data, e la X c'è solo quando c'è una data da
+/// togliere.
+- (void)aggiornaScadenza
+{
+    NSString *testo = NSLocalizedString(@"scadenza_nessuna", nil);
+    if (self.dataScadenza != nil) {
+        testo = [NSDateFormatter localizedStringFromDate:self.dataScadenza
+                                               dateStyle:NSDateFormatterMediumStyle
+                                               timeStyle:NSDateFormatterNoStyle];
+    }
+    [self.scadenza setTitle:testo forState:UIControlStateNormal];
+    self.togliScadenza.hidden = self.dataScadenza == nil;
 }
 
 /// La data come la vuole il core, "AAAA-MM-GG", oppure vuota.
 - (NSString *)scadenzaScritta
 {
-    if (!self.scadenzaMessa) {
+    if (self.dataScadenza == nil) {
         return @"";
     }
     NSDateFormatter *formato = [NSDateFormatter new];
     formato.dateFormat = @"yyyy-MM-dd";
     formato.locale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
-    return [formato stringFromDate:self.scadenza.date];
+    return [formato stringFromDate:self.dataScadenza];
 }
 
 - (void)mostraScadenza:(NSString *)scritta
@@ -589,9 +652,8 @@ static const NSUInteger OCLimiteCodice = 500;
         [self scadenzaTolta];
         return;
     }
-    self.scadenza.date = quando;
-    self.scadenzaMessa = YES;
-    self.togliScadenza.hidden = NO;
+    self.dataScadenza = quando;
+    [self aggiornaScadenza];
 }
 
 #pragma mark - Foto della carta
