@@ -113,7 +113,7 @@
 "licenza_completa_titolo" = "Licenza completa (AGPL v3)";
 "errore_precedente_titolo" = "L'avvio precedente si è chiuso male";
 "errore_precedente" = "Questo è il dettaglio, utile a chi sviluppa:\n\n%1$@";
-"privacy_intro_ios" = "OpenCard non raccoglie niente e non esce dal telefono: le carte restano nella memoria privata dell'app. La pagina qui sotto lo dice per esteso, ed è quella dichiarata a Google e ad Apple.";
+"privacy_intro_ios" = "OpenCard non raccoglie niente e non esce dal telefono: le carte restano nella memoria privata dell'app. La pagina qui sotto lo dice per esteso, ed è quella dichiarata ad Apple.";
 "backup_privacy_ios" = "Le carte stanno nello spazio riservato all'app e di partenza rientrano nel backup del telefono: se hai acceso iCloud ci finiscono anche loro, insieme ai dati delle altre app, e cambiando iPhone le ritrovi. È il tuo backup, sul tuo account Apple, e Denovo non vi ha accesso. Da Impostazioni puoi tenerle fuori.";
 "componenti_sistema" = "Componenti di sistema";
 "preferisci" = "Preferisci";

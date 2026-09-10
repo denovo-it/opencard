@@ -119,7 +119,7 @@
   "carte_ripristinate_altro": "Ripristinate {1:intero} carte.",
   "privacy_intro_android": "OpenCard non raccoglie niente e non ha nemmeno il permesso di collegarsi a internet: le carte restano nella memoria privata dell'app. La pagina qui sotto lo dice per esteso, ed è quella dichiarata a Google e ad Apple.",
   "backup_privacy_android": "Di serie le carte non entrano nel backup automatico verso il cloud di Google: si accende da Impostazioni. Se cambi telefono le porti con il backup su file oppure con il passaggio a QR.",
-  "privacy_intro_ios": "OpenCard non raccoglie niente e non esce dal telefono: le carte restano nella memoria privata dell'app. La pagina qui sotto lo dice per esteso, ed è quella dichiarata a Google e ad Apple.",
+  "privacy_intro_ios": "OpenCard non raccoglie niente e non esce dal telefono: le carte restano nella memoria privata dell'app. La pagina qui sotto lo dice per esteso, ed è quella dichiarata ad Apple.",
   "backup_privacy_ios": "Le carte stanno nello spazio riservato all'app e di partenza rientrano nel backup del telefono: se hai acceso iCloud ci finiscono anche loro, insieme ai dati delle altre app, e cambiando iPhone le ritrovi. È il tuo backup, sul tuo account Apple, e Denovo non vi ha accesso. Da Impostazioni puoi tenerle fuori.",
   "componenti_sistema": "Componenti di sistema",
   "preferisci": "Preferisci",

@@ -113,7 +113,7 @@
 "licenza_completa_titolo" = "Full license (AGPL v3)";
 "errore_precedente_titolo" = "The previous launch ended badly";
 "errore_precedente" = "Here is the detail, useful to whoever develops the app:\n\n%1$@";
-"privacy_intro_ios" = "OpenCard collects nothing and never leaves the phone: your cards stay in the app's private storage. The page below says it in full, and it's the one declared to Google and Apple.";
+"privacy_intro_ios" = "OpenCard collects nothing and never leaves the phone: your cards stay in the app's private storage. The page below says it in full, and it's the one declared to Apple.";
 "backup_privacy_ios" = "The cards live in the app's own space and by default they are included in the phone backup: if iCloud is on they go there too, along with other apps' data, and you get them back on a new iPhone. It is your backup, on your Apple account, and Denovo has no access to it. You can leave them out from Settings.";
 "componenti_sistema" = "System components";
 "preferisci" = "Add to favorites";
