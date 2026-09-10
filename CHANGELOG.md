@@ -6,6 +6,7 @@
 - Un codice lungo disegnato come codice a barre adesso si vede. Capitava con le carte lette da un QR e poi cambiate in codice a barre: l'immagine veniva costruita così larga che parecchi telefoni Android non la mostravano affatto, e al posto delle barre restava il solo testo del codice.
 - Scegliendo un tipo di codice che non può contenere quel codice, l'app lo dice subito, appena si sceglie, e poi si rifiuta di salvare: prima la carta si salvava e non mostrava niente. L'avviso compare anche aprendo una carta che è già in quello stato. Con Automatico non capita mai: se il codice non sta in un codice a barre viene disegnato come QR.
 - Quando manca l'etichetta o il codice, Salva dice perché non salva: il messaggio è passato in cima al modulo, sotto i due pulsanti. In fondo alla schermata restava fuori dallo schermo e sembrava che Salva non funzionasse.
+- Su Android 15 e 16 la fascia in alto con l'ora è di nuovo arancione, e l'ora e le icone si leggono anche col tema chiaro.
 - La scadenza si sceglie dal calendario, senza scriverla a mano.
 - Ogni carta può avere la foto del fronte e del retro, per leggere quello che sulla tessera è stampato e nel codice non c'è. Si passa da una faccia all'altra scorrendo di lato o con le due frecce, e toccandola si apre a schermo pieno, dove si ingrandisce con due dita.
 - Il backup su file adesso è un archivio con dentro le carte e le foto, e si può chiudere con una password.

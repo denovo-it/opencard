@@ -7,6 +7,18 @@
         <item name="colorOnSecondary">@color/on_brand</item>
         <item name="android:statusBarColor" tools:targetApi="21">@color/brand</item>
         <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
+        <!-- Da Android 15, con targetSdk 36, statusBarColor non conta più: la
+             barra di stato è trasparente e sotto si vede quello che disegna
+             l'app. Il CoordinatorLayout che fa da radice alle schermate ci mette
+             il suo statusBarBackground, ma lo legge da questo stile: senza,
+             restava il fondo chiaro con orologio e icone bianche sopra. -->
+        <item name="coordinatorLayoutStyle">@style/Radice.OpenCard</item>
+    </style>
+
+    <!-- L'arancione sotto la barra di stato da Android 15 in su. Fino ad
+         Android 14 lo copre quello di statusBarColor, che è lo stesso. -->
+    <style name="Radice.OpenCard" parent="android:Widget">
+        <item name="statusBarBackground">@color/brand</item>
     </style>
 
     <!-- Barra arancione, titolo e icone bianchi: vale per tutte le schermate. -->
