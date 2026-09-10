@@ -467,6 +467,12 @@ static const NSUInteger OCLimiteCodice = 500;
     riquadro.backgroundColor = [UIColor secondarySystemBackgroundColor];
     riquadro.layer.cornerRadius = 10;
     riquadro.clipsToBounds = YES;
+    // La foto va nell'immagine del pulsante, allargata a tutto il riquadro e
+    // ritagliata: lo sfondo di un UIButton invece si stira, e una foto in
+    // verticale usciva schiacciata.
+    riquadro.contentHorizontalAlignment = UIControlContentHorizontalAlignmentFill;
+    riquadro.contentVerticalAlignment = UIControlContentVerticalAlignmentFill;
+    riquadro.titleLabel.textAlignment = NSTextAlignmentCenter;
     riquadro.imageView.contentMode = UIViewContentModeScaleAspectFill;
     [riquadro.heightAnchor constraintEqualToConstant:110].active = YES;
     [riquadro addTarget:self action:azione forControlEvents:UIControlEventTouchUpInside];
@@ -729,7 +735,10 @@ static const NSUInteger OCLimiteCodice = 500;
     } else {
         self.fotoRetro = immagine;
     }
-    [riquadro setBackgroundImage:immagine forState:UIControlStateNormal];
+    // Com'è e non come sagoma: un pulsante di sistema colora le sue immagini
+    // con la tinta.
+    [riquadro setImage:[immagine imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal]
+              forState:UIControlStateNormal];
     [riquadro setTitle:immagine != nil ? @"" : testo forState:UIControlStateNormal];
 }
 
