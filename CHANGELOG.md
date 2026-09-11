@@ -1,3 +1,7 @@
+## 1.0.4-dev (in lavorazione)
+
+- Ancora niente che si veda usando l'app: per adesso è cambiato solo il numero di versione.
+
 ## 1.0.3
 
 - I tipi di codice passano da 5 a 18: Aztec, Data Matrix, PDF417, Micro QR e gli altri si scelgono da un elenco quando si aggiunge una carta. L'elenco parte da Automatico, e chi non sa che codice ha in mano non deve sceglierlo: inquadrando la tessera il tipo lo riconosce il lettore, e scrivendo il codice a mano lo decide l'app.

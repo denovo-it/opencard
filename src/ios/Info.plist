@@ -20,7 +20,7 @@
 	     separati da punto e respinge il caricamento se trova altro. Il segno
 	     della lavorazione sta su Android, in versionName, e nel CHANGELOG. -->
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.3</string>
+	<string>1.0.4</string>
 	<key>CFBundleVersion</key>
 	<string>2026091004</string>
 	<!-- Nessuna crittografia: l'app non chiama niente di cifrato e non usa la
