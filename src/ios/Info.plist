@@ -23,9 +23,14 @@
 	<string>1.0.4</string>
 	<key>CFBundleVersion</key>
 	<string>2026091004</string>
-	<!-- Nessuna crittografia: l'app non chiama niente di cifrato e non usa la
-	     rete. Senza questa chiave App Store Connect ripete la domanda sulla
-	     conformità all'esportazione a ogni caricamento. -->
+	<!-- Dalla 1.0.3 l'app cifra il file delle carte e i backup con password,
+	     con Monocypher (XChaCha20-Poly1305, Argon2id): algoritmi pubblicati,
+	     e sorgente pubblico su GitHub. Per l'EAR (15 CFR 742.15(b) e la nota a
+	     734.3(b)(3)) il codice e l'app compilata non sono soggetti alle regole
+	     di esportazione, quindi non servono documenti e la chiave resta false.
+	     Vale finché il sorgente di ogni build è pubblico prima del
+	     caricamento. Senza questa chiave App Store Connect ripete la domanda
+	     sulla conformità all'esportazione a ogni caricamento. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>CFBundleSupportedPlatforms</key>
