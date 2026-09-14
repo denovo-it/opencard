@@ -18,7 +18,7 @@ L'app è pubblicata sui due store ed è gratis:
 
 ## Requisiti
 
-- **Android 7.0** (API 24) o successivo. L'app è compilata contro l'API 36 e
+- **Android 6.0** (API 23) o successivo. L'app è compilata contro l'API 36 e
   contiene il codice nativo per `arm64-v8a` e `armeabi-v7a`.
 - **iOS 15.0** o successivo, solo iPhone. Sono gli stessi modelli di iOS 13,
   dall'iPhone 6s e dal primo SE in su, con il sistema aggiornato.
