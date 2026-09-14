@@ -96,6 +96,17 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // Il lint che gira in ogni build di release (lintVital) guarda solo i
+    // problemi «fatal», e NewApi non lo era: l'8 settembre 2026, scendendo ad
+    // Android 6, due chiamate dell'API 24 sono arrivate in produzione. Adesso
+    // ferma il bundle.
+    // HighAppVersionCode invece è voluto: il versionCode è una data, e arriva
+    // al massimo di Play (2.100.000.000) solo nel 2100.
+    lint {
+        fatal += "NewApi"
+        disable += "HighAppVersionCode"
+    }
+
 }
 
 // Il changelog viaggia dentro l'app e la schermata informazioni lo mostra. Si

@@ -42,7 +42,7 @@ class InfoActivity : AppCompatActivity() {
         // avvio e le note di rilascio, e in tre posti diversi diventa rumore.
         findViewById<TextView>(R.id.versione).text = getString(
             R.string.versione_e_build,
-            BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE,
+            BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE.toString(),
         )
 
         findViewById<Button>(R.id.sito).setOnClickListener { apri("https://denovo.srl") }

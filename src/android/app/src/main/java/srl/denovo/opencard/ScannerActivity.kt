@@ -198,7 +198,7 @@ class ScannerActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-    @androidx.camera.core.ExperimentalGetImage
+    @androidx.annotation.OptIn(markerClass = [androidx.camera.core.ExperimentalGetImage::class])
     private fun esamina(fotogramma: androidx.camera.core.ImageProxy) {
         val immagine = fotogramma.image
         if (immagine == null || giaLetto) {

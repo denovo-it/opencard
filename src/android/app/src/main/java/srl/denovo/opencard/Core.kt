@@ -299,7 +299,12 @@ object Core {
     /** Data di oggi come la vuole il nome del file di backup. */
     fun oggi(): String = SimpleDateFormat("yyyyMMdd", Locale.ITALY).format(Date())
 
-    /** Istante attuale in ISO 8601, per l'intestazione del backup. */
+    /** Istante attuale in ISO 8601, per l'intestazione del backup. In UTC con
+     *  la Z scritta, come `BackupNelCloud.quandoIso()`: il fuso con `XXX`
+     *  Android lo conosce solo dall'API 24, e su Android 6 l'esportazione
+     *  chiudeva l'app. Il campo, `exported_at`, non lo rilegge nessuno. */
     fun adesso(): String =
-        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ITALY).format(Date())
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ITALY)
+            .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+            .format(Date())
 }

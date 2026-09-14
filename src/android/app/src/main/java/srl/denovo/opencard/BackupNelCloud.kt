@@ -60,7 +60,8 @@ class BackupNelCloud : BackupAgent() {
 
             // Anche la scelta stessa, se no sul telefono nuovo l'interruttore
             // ripartirebbe spento con le carte già arrivate.
-            fullBackupFile(File(File(dataDir, "shared_prefs"), "${Impostazioni.FILE}.xml"), dati)
+            // `applicationInfo.dataDir` e non `dataDir`, che c'è solo dall'API 24.
+            fullBackupFile(File(File(applicationInfo.dataDir, "shared_prefs"), "${Impostazioni.FILE}.xml"), dati)
         } catch (guasto: Exception) {
             // Un backup che non riesce non deve buttare giu' il processo: il
             // sistema lo ritenta domani, e le carte sul telefono sono intatte.

@@ -51,12 +51,12 @@ class SplashActivity : AppCompatActivity() {
             if (CANALE != null) {
                 getString(
                     R.string.versione_e_build_canale,
-                    BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, CANALE.uppercase(),
+                    BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE.toString(), CANALE.uppercase(),
                 )
             } else {
                 getString(
                     R.string.versione_e_build,
-                    BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE,
+                    BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE.toString(),
                 )
             }
 
