@@ -4,6 +4,7 @@
 - Su Android 6 il backup automatico verso il cloud di Google ora si completa.
 - I QR si vedono alla loro misura, come sulla tessera, non più a tutta larghezza: alcuni lettori non leggevano un QR così grande. I codici a barre restano a tutta larghezza.
 - Nella schermata della carta il codice si allarga e si stringe con due dita, QR e codici a barre.
+- Importando un CSV l'app chiede se aggiungere le carte a quelle che ci sono o sostituirle: prima la domanda diceva «Sostituisci» e poi le aggiungeva.
 - Le carte arrivano anche sull'orologio: su Galaxy Watch e sugli altri Wear OS l'app mostra il codice della carta scelta, e le carte gliele manda il telefono via Bluetooth, senza passare da internet.
 
 ## 1.0.3

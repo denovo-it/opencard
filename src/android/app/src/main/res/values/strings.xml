@@ -174,6 +174,9 @@
     <string name="backup_cloud">Include the cards in the phone backup</string>
     <string name="backup_cloud_acceso_android">The cards go into the Android automatic backup and end up on Google\'s cloud along with other apps\' data. On a new phone you get them back the first time you open the app.</string>
     <string name="backup_cloud_spento_android">The cards stay on this phone and never leave it. To take them elsewhere use Export to file or the QR transfer.</string>
+    <string name="csv_titolo">Cards from a CSV file</string>
+    <string name="csv_avviso">The cards in the CSV are added to the ones you have, or take their place: in that case your current cards and their photos are removed.</string>
+    <string name="csv_aggiungi">Add</string>
 
     <plurals name="carte_ricevute">
         <item quantity="one">One card received.</item>

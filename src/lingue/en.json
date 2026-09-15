@@ -182,5 +182,8 @@
   "backup_cloud_spento_ios": "The cards stay on this phone and are left out of the backup. To take them elsewhere use Export to file or the QR transfer.",
   "lingua_riapri_ios": "The new language shows up the next time OpenCard opens: close it from the App Switcher by swiping it up, then open it again.",
   "nessuna_carta_wear": "No cards yet. Open OpenCard on your phone: they arrive on their own.",
-  "errore_dati_wear": "The cards can't be read. Open OpenCard on your phone to send them again."
+  "errore_dati_wear": "The cards can't be read. Open OpenCard on your phone to send them again.",
+  "csv_titolo": "Cards from a CSV file",
+  "csv_avviso": "The cards in the CSV are added to the ones you have, or take their place: in that case your current cards and their photos are removed.",
+  "csv_aggiungi": "Add"
 }

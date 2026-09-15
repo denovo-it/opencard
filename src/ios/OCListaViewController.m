@@ -7,6 +7,7 @@
 #import "OCArchivio.h"
 #import "OCCore.h"
 #import "OCCsv.h"
+#import "OCFoto.h"
 #import "OCImpostazioniViewController.h"
 #import "OCDettaglioViewController.h"
 #import "OCFormViewController.h"
@@ -715,10 +716,42 @@
 {
     NSError *errore = nil;
     NSArray<OCCarta *> *tutte = [OCCore tutteLeCarte:&errore];
+    BOOL vuoto = tutte != nil && tutte.count == 0;
+
+    // Un CSV è un'altra cosa rispetto a un backup: può aggiungersi alle carte
+    // che ci sono, che è quello che vuole chi arriva da un'altra app, oppure
+    // prendere il loro posto. Lo decide chi importa, con due risposte che
+    // dicono quello che fanno: fino alla 1.0.3 la domanda diceva «Sostituisci»
+    // e l'app aggiungeva.
+    if ([OCCsv eCsv:contenuto]) {
+        if (vuoto) {
+            [self scriviLeCarte:contenuto password:@"" sostituisciCsv:NO];
+            return;
+        }
+        UIAlertController *scelta = [UIAlertController
+            alertControllerWithTitle:NSLocalizedString(@"csv_titolo", nil)
+                             message:NSLocalizedString(@"csv_avviso", nil)
+                      preferredStyle:UIAlertControllerStyleAlert];
+        [scelta addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
+                                                   style:UIAlertActionStyleCancel
+                                                 handler:nil]];
+        [scelta addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"csv_aggiungi", nil)
+                                                   style:UIAlertActionStyleDefault
+                                                 handler:^(UIAlertAction *azione) {
+            [self scriviLeCarte:contenuto password:@"" sostituisciCsv:NO];
+        }]];
+        [scelta addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"ripristina_conferma", nil)
+                                                   style:UIAlertActionStyleDestructive
+                                                 handler:^(UIAlertAction *azione) {
+            [self scriviLeCarte:contenuto password:@"" sostituisciCsv:YES];
+        }]];
+        [self presentViewController:scelta animated:YES completion:nil];
+        return;
+    }
 
     // Con zero carte non c'è niente da sostituire: la domanda sarebbe solo un
     // passaggio in più prima di una cosa che non toglie nulla a nessuno.
-    if (tutte != nil && tutte.count == 0) {
+    if (vuoto) {
         [self chiediPasswordSeServe:contenuto];
         return;
     }
@@ -785,6 +818,11 @@
 
 - (void)scriviLeCarte:(NSData *)dati password:(NSString *)password
 {
+    [self scriviLeCarte:dati password:password sostituisciCsv:NO];
+}
+
+- (void)scriviLeCarte:(NSData *)dati password:(NSString *)password sostituisciCsv:(BOOL)sostituisciCsv
+{
     NSError *errore = nil;
     NSData *aperto = dati;
 
@@ -808,9 +846,18 @@
         }
         quante = [OCCore ripristinaBackup:elenco errore:&errore];
     } else if ([OCCsv eCsv:aperto]) {
-        // Il CSV non sostituisce: si aggiunge in fondo. Chi arriva da un'altra
-        // app di solito ha già qualcosa qui dentro, e cancellarglielo sarebbe
-        // un modo brutto di dare il benvenuto.
+        // Il CSV si aggiunge in fondo, a meno che chi importa non abbia scelto
+        // di sostituire: allora prima si fa pulizia, foto comprese.
+        if (sostituisciCsv) {
+            for (OCCarta *carta in [OCCore tutteLeCarte:NULL]) {
+                [OCFoto cancella:carta.fotoFronte];
+                [OCFoto cancella:carta.fotoRetro];
+            }
+            if (![OCCore azzeraTutto:&errore]) {
+                [self avvisa:errore.localizedDescription];
+                return;
+            }
+        }
         quante = [self aggiungiDaCsv:[OCCsv leggi:aperto] errore:&errore];
     } else {
         quante = [OCCore ripristinaBackup:aperto errore:&errore];

@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity() {
 
     private val scegliBackup = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
-    ) { sorgente -> if (sorgente != null) confermaRipristino(sorgente) }
+    ) { sorgente -> if (sorgente != null) leggiBackup(sorgente) }
 
     /** La password scelta per l'esportazione in corso. Vuota vuol dire in chiaro. */
     private var passwordBackup = ""
@@ -458,60 +458,76 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun confermaRipristino(sorgente: Uri) {
-        Dati.chiedi(
-            { Core.getAll().isEmpty() },
-            { vuoto ->
-                // Con zero carte non c'e' niente da sostituire: la domanda
-                // sarebbe solo un passaggio in piu' prima di una cosa che non
-                // toglie nulla a nessuno.
-                if (vuoto) {
-                    ripristina(sorgente)
-                } else {
-                    AlertDialog.Builder(this)
-                        .setTitle(R.string.ripristina_titolo)
-                        .setMessage(R.string.ripristina_avviso)
-                        .setNegativeButton(R.string.annulla, null)
-                        .setPositiveButton(R.string.ripristina_conferma) { _, _ -> ripristina(sorgente) }
-                        .show()
-                }
-            },
-            { avvisa(it) },
-        )
-    }
-
-    private fun ripristina(sorgente: Uri) {
-        // Lettura e ripristino insieme sul thread dei dati: il file può stare
-        // su un provider lento (Drive) e sul thread dell'interfaccia sarebbe
-        // un ANR. Il tetto tiene fuori il file sbagliato scelto per errore: un
-        // backup vero pesa qualche decina di kilobyte.
+    private fun leggiBackup(sorgente: Uri) {
+        // Lettura sul thread dei dati: il file può stare su un provider lento
+        // (Drive) e sul thread dell'interfaccia sarebbe un ANR. Il tetto tiene
+        // fuori il file sbagliato scelto per errore: un backup vero pesa
+        // qualche decina di kilobyte. Si legge prima di fare domande, perché
+        // la domanda giusta dipende da che file è.
         Dati.chiedi(
             {
-                try {
+                val dati = try {
                     contentResolver.openInputStream(sorgente)?.use { leggiConTetto(it) }
                 } catch (e: OpenCardException) {
                     throw e
                 } catch (e: Exception) {
                     null
                 } ?: throw OpenCardException(getString(R.string.backup_non_letto))
+                dati to Core.getAll().isEmpty()
             },
-            { dati ->
-                // La password si chiede solo se il file ce l'ha: chi non l'ha
-                // mai usata non vede niente di nuovo.
-                if (Core.backupCifrato(dati)) {
-                    chiediPassword(
-                        R.string.password_apri_titolo,
-                        R.string.password_apri_spiega,
-                        vuotoAmmesso = false,
-                        // Qui non si salva niente: si apre un file che c'e' gia'.
-                        bottone = R.string.apri,
-                    ) { password -> scriviLeCarte(dati, password) }
-                } else {
-                    scriviLeCarte(dati, "")
-                }
-            },
+            { (dati, vuoto) -> confermaRipristino(dati, vuoto) },
             { avvisa(it) },
         )
+    }
+
+    private fun confermaRipristino(dati: ByteArray, vuoto: Boolean) {
+        // Un CSV è un'altra cosa rispetto a un backup: può aggiungersi alle
+        // carte che ci sono, che è quello che vuole chi arriva da un'altra
+        // app, oppure prendere il loro posto. Lo decide chi importa, con due
+        // risposte che dicono quello che fanno: fino alla 1.0.3 la domanda
+        // diceva «Sostituisci» e l'app aggiungeva.
+        if (Csv.eCsv(dati)) {
+            if (vuoto) {
+                scriviLeCarte(dati, "", sostituisciCsv = false)
+                return
+            }
+            AlertDialog.Builder(this)
+                .setTitle(R.string.csv_titolo)
+                .setMessage(R.string.csv_avviso)
+                .setNegativeButton(R.string.annulla, null)
+                .setNeutralButton(R.string.csv_aggiungi) { _, _ -> scriviLeCarte(dati, "", sostituisciCsv = false) }
+                .setPositiveButton(R.string.ripristina_conferma) { _, _ -> scriviLeCarte(dati, "", sostituisciCsv = true) }
+                .show()
+            return
+        }
+        // Con zero carte non c'e' niente da sostituire: la domanda sarebbe
+        // solo un passaggio in piu' prima di una cosa che non toglie nulla a
+        // nessuno.
+        if (vuoto) {
+            chiediPasswordSeServe(dati)
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.ripristina_titolo)
+            .setMessage(R.string.ripristina_avviso)
+            .setNegativeButton(R.string.annulla, null)
+            .setPositiveButton(R.string.ripristina_conferma) { _, _ -> chiediPasswordSeServe(dati) }
+            .show()
+    }
+
+    /** La password si chiede solo se il file ce l'ha: chi non l'ha mai usata non vede niente di nuovo. */
+    private fun chiediPasswordSeServe(dati: ByteArray) {
+        if (Core.backupCifrato(dati)) {
+            chiediPassword(
+                R.string.password_apri_titolo,
+                R.string.password_apri_spiega,
+                vuotoAmmesso = false,
+                // Qui non si salva niente: si apre un file che c'e' gia'.
+                bottone = R.string.apri,
+            ) { password -> scriviLeCarte(dati, password) }
+        } else {
+            scriviLeCarte(dati, "")
+        }
     }
 
     /** Le carte di un CSV entrano una per una, con i campi che portano. */
@@ -533,7 +549,7 @@ class MainActivity : AppCompatActivity() {
         return carte.size
     }
 
-    private fun scriviLeCarte(dati: ByteArray, password: String) {
+    private fun scriviLeCarte(dati: ByteArray, password: String, sostituisciCsv: Boolean = false) {
         Dati.chiedi(
             {
                 // Tre forme, in ordine di quanto sono recenti: archivio chiuso
@@ -546,10 +562,16 @@ class MainActivity : AppCompatActivity() {
                             ?: throw OpenCardException(getString(R.string.backup_non_letto))
                         Core.backupRipristina(elenco)
                     }
-                    // Il CSV non sostituisce: si aggiunge in fondo. Chi arriva
-                    // da un'altra app di solito ha gia' qualcosa qui dentro, e
-                    // cancellarglielo sarebbe un modo brutto di dare il benvenuto.
-                    Csv.eCsv(aperto) -> aggiungiDaCsv(Csv.leggi(aperto))
+                    // Il CSV si aggiunge in fondo, a meno che chi importa non
+                    // abbia scelto di sostituire: allora prima si fa pulizia,
+                    // foto comprese, come «Cancella tutti i tuoi dati».
+                    Csv.eCsv(aperto) -> {
+                        if (sostituisciCsv) {
+                            Core.azzeraTutto()
+                            Foto.cancellaTutte(this)
+                        }
+                        aggiungiDaCsv(Csv.leggi(aperto))
+                    }
                     else -> Core.backupRipristinaFile(aperto, "")
                 }
             },

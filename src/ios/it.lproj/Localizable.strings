@@ -173,3 +173,6 @@
 "backup_cloud_acceso_ios" = "Le carte rientrano nel backup del telefono: se hai acceso iCloud ci finiscono anche loro, insieme ai dati delle altre app, e cambiando iPhone le ritrovi.";
 "backup_cloud_spento_ios" = "Le carte restano su questo telefono e non entrano nel backup. Per portarle altrove usa Esporta su file oppure il passaggio a QR.";
 "lingua_riapri_ios" = "La lingua nuova arriva alla prossima apertura: chiudi OpenCard dal selettore app, scorrendola verso l'alto, e riaprila.";
+"csv_titolo" = "Carte da un file CSV";
+"csv_avviso" = "Le carte del CSV si aggiungono a quelle che hai, oppure prendono il loro posto: in quel caso spariscono le carte di adesso e le loro foto.";
+"csv_aggiungi" = "Aggiungi";
