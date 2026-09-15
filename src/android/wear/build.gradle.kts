@@ -35,7 +35,7 @@ android {
         // Stesso formato del telefono, YYYYMMDDnn, ma il progressivo parte da
         // 51: Play vuole un versionCode diverso per ogni APK della stessa
         // scheda, e così i due non si pestano mai nella stessa giornata.
-        versionCode = 2026091555
+        versionCode = 2026091556
         versionName = "1.0.4"
 
         ndk {
