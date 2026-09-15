@@ -1,4 +1,4 @@
-## 1.0.4-dev (in lavorazione)
+## 1.0.4
 
 - Su Android 6 esportare le carte in un archivio, anche con password, non chiude più l'app.
 - Su Android 6 il backup automatico verso il cloud di Google ora si completa.
