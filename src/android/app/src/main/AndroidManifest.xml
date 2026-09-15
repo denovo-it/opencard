@@ -68,6 +68,16 @@
                 android:resource="@xml/widget_carta_info" />
         </receiver>
 
+        <!-- L'orologio chiede le carte e questo servizio gliele manda. Lo
+             avvia Google Play services quando arriva il messaggio, anche con
+             l'app chiusa, e per questo deve essere esportato. -->
+        <service android:name=".OrologioService" android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/opencard" />
+            </intent-filter>
+        </service>
+
         <activity android:name=".WidgetConfigActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />

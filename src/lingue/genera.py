@@ -39,6 +39,11 @@ SUFFISSO_ALTRO = "_altro"
 SUFFISSO_ANDROID = "_android"
 SUFFISSO_IPHONE = "_ios"
 
+# L'orologio (modulo wear) ha poche frasi sue, e non gli servono quelle del
+# telefono: prende app_name e le chiavi con questo suffisso, che gli altri due
+# non vedono.
+SUFFISSO_OROLOGIO = "_wear"
+
 SEGNAPOSTO = re.compile(r"\{(\d+):(testo|intero)\}")
 
 INTESTAZIONE = "generato da src/lingue/genera.py: non modificarlo a mano"
@@ -57,7 +62,12 @@ def lingue_presenti():
 def per_piattaforma(voci, suffisso_da_tenere):
     """Le voci di una piattaforma: le comuni più le sue, senza quelle dell'altra."""
     altro = SUFFISSO_IPHONE if suffisso_da_tenere == SUFFISSO_ANDROID else SUFFISSO_ANDROID
-    return {c: t for c, t in voci.items() if not c.endswith(altro)}
+    return {c: t for c, t in voci.items()
+            if not c.endswith(altro) and not c.endswith(SUFFISSO_OROLOGIO)}
+
+
+def per_orologio(voci):
+    return {c: t for c, t in voci.items() if c == "app_name" or c.endswith(SUFFISSO_OROLOGIO)}
 
 
 def dividi_plurali(voci):
@@ -152,6 +162,8 @@ def destinazioni(lingua, voci):
     fatti = [
         (RADICE / "src/android/app/src/main/res" / cartella_android / "strings.xml",
          testo_android(di_android).encode("utf-8")),
+        (RADICE / "src/android/wear/src/main/res" / cartella_android / "strings.xml",
+         testo_android(per_orologio(voci)).encode("utf-8")),
         (RADICE / "src/ios" / f"{lingua}.lproj" / "Localizable.strings",
          testo_iphone(di_iphone).encode("utf-8")),
     ]

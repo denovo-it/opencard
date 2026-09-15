@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "OpenCard"
 include(":app")
+include(":wear")

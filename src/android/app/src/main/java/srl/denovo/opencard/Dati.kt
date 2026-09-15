@@ -27,6 +27,9 @@ object Dati {
      */
     var erroreDiApertura: String? = null
 
+    private lateinit var applicazione: Context
+    private lateinit var fileCarte: File
+
     /**
      * Va chiamata una volta all'avvio.
      *
@@ -34,6 +37,8 @@ object Dati {
      * non serve nessun permesso.
      */
     fun apri(contesto: Context) {
+        applicazione = contesto.applicationContext
+        fileCarte = File(contesto.filesDir, "opencard.json")
         recuperaDatiEsistenti(contesto)
         Core.storeInit(contesto.filesDir.absolutePath)
         // La chiave prima di qualsiasi lettura: un file cifrato senza chiave
@@ -104,6 +109,7 @@ object Dati {
         suErrore: (String) -> Unit = {},
     ) {
         lavoratore.execute {
+            val prima = impronta()
             try {
                 val risultato = operazione()
                 principale.post { suRisposta(risultato) }
@@ -111,8 +117,17 @@ object Dati {
                 val messaggio = e.message ?: "Errore imprevisto."
                 principale.post { suErrore(messaggio) }
             }
+            // Se l'operazione ha scritto il file, l'orologio riceve le carte
+            // com'è adesso. Si guarda il file e non l'operazione, così vale
+            // per ogni scrittura, anche per quelle che verranno: il core
+            // scrive sempre lì. La risposta è già partita, quindi
+            // l'interfaccia non aspetta l'orologio.
+            if (impronta() != prima) Orologio.manda(applicazione)
         }
     }
+
+    /** Data e misura del file delle carte: cambiano a ogni scrittura del core. */
+    private fun impronta() = fileCarte.lastModified() to fileCarte.length()
 
     /** Come [chiedi], per le operazioni che non restituiscono niente. */
     fun fai(

@@ -107,6 +107,14 @@ android {
         disable += "HighAppVersionCode"
     }
 
+    // Il ponte con il core, la chiave del file e i nomi dei messaggi per
+    // l'orologio stanno in ../condiviso: sono gli stessi file per il telefono
+    // e per il modulo wear, letti da tutti e due invece che copiati. Le classi
+    // che il ponte C costruisce per nome devono avere la stessa forma nei due
+    // APK, e con un file solo non possono divergere.
+    sourceSets.getByName("main") {
+        kotlin.srcDir("../condiviso/java")
+    }
 }
 
 // Il changelog viaggia dentro l'app e la schermata informazioni lo mostra. Si
@@ -186,4 +194,9 @@ dependencies {
     implementation("androidx.camera:camera-view:$camerax")
 
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
+    // Le carte all'orologio (Orologio.kt): messaggi diretti agli orologi
+    // vicini, via Bluetooth, attraverso Google Play services. Senza Play
+    // services le chiamate falliscono e l'app va avanti come prima.
+    implementation("com.google.android.gms:play-services-wearable:19.0.0")
 }

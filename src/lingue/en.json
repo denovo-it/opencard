@@ -180,5 +180,7 @@
   "backup_cloud_spento_android": "The cards stay on this phone and never leave it. To take them elsewhere use Export to file or the QR transfer.",
   "backup_cloud_acceso_ios": "The cards are included in the phone backup: if iCloud is on they go there too, along with other apps' data, and you get them back on a new iPhone.",
   "backup_cloud_spento_ios": "The cards stay on this phone and are left out of the backup. To take them elsewhere use Export to file or the QR transfer.",
-  "lingua_riapri_ios": "The new language shows up the next time OpenCard opens: close it from the App Switcher by swiping it up, then open it again."
+  "lingua_riapri_ios": "The new language shows up the next time OpenCard opens: close it from the App Switcher by swiping it up, then open it again.",
+  "nessuna_carta_wear": "No cards yet. Open OpenCard on your phone: they arrive on their own.",
+  "errore_dati_wear": "The cards can't be read. Open OpenCard on your phone to send them again."
 }

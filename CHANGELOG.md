@@ -2,6 +2,7 @@
 
 - Su Android 6 esportare le carte in un archivio, anche con password, non chiude più l'app.
 - Su Android 6 il backup automatico verso il cloud di Google ora si completa.
+- Le carte arrivano anche sull'orologio: su Galaxy Watch e sugli altri Wear OS l'app mostra il codice della carta scelta, e le carte gliele manda il telefono via Bluetooth, senza passare da internet.
 
 ## 1.0.3
 

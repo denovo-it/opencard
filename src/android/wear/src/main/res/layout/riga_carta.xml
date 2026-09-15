@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Una carta nell'elenco: il nome, bianco, sul colore della carta. Il colore
+     lo mette il codice con backgroundTintList. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="28dp"
+    android:layout_marginVertical="4dp"
+    android:background="@drawable/riga"
+    android:ellipsize="end"
+    android:gravity="center"
+    android:maxLines="2"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="14dp"
+    android:textColor="#FFFFFF"
+    android:textSize="16sp" />

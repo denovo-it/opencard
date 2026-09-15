@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature android:name="android.hardware.type.watch" />
+
+    <!-- Niente backup di sistema: le carte le rimanda il telefono. Il file
+         resta cifrato con la chiave di questo orologio, come sul telefono. -->
+    <application
+        android:name=".Applicazione"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@android:style/Theme.DeviceDefault">
+
+        <uses-library android:name="com.google.android.wearable" android:required="true" />
+
+        <!-- Non è autonoma: senza l'app sul telefono non ha carte da mostrare,
+             e Play la propone solo a chi ha il telefono con OpenCard. -->
+        <meta-data android:name="com.google.android.wearable.standalone" android:value="false" />
+
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".CodiceActivity" android:exported="false" />
+
+        <!-- Le carte dal telefono. Lo avvia Google Play services quando arriva
+             il messaggio, anche con l'app chiusa, e per questo è esportato. -->
+        <service android:name=".DalTelefono" android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/opencard" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

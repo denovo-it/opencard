@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- L'elenco delle carte, una riga per carta sul suo colore. Sotto, il
+     messaggio per quando l'elenco è vuoto: BoxInsetLayout lo tiene dentro il
+     quadrato inscritto nel cerchio, così non finisce tagliato dai bordi. -->
+<androidx.wear.widget.BoxInsetLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <androidx.wear.widget.WearableRecyclerView
+        android:id="@+id/elenco"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:scrollbars="vertical" />
+
+    <TextView
+        android:id="@+id/vuoto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:visibility="gone"
+        app:layout_boxedEdges="all" />
+
+</androidx.wear.widget.BoxInsetLayout>

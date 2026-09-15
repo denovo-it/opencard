@@ -180,5 +180,7 @@
   "backup_cloud_spento_android": "Le carte restano su questo telefono e non escono. Per portarle altrove usa Esporta su file oppure il passaggio a QR.",
   "backup_cloud_acceso_ios": "Le carte rientrano nel backup del telefono: se hai acceso iCloud ci finiscono anche loro, insieme ai dati delle altre app, e cambiando iPhone le ritrovi.",
   "backup_cloud_spento_ios": "Le carte restano su questo telefono e non entrano nel backup. Per portarle altrove usa Esporta su file oppure il passaggio a QR.",
-  "lingua_riapri_ios": "La lingua nuova arriva alla prossima apertura: chiudi OpenCard dal selettore app, scorrendola verso l'alto, e riaprila."
+  "lingua_riapri_ios": "La lingua nuova arriva alla prossima apertura: chiudi OpenCard dal selettore app, scorrendola verso l'alto, e riaprila.",
+  "nessuna_carta_wear": "Ancora nessuna carta. Apri OpenCard sul telefono: arrivano da sole.",
+  "errore_dati_wear": "Le carte non si leggono. Apri OpenCard sul telefono per mandarle di nuovo."
 }

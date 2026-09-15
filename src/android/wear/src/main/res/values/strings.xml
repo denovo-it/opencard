@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- generato da src/lingue/genera.py: non modificarlo a mano -->
+<resources>
+    <string name="app_name">OpenCard</string>
+    <string name="nessuna_carta_wear">No cards yet. Open OpenCard on your phone: they arrive on their own.</string>
+    <string name="errore_dati_wear">The cards can\'t be read. Open OpenCard on your phone to send them again.</string>
+</resources>
