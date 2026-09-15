@@ -10,9 +10,16 @@
 #import "OCFormViewController.h"
 #import "OCTema.h"
 
+/// Sotto questa altezza il codice non si stringe: 100 pt, che per un QR da
+/// tessera sono ancora 4 pt per modulo.
+static const CGFloat OCAltezzaMinimaCodice = 100;
+
 @interface OCDettaglioViewController () <UIScrollViewDelegate>
 @property (nonatomic, assign) NSInteger identificativo;
 @property (nonatomic, strong) UIImageView *immagine;
+/// L'altezza del codice: la costante la muove il pinch.
+@property (nonatomic, strong) NSLayoutConstraint *altezzaCodice;
+@property (nonatomic, assign) CGFloat altezzaAlPizzico;
 @property (nonatomic, strong) UILabel *codice;
 /// Nota, scadenza e saldo, uno per riga e solo se ci sono.
 @property (nonatomic, strong) UILabel *dettagli;
@@ -99,6 +106,9 @@
 {
     self.immagine = [UIImageView new];
     self.immagine.contentMode = UIViewContentModeScaleAspectFit;
+    self.immagine.userInteractionEnabled = YES;
+    [self.immagine addGestureRecognizer:
+        [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pizzica:)]];
 
     // Il numero sta attaccato al codice, non in fondo allo schermo: si leggono
     // insieme, e alla cassa serve confrontarli a colpo d'occhio.
@@ -144,8 +154,31 @@
         // il numero, i dettagli e le foto, e devono restare in vista.
         [self.immagine.heightAnchor constraintLessThanOrEqualToAnchor:area.heightAnchor
                                                            multiplier:0.45],
-        [self.immagine.heightAnchor constraintGreaterThanOrEqualToConstant:160],
+        self.altezzaCodice,
     ]];
+}
+
+/// L'altezza del codice parte dalla misura naturale dell'immagine e la cambia
+/// il pinch, fra il minimo e il tetto di quasi metà schermo. Priorità sotto
+/// il tetto, così il tetto vince.
+- (NSLayoutConstraint *)altezzaCodice
+{
+    if (_altezzaCodice == nil) {
+        _altezzaCodice = [self.immagine.heightAnchor constraintEqualToConstant:OCAltezzaMinimaCodice];
+        _altezzaCodice.priority = UILayoutPriorityDefaultHigh;
+    }
+    return _altezzaCodice;
+}
+
+- (void)pizzica:(UIPinchGestureRecognizer *)gesto
+{
+    if (gesto.state == UIGestureRecognizerStateBegan) {
+        self.altezzaAlPizzico = self.altezzaCodice.constant;
+    } else if (gesto.state == UIGestureRecognizerStateChanged) {
+        CGFloat tetto = self.view.safeAreaLayoutGuide.layoutFrame.size.height * 0.45;
+        CGFloat nuova = self.altezzaAlPizzico * gesto.scale;
+        self.altezzaCodice.constant = MIN(tetto, MAX(OCAltezzaMinimaCodice, nuova));
+    }
 }
 
 /// Le foto, una per pagina, con l'etichetta del lato e due frecce.
@@ -275,7 +308,14 @@
         [self avvisa:errore.localizedDescription];
         return;
     }
-    self.immagine.image = disegno;
+    // Passo 6: il core disegna 8 px per modulo, e con scala 8/6 l'immagine
+    // misura 6 pt per modulo, come un QR stampato sulla tessera (vedi
+    // guide/codici-quadrati-piu-piccoli.md). Da lì il pinch la cambia.
+    UIImage *aPasso6 = [UIImage imageWithCGImage:disegno.CGImage
+                                           scale:8.0 / 6.0
+                                     orientation:UIImageOrientationUp];
+    self.immagine.image = aPasso6;
+    self.altezzaCodice.constant = MAX(OCAltezzaMinimaCodice, aPasso6.size.height);
 }
 
 /// Saldo, scadenza e nota, in quest'ordine e solo quelli compilati. Il riquadro

@@ -4,10 +4,13 @@
     <uses-feature android:name="android.hardware.type.watch" />
 
     <!-- Niente backup di sistema: le carte le rimanda il telefono. Il file
-         resta cifrato con la chiave di questo orologio, come sul telefono. -->
+         resta cifrato con la chiave di questo orologio, come sul telefono.
+         allowBackup vale fino ad Android 11, le regole in xml da Android 12:
+         dicono la stessa cosa. -->
     <application
         android:name=".Applicazione"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.DeviceDefault">
@@ -18,14 +21,23 @@
              e Play la propone solo a chi ha il telefono con OpenCard. -->
         <meta-data android:name="com.google.android.wearable.standalone" android:value="false" />
 
-        <activity android:name=".MainActivity" android:exported="true">
+        <!-- Le due schermate sono un compito solo, con lo stesso taskAffinity:
+             è quello che Wear OS chiede perché l'app compaia una volta sola
+             fra le app recenti. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:taskAffinity="srl.denovo.opencard.orologio">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity android:name=".CodiceActivity" android:exported="false" />
+        <activity
+            android:name=".CodiceActivity"
+            android:exported="false"
+            android:taskAffinity="srl.denovo.opencard.orologio" />
 
         <!-- Le carte dal telefono. Lo avvia Google Play services quando arriva
              il messaggio, anche con l'app chiusa, e per questo è esportato. -->

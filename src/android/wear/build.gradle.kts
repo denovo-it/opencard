@@ -1,5 +1,17 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
+}
+
+// Firma di release: la stessa chiave di caricamento del telefono, scelta con
+// -PkeystoreProps=keystore-upload.properties come fa bundle-play.sh --wear.
+// Senza il file si compila comunque, firmato debug: basta per l'orologio
+// collegato con adb.
+val keystoreProps = Properties().apply {
+    val nome = (project.findProperty("keystoreProps") as String?) ?: "keystore.properties"
+    val f = rootProject.file(nome)
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 // L'app per l'orologio, Wear OS. Stesso applicationId e, quando andrà su
@@ -23,7 +35,7 @@ android {
         // Stesso formato del telefono, YYYYMMDDnn, ma il progressivo parte da
         // 51: Play vuole un versionCode diverso per ogni APK della stessa
         // scheda, e così i due non si pestano mai nella stessa giornata.
-        versionCode = 2026091551
+        versionCode = 2026091552
         versionName = "1.0.4-dev"
 
         ndk {
@@ -46,6 +58,17 @@ android {
         }
     }
 
+    signingConfigs {
+        if (keystoreProps.isNotEmpty()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -54,6 +77,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            if (keystoreProps.isNotEmpty()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

@@ -59,12 +59,16 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <!-- Il numero sta attaccato al codice, non in fondo allo schermo: si
+        <!-- Il codice alla sua misura naturale, non a tutta larghezza: la
+             larghezza la mette DettaglioActivity (6 dp per modulo, con il
+             pinch per cambiarla) e l'altezza segue con adjustViewBounds.
+             Il numero sta attaccato al codice, non in fondo allo schermo: si
              leggono insieme, e alla cassa serve confrontarli a colpo d'occhio. -->
         <ImageView
             android:id="@+id/immagine"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
             android:adjustViewBounds="true"
             android:contentDescription="@null"
             android:scaleType="fitCenter" />

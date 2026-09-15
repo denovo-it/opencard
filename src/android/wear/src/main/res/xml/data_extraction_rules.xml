@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Niente nel backup di Google né nel passaggio a un orologio nuovo: le carte
+     arrivano dal telefono, e il file qui è cifrato con una chiave che non
+     esce da questo orologio. -->
+<data-extraction-rules>
+    <cloud-backup disabled="true" />
+    <device-transfer disabled="true" />
+</data-extraction-rules>

@@ -54,6 +54,9 @@ class DettaglioActivity : AppCompatActivity() {
     }
 
     companion object {
+        /** 6 dp per modulo, con il core che disegna 8 px per modulo. */
+        private const val DP_PER_PIXEL = 6f / 8f
+
         private const val EXTRA_ID = "id"
 
         fun intent(contesto: Context, id: Int) =
@@ -261,7 +264,21 @@ class DettaglioActivity : AppCompatActivity() {
             // Con la simbologia scelta, non con quella indovinata: una carta
             // Aztec disegnata a indovinare tornerebbe un Code 128.
             { Core.renderCodeSimbologia(carta.code, carta.simbologia) },
-            { immagine -> findViewById<ImageView>(R.id.immagine).setImageBitmap(immagine.aBitmap()) },
+            { immagine ->
+                val vista = findViewById<ImageView>(R.id.immagine)
+                vista.setImageBitmap(immagine.aBitmap())
+                // Alla misura naturale, 6 dp per modulo: un QR da tessera esce
+                // grande come sulla tessera, non a tutta larghezza (vedi
+                // guide/codici-quadrati-piu-piccoli.md). Il core disegna 8 px
+                // per modulo, quindi un pixel vale 6/8 di dp. Un codice a
+                // barre è più largo della colonna e resta a tutta larghezza.
+                // Da lì il pinch lo allarga o lo stringe.
+                val densita = resources.displayMetrics.density
+                val colonna = resources.displayMetrics.widthPixels - (48 * densita).toInt()
+                val zoom = ZoomCodice(vista, minimo = (160 * densita).toInt(), massimo = colonna)
+                zoom.imposta((immagine.larghezza * DP_PER_PIXEL * densita).toInt())
+                vista.setOnTouchListener(zoom)
+            },
             { messaggio ->
                 Snackbar.make(findViewById(R.id.radice), messaggio, Snackbar.LENGTH_LONG).show()
             },
