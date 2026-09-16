@@ -1,0 +1,5 @@
+/* generato da src/lingue/genera.py: non modificarlo a mano */
+
+"app_name" = "OpenCard";
+"nessuna_carta_wear" = "No cards yet. Open OpenCard on your phone: they arrive on their own.";
+"errore_dati_wear" = "The cards can't be read. Open OpenCard on your phone to send them again.";

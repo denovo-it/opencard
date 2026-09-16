@@ -39,9 +39,9 @@ SUFFISSO_ALTRO = "_altro"
 SUFFISSO_ANDROID = "_android"
 SUFFISSO_IPHONE = "_ios"
 
-# L'orologio (modulo wear) ha poche frasi sue, e non gli servono quelle del
-# telefono: prende app_name e le chiavi con questo suffisso, che gli altri due
-# non vedono.
+# L'orologio (modulo wear e app per Apple Watch) ha poche frasi sue, e non gli
+# servono quelle del telefono: prende app_name e le chiavi con questo suffisso,
+# che i due telefoni non vedono. Le frasi sono le stesse sui due orologi.
 SUFFISSO_OROLOGIO = "_wear"
 
 SEGNAPOSTO = re.compile(r"\{(\d+):(testo|intero)\}")
@@ -166,6 +166,8 @@ def destinazioni(lingua, voci):
          testo_android(per_orologio(voci)).encode("utf-8")),
         (RADICE / "src/ios" / f"{lingua}.lproj" / "Localizable.strings",
          testo_iphone(di_iphone).encode("utf-8")),
+        (RADICE / "src/watchos" / f"{lingua}.lproj" / "Localizable.strings",
+         testo_iphone(per_orologio(voci)).encode("utf-8")),
     ]
     plurali = stringsdict(di_iphone)
     if plurali is not None:

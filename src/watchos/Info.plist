@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>OpenCard</string>
+	<key>CFBundleExecutable</key>
+	<string>OpenCardOrologio</string>
+	<key>CFBundleIdentifier</key>
+	<string>srl.denovo.opencard.watchkitapp</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>OpenCard</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<!-- Versione e build le copia lo script da src/ios/Info.plist: l'orologio
+	     esce dentro l'app del telefono e deve dire lo stesso numero. -->
+	<key>CFBundleShortVersionString</key>
+	<string>0</string>
+	<key>CFBundleVersion</key>
+	<string>0</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>WatchOS</string>
+	</array>
+	<key>MinimumOSVersion</key>
+	<string>9.0</string>
+	<key>UIDeviceFamily</key>
+	<array>
+		<integer>4</integer>
+	</array>
+	<key>WKApplication</key>
+	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>srl.denovo.opencard</string>
+	<key>WKRunsIndependentlyOfCompanionApp</key>
+	<false/>
+</dict>
+</plist>
