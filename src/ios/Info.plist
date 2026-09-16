@@ -20,7 +20,7 @@
 	     separati da punto e respinge il caricamento se trova altro. Il segno
 	     della lavorazione sta su Android, in versionName, e nel CHANGELOG. -->
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.4</string>
+	<string>1.0.5</string>
 	<key>CFBundleVersion</key>
 	<string>2026091505</string>
 	<!-- Dalla 1.0.3 l'app cifra il file delle carte e i backup con password,

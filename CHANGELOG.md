@@ -1,3 +1,7 @@
+## 1.0.5-dev (in lavorazione)
+
+- Ancora niente che si veda usando l'app: per adesso è cambiato solo il numero di versione.
+
 ## 1.0.4
 
 - Su Android 6 esportare le carte in un archivio, anche con password, non chiude più l'app.

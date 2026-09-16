@@ -36,7 +36,7 @@ android {
         // 51: Play vuole un versionCode diverso per ogni APK della stessa
         // scheda, e così i due non si pestano mai nella stessa giornata.
         versionCode = 2026091556
-        versionName = "1.0.4"
+        versionName = "1.0.5-dev"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
