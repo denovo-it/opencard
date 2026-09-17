@@ -36,14 +36,19 @@ arrivano dal telefono. L'app per Apple Watch è in arrivo.
 ```
 src/                   codice C comune
   codegen.[ch]         generazione di QR e barcode con zint
-  store.[ch]           persistenza delle carte in JSON
+  store.[ch]           persistenza delle carte in JSON, cifrato sul telefono
   backup.[ch]          esportazione e lettura dei backup
-  third-party/         cJSON (MIT)
+  archivio.[ch]        l'archivio ZIP del backup, con le carte e le foto
+  cripto.[ch]          cifratura del file delle carte e dei backup con password
+  transfer.[ch]        passaggio delle carte fra telefoni con i QR
+  lingue/              i testi dell'app, da cui escono i file di Android e iOS
+  third-party/         cJSON (MIT) e Monocypher (CC0 o BSD-2-Clause)
   android/             ramo Android: Kotlin, JNI, Gradle
     app/               l'app del telefono
     wear/              l'app per gli smartwatch Wear OS
     condiviso/         il codice Kotlin comune a telefono e orologio
   ios/                 ramo iOS: Objective-C
+  watchos/             l'app per Apple Watch, in SwiftUI (in lavorazione)
 ```
 
 Il core dipende da [zint](https://github.com/zint/zint) 2.13 (BSD-3-Clause),
@@ -57,9 +62,17 @@ il selettore di file, che sono necessariamente doppie.
 
 ## I dati
 
-Le carte vengono salvate in un file JSON leggibile, nella directory dei dati dell'app.
-Liberamente accessibile, si può copiare e spostare senza altri strumenti ed è human
-friendly.
+Le carte vengono salvate in un file JSON, nella directory dei dati dell'app. Dalla
+1.0.3 il file è cifrato con XChaCha20-Poly1305: chi lo copia da un telefono spento o
+da un backup trova byte a caso. Su Android la chiave è protetta dal Keystore e non
+esce dal telefono; su iPhone è nel portachiavi e viaggia dentro il backup cifrato di
+iCloud, così chi cambia telefono ritrova le carte.
+
+Per avere le carte in un file leggibile c'è l'esportazione: un archivio ZIP con
+l'elenco delle carte in JSON e le foto, oppure un CSV per le altre app. Con una
+password l'archivio diventa un file `.opencard`, cifrato con XChaCha20-Poly1305 e
+con la chiave ricavata dalla password con Argon2id. I formati sono gli stessi su
+Android e su iPhone: un backup fatto con un telefono si apre con l'altro.
 
 ## Marchi e immagini
 
