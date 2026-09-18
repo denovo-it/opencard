@@ -5,5 +5,7 @@
 #import <UIKit/UIKit.h>
 
 @interface OCAppDelegate : UIResponder <UIApplicationDelegate>
-@property (nonatomic, strong) UIWindow *window;
+/// Il messaggio dell'errore di apertura dei dati, se c'è stato. Lo mostra la
+/// scena, che ha la finestra.
+@property (nonatomic, copy) NSString *erroreApertura;
 @end

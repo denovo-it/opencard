@@ -5,8 +5,6 @@
 #import "OCAppDelegate.h"
 
 #import "OCCore.h"
-#import "OCListaViewController.h"
-#import "OCSplashViewController.h"
 #import "OCTema.h"
 
 @implementation OCAppDelegate
@@ -15,26 +13,14 @@
     didFinishLaunchingWithOptions:(NSDictionary *)opzioni
 {
     // Il file dei dati si apre prima di qualunque schermata: un problema qui
-    // non deve chiudere l'app senza dire niente.
+    // non deve chiudere l'app senza dire niente. Il messaggio lo mostra la
+    // scena, in OCSceneDelegate, perché la finestra adesso è sua.
     NSError *errore = nil;
-    BOOL aperto = [OCCore apriConErrore:&errore];
+    if (![OCCore apriConErrore:&errore]) {
+        self.erroreApertura = errore.localizedDescription;
+    }
 
-    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     [self applicaAspettoBarra];
-
-    if ([OCCore primoAvvio]) {
-        OCSplashViewController *benvenuto = [[OCSplashViewController alloc] initSoloMostra:NO];
-        benvenuto.suFine = ^{ [self mostraCarte]; };
-        self.window.rootViewController = benvenuto;
-    } else {
-        self.window.rootViewController = [self contenitoreCarte];
-    }
-
-    [self.window makeKeyAndVisible];
-
-    if (!aperto) {
-        [self avvisa:errore.localizedDescription];
-    }
     return YES;
 }
 
@@ -51,28 +37,6 @@
     barra.scrollEdgeAppearance = aspetto;
     barra.compactAppearance = aspetto;
     barra.tintColor = [OCTema sopraMarca];
-}
-
-- (UINavigationController *)contenitoreCarte
-{
-    return [[UINavigationController alloc]
-            initWithRootViewController:[OCListaViewController new]];
-}
-
-- (void)mostraCarte
-{
-    self.window.rootViewController = [self contenitoreCarte];
-}
-
-- (void)avvisa:(NSString *)messaggio
-{
-    UIAlertController *avviso = [UIAlertController alertControllerWithTitle:nil
-                                                                   message:messaggio
-                                                            preferredStyle:UIAlertControllerStyleAlert];
-    [avviso addAction:[UIAlertAction actionWithTitle:@"OK"
-                                               style:UIAlertActionStyleDefault
-                                             handler:nil]];
-    [self.window.rootViewController presentViewController:avviso animated:YES completion:nil];
 }
 
 @end
