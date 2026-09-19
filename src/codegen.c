@@ -174,6 +174,21 @@ int opencard_symbology(const char *code, opencard_tipo tipo)
     return BARCODE_CODE128;
 }
 
+/* EANX conta le cifre come se mancasse sempre quella di controllo: otto cifre
+ * per lui sono un EAN-13 da completare con gli zeri davanti. Ma un EAN-8 lo
+ * si scrive con tutte e otto, ed è così che lo leggono i lettori dalla
+ * tessera: 96385074 usciva disegnato come 0000963850742, e alla cassa era un
+ * altro numero. EANX_CHK prende le otto cifre per un EAN-8 e ne verifica il
+ * controllo, come EANX fa già con le tredici di un EAN-13. Con sette cifre
+ * resta EANX, che il controllo lo calcola da sé. */
+static int zint_per_la_lunghezza(int zint_simbologia, size_t n)
+{
+    if (zint_simbologia == BARCODE_EANX && n == 8) {
+        return BARCODE_EANX_CHK;
+    }
+    return zint_simbologia;
+}
+
 /* Oltre questa larghezza l'immagine non arriva sullo schermo.
  *
  * Un codice lungo disegnato a scala 4 diventa larghissimo: cinquanta caratteri
@@ -223,7 +238,7 @@ static int disegna(const char *code, int zint_simbologia,
     }
 
     estremi(code, &s, &n);
-    simbolo->symbology = zint_simbologia;
+    simbolo->symbology = zint_per_la_lunghezza(zint_simbologia, n);
     simbolo->show_hrt = 0;      /* il testo lo disegna la UI, raggruppato a tre */
     simbolo->scale = 4.0f;
 
@@ -329,7 +344,7 @@ int opencard_codice_sta(const char *code, opencard_simbologia simbologia)
     if (simbolo == NULL) {
         return 0;
     }
-    simbolo->symbology = zint_simbologia;
+    simbolo->symbology = zint_per_la_lunghezza(zint_simbologia, n);
     /* Solo la codifica, niente disegno: qui interessa la risposta sì o no, e
      * l'immagine costa memoria che poi si butterebbe. */
     esito = ZBarcode_Encode(simbolo, (const unsigned char *)s, (int)n);
@@ -386,7 +401,7 @@ int opencard_write_png(const char *code, opencard_tipo tipo, const char *percors
     }
 
     estremi(code, &s, &n);
-    simbolo->symbology = opencard_symbology(code, tipo);
+    simbolo->symbology = zint_per_la_lunghezza(opencard_symbology(code, tipo), n);
     simbolo->show_hrt = 0;      /* il testo lo disegna la UI, raggruppato a tre */
     simbolo->scale = 4.0f;
     strncpy(simbolo->outfile, percorso, sizeof(simbolo->outfile) - 1);
