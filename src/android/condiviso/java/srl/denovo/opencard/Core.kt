@@ -58,17 +58,28 @@ object Simbologie {
     fun eQuadrato(simbologia: Int) = simbologia == QR || simbologia == MICROQR
 
     /**
-     * Vero per i codici a barre di una riga sola: una fascia orizzontale
-     * qualsiasi è il codice intero, e l'orologio li accorcia per farli stare
-     * nel cerchio. Aztec, Data Matrix, PDF417 e i due QR no: tagliati si
-     * perdono.
+     * Vero per i codici a barre di una riga sola: la zona bianca la vogliono
+     * solo ai lati, e rimpiccioliti con il filtro si leggono lo stesso.
+     * Aztec, Data Matrix, PDF417 e i due QR la vogliono tutto intorno, e i
+     * loro moduli devono restare tutti uguali.
      */
     fun eUnaRiga(simbologia: Int) =
         simbologia !in setOf(QR, MICROQR, AZTEC, DATAMATRIX, PDF417)
 
+    /**
+     * Vero per EAN e UPC: il core li disegna già con la zona bianca ai lati,
+     * da 7 a 11 moduli. Gli altri escono senza, e il margine lo deve lasciare
+     * chi li mostra.
+     */
+    fun haLaSuaQuiete(simbologia: Int) = simbologia in setOf(EAN8, EAN13, UPCA, UPCE)
+
     private const val AZTEC = 2
     private const val DATAMATRIX = 6
+    private const val EAN8 = 7
+    private const val EAN13 = 8
     private const val PDF417 = 10
+    private const val UPCA = 11
+    private const val UPCE = 12
 
     /**
      * Nessuna scelta dell'utente: la simbologia la decide l'app.

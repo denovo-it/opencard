@@ -1,6 +1,6 @@
 ## 1.0.5-dev (in lavorazione)
 
-- Ancora niente che si veda usando l'app: per adesso è cambiato solo il numero di versione.
+- Sull'orologio il codice non arriva più fino al bordo tondo dello schermo: è un po' più piccolo e ha il suo margine bianco tutto intorno, perché alcuni lettori alla cassa non lo leggevano. Vale per i codici a barre e per i QR.
 
 ## 1.0.4
 
