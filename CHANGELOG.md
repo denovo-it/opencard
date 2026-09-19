@@ -1,4 +1,4 @@
-## 1.0.5-dev (in lavorazione)
+## 1.0.5
 
 - Sull'orologio il codice non arriva più fino al bordo tondo dello schermo: è un po' più piccolo e ha il suo margine bianco tutto intorno, perché alcuni lettori alla cassa non lo leggevano. Vale per i codici a barre e per i QR.
 - Un EAN-8 con tutte e 8 le cifre, come lo legge la fotocamera dalla tessera, adesso esce come EAN-8. Prima veniva disegnato come un EAN-13 con quattro zeri davanti, e alla cassa si leggeva un altro numero.

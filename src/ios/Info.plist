@@ -22,7 +22,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.5</string>
 	<key>CFBundleVersion</key>
-	<string>2026091902</string>
+	<string>2026091903</string>
 	<!-- Dalla 1.0.3 l'app cifra il file delle carte e i backup con password,
 	     con Monocypher (XChaCha20-Poly1305, Argon2id): algoritmi pubblicati,
 	     e sorgente pubblico su GitHub. Per l'EAR (15 CFR 742.15(b) e la nota a
