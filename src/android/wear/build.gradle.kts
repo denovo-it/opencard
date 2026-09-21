@@ -119,4 +119,8 @@ dependencies {
     implementation("androidx.wear:wear:1.3.0")
     // I messaggi dal telefono.
     implementation("com.google.android.gms:play-services-wearable:19.0.0")
+    // Il nostro codice non la usa, le activity estendono android.app.Activity:
+    // la porta androidx.wear, attraverso fragment, alla 1.1.0, che Play
+    // segnala come obsoleta. Qui sale alla versione che ha il telefono.
+    implementation("androidx.activity:activity:1.8.0")
 }

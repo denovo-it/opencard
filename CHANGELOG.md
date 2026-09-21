@@ -1,6 +1,6 @@
 ## 1.0.6-dev (in lavorazione)
 
-- Ancora niente che si veda usando l'app: per adesso è cambiato solo il numero di versione.
+- Ancora niente che si veda usando l'app. Sull'orologio è stata aggiornata una libreria di Android che Google Play segnalava come vecchia.
 
 ## 1.0.5
 
