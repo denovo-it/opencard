@@ -8,6 +8,18 @@
 	<string>OpenCard</string>
 	<key>CFBundleExecutable</key>
 	<string>OpenCardOrologio</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
+	<!-- watchOS legge l'icona da qui, non dalla sola CFBundleIconName: le due
+	     chiavi le scrive actool nel plist parziale e Xcode le unisce. -->
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconName</key>
+			<string>AppIcon</string>
+		</dict>
+	</dict>
 	<key>CFBundleIdentifier</key>
 	<string>srl.denovo.opencard.watchkitapp</string>
 	<key>CFBundleInfoDictionaryVersion</key>
