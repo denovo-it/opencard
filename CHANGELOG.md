@@ -1,4 +1,4 @@
-## 1.0.6-dev (in lavorazione)
+## 1.0.6
 
 - Quando una scheda ha più di 5 carte, in cima alla lista compare un campo di ricerca: scrivendo una parte dell'etichetta restano solo le carte che la contengono, senza badare a maiuscole e accenti. La X a destra svuota il campo e fa tornare tutte le carte. Mentre si cerca le carte non si spostano con la pressione prolungata.
 - Sull'orologio è stata aggiornata una libreria di Android che Google Play segnalava come vecchia.
