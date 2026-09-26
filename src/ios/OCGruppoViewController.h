@@ -26,6 +26,14 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) void (^suCestino)(OCCarta *carta);
 @property (nonatomic, copy, nullable) void (^suErrore)(NSString *messaggio);
 
+/// Il testo del campo di ricerca: si vedono solo le carte con l'etichetta
+/// che lo contiene. Cambiarlo rilegge le carte.
+@property (nonatomic, copy) NSString *filtro;
+
+/// Quante carte ha il gruppo prima del filtro: decide se il campo di ricerca
+/// si mostra, e scrivendo non deve scendere.
+@property (nonatomic, readonly) NSUInteger totale;
+
 /// Rilegge le carte dal core.
 - (void)ricarica;
 

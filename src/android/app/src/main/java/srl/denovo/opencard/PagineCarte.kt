@@ -44,6 +44,21 @@ class PagineCarte(
         private set
 
     /**
+     * Il testo del campo di ricerca: si vedono solo le carte con l'etichetta
+     * che lo contiene. Vale per tutte le schede insieme.
+     */
+    var filtro = ""
+        private set
+
+    /** Cambia il filtro e ridisegna le pagine, a ogni tasto premuto. */
+    fun filtra(testo: String) {
+        val nuovo = testo.trim()
+        if (nuovo == filtro) return
+        filtro = nuovo
+        notifyDataSetChanged()
+    }
+
+    /**
      * Le schede che ci sono adesso, nell'ordine in cui si vedono.
      *
      * Tenere qui l'ordine invece di calcolarlo caso per caso evita la trappola
@@ -61,6 +76,19 @@ class PagineCarte(
         const val CARTE = 0
         const val USA_E_GETTA = 1
         const val PREFERITE = 2
+
+        /**
+         * Vero se l'etichetta contiene il testo cercato, in qualunque punto.
+         * Maiuscole e accenti non contano: chi scrive «caffe» trova «Caffè».
+         */
+        fun corrisponde(etichetta: String, cercato: String): Boolean =
+            cercato.isEmpty() || semplice(etichetta).contains(semplice(cercato))
+
+        private val accenti = Regex("\\p{Mn}+")
+
+        private fun semplice(testo: String): String =
+            accenti.replace(java.text.Normalizer.normalize(testo, java.text.Normalizer.Form.NFD), "")
+                .lowercase()
     }
 
     /**
@@ -128,8 +156,11 @@ class PagineCarte(
         // Nella scheda con la stella non si trascina: le preferite arrivano dai
         // due gruppi, che hanno due ordini loro, e riordinare qui vorrebbe dire
         // inventarne un terzo che poi nessuno rilegge.
+        //
+        // E neanche mentre si cerca: l'ordine salvato sarebbe quello delle
+        // sole carte visibili, e le altre uscirebbero dall'elenco.
         pagina.presa?.attachToRecyclerView(null)
-        pagina.presa = if (preferite) {
+        pagina.presa = if (preferite || filtro.isNotEmpty()) {
             null
         } else {
             ItemTouchHelper(adattatore.trascinamento()).apply {
@@ -139,6 +170,7 @@ class PagineCarte(
 
         pagina.vuoto.setText(
             when {
+                filtro.isNotEmpty() -> R.string.nessuna_trovata
                 preferite -> R.string.nessuna_preferita
                 usaEGetta -> R.string.nessuna_usa_e_getta
                 else -> R.string.nessuna_carta
@@ -154,8 +186,9 @@ class PagineCarte(
 
         Dati.chiedi(
             { if (preferite) Core.getPreferite() else Core.getGruppo(usaEGetta) },
-            { carte ->
-                adattatore.mostra(carte.toList(), cestino = usaEGetta)
+            { tutte ->
+                val carte = tutte.filter { corrisponde(it.label, filtro) }
+                adattatore.mostra(carte, cestino = usaEGetta)
                 pagina.vuoto.visibility = if (carte.isEmpty()) View.VISIBLE else View.GONE
             },
             { messaggio -> suErrore(messaggio) },

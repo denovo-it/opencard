@@ -10,6 +10,9 @@
     <string name="nessuna_usa_e_getta">Vouchers and one-time codes end up here.</string>
     <string name="scheda_preferite">Favorites</string>
     <string name="nessuna_preferita">Cards with a star end up here.</string>
+    <string name="cerca_etichetta">Search by label</string>
+    <string name="nessuna_trovata">No cards with this label.</string>
+    <string name="cancella_ricerca">Clear search</string>
     <string name="preferita">Favorite</string>
     <string name="togli_preferita">Remove from favorites</string>
     <string name="aggiunta_preferite">Added to favorites.</string>

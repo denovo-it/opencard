@@ -9,10 +9,13 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.annotation.SuppressLint
+import android.text.Editable
 import android.text.InputType
+import android.text.TextWatcher
 import android.view.Menu
 import android.view.View
 import android.view.MenuItem
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -26,6 +29,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import com.google.android.material.textfield.TextInputLayout
 
 /**
  * Le carte, divise in schede: quelle di tutti i giorni, le usa e getta e, se
@@ -36,9 +40,30 @@ import com.google.android.material.tabs.TabLayoutMediator
  */
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        /**
+         * Il campo di ricerca compare solo quando la scheda aperta ha più di
+         * questo numero di carte. Con poche carte stanno tutte sullo schermo e
+         * si fa prima a toccarle: il campo occuperebbe solo spazio. Lo stesso
+         * valore è in OCListaViewController.m.
+         */
+        private const val CARTE_PER_LA_RICERCA = 5
+    }
+
     private lateinit var pagine: ViewPager2
     private lateinit var carte: PagineCarte
     private lateinit var schede: TabLayout
+    private lateinit var ricerca: EditText
+
+    /**
+     * Quante carte ha ogni scheda, prima del filtro, per tipo di scheda. Si
+     * contano senza filtro: altrimenti, scrivendo, le carte trovate
+     * scenderebbero sotto la soglia e il campo sparirebbe sotto le dita.
+     */
+    private var cartePerScheda = mapOf<Int, Int>()
+
+    /** Vero mentre [ricarica] sposta le pagine per rifare le schede. */
+    private var rifacendoSchede = false
 
     /** Scheda aperta: vero se è quella delle usa e getta. */
     private val usaEGetta: Boolean
@@ -205,6 +230,39 @@ class MainActivity : AppCompatActivity() {
             }
         }.attach()
 
+        // Il campo segue la scheda aperta: si decide a ogni cambio di pagina.
+        pagine.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(posizione: Int) {
+                if (!rifacendoSchede) aggiornaRicerca()
+            }
+        })
+
+        // Si filtra a ogni tasto, senza aspettare l'invio. La X a destra del
+        // campo lo svuota e fa tornare tutte le carte.
+        ricerca = findViewById(R.id.ricerca)
+        val contenitore = findViewById<TextInputLayout>(R.id.ricerca_contenitore)
+        contenitore.setEndIconOnClickListener { ricerca.setText("") }
+        contenitore.isEndIconVisible = false
+        ricerca.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(testo: Editable?) {
+                contenitore.isEndIconVisible = !testo.isNullOrEmpty()
+                carte.filtra(testo?.toString().orEmpty())
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+        })
+        ricerca.setOnEditorActionListener { campo, _, _ ->
+            // Il tasto di ricerca chiude la tastiera: le carte trovate sono
+            // già lì, e la tastiera ne coprirebbe metà. Non si guarda quale
+            // azione arriva: l'invio di una tastiera fisica non porta
+            // IME_ACTION_SEARCH, e deve fare la stessa cosa.
+            getSystemService(InputMethodManager::class.java)
+                .hideSoftInputFromWindow(campo.windowToken, 0)
+            campo.clearFocus()
+            true
+        }
+
         findViewById<FloatingActionButton>(R.id.aggiungi).setOnClickListener {
             // La casella "usa e getta" parte come la scheda da cui hai premuto il +.
             apri(FormActivity.intentNuova(this, usaEGetta))
@@ -278,16 +336,29 @@ class MainActivity : AppCompatActivity() {
      */
     private fun ricarica() {
         Dati.chiedi(
-            { Core.getPreferite().isNotEmpty() to Core.getGruppo(true).isNotEmpty() },
-            { (ce, ceUsaEGetta) ->
+            {
+                mapOf(
+                    PagineCarte.PREFERITE to Core.getPreferite().size,
+                    PagineCarte.CARTE to Core.getGruppo(false).size,
+                    PagineCarte.USA_E_GETTA to Core.getGruppo(true).size,
+                )
+            },
+            { quante ->
+                cartePerScheda = quante
+                val ce = quante.getValue(PagineCarte.PREFERITE) > 0
+                val ceUsaEGetta = quante.getValue(PagineCarte.USA_E_GETTA) > 0
                 val guardava = carte.tipoDi(pagine.currentItem)
                 if (carte.mostraSchede(ce, ceUsaEGetta)) {
                     // Prima si torna a una posizione che esiste anche dopo, poi
-                    // si cambia il numero di schede.
+                    // si cambia il numero di schede. Il passaggio per la prima
+                    // pagina non è un cambio di scheda: il campo di ricerca non
+                    // lo deve vedere, o si svuoterebbe per niente.
+                    rifacendoSchede = true
                     pagine.setCurrentItem(0, false)
                     carte.ricarica()
                     val dove = carte.posizioneDi(guardava)
                     if (dove > 0) pagine.setCurrentItem(dove, false)
+                    rifacendoSchede = false
                 } else {
                     carte.ricarica()
                 }
@@ -296,6 +367,7 @@ class MainActivity : AppCompatActivity() {
                 // ornamento. Sparisce, e con essa la barra all'apertura di chi
                 // non ha ancora nessuna carta.
                 schede.visibility = if (carte.itemCount > 1) View.VISIBLE else View.GONE
+                aggiornaRicerca()
                 apriSullaStella(ce)
             },
             {
@@ -305,6 +377,21 @@ class MainActivity : AppCompatActivity() {
                 primaApertura = false
             },
         )
+    }
+
+    /**
+     * Il campo di ricerca c'è solo se la scheda aperta ha più di
+     * [CARTE_PER_LA_RICERCA] carte: con poche carte non c'è niente da
+     * cercare. Quando sparisce si svuota, sia che si passi a una scheda più
+     * piccola sia che si scenda sotto la soglia eliminando una carta:
+     * nascosto, il filtro resterebbe acceso senza che si veda.
+     */
+    private fun aggiornaRicerca() {
+        val quante = cartePerScheda[carte.tipoDi(pagine.currentItem)] ?: 0
+        val conRicerca = quante > CARTE_PER_LA_RICERCA
+        if (!conRicerca) ricerca.text?.clear()
+        findViewById<View>(R.id.ricerca_riquadro).visibility =
+            if (conRicerca) View.VISIBLE else View.GONE
     }
 
     /**

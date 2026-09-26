@@ -9,6 +9,9 @@
 "nessuna_usa_e_getta" = "Vouchers and one-time codes end up here.";
 "scheda_preferite" = "Favorites";
 "nessuna_preferita" = "Cards with a star end up here.";
+"cerca_etichetta" = "Search by label";
+"nessuna_trovata" = "No cards with this label.";
+"cancella_ricerca" = "Clear search";
 "preferita" = "Favorite";
 "togli_preferita" = "Remove from favorites";
 "aggiunta_preferite" = "Added to favorites.";

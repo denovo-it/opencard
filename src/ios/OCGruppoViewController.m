@@ -24,6 +24,7 @@ static NSString *const OCRiusoCella = @"carta";
     if (self != nil) {
         _usaEGetta = usaEGetta;
         _carte = [NSMutableArray array];
+        _filtro = @"";
     }
     return self;
 }
@@ -63,13 +64,6 @@ static NSString *const OCRiusoCella = @"carta";
     self.vuoto.textAlignment = NSTextAlignmentCenter;
     self.vuoto.textColor = [OCTema tenue];
     self.vuoto.font = [UIFont systemFontOfSize:16];
-    if (self.preferite) {
-        self.vuoto.text = NSLocalizedString(@"nessuna_preferita", nil);
-    } else if (self.usaEGetta) {
-        self.vuoto.text = NSLocalizedString(@"nessuna_usa_e_getta", nil);
-    } else {
-        self.vuoto.text = NSLocalizedString(@"nessuna_carta", nil);
-    }
     self.vuoto.hidden = YES;
     self.vuoto.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.vuoto];
@@ -100,6 +94,28 @@ static NSString *const OCRiusoCella = @"carta";
     [self ricarica];
 }
 
+- (void)setFiltro:(NSString *)filtro
+{
+    _filtro = [filtro copy];
+    [self ricarica];
+}
+
+/// Il messaggio della lista vuota: mentre si cerca dice che non si è trovato
+/// niente, e non che la scheda è ancora da riempire.
+- (NSString *)testoVuoto
+{
+    if (self.filtro.length > 0) {
+        return NSLocalizedString(@"nessuna_trovata", nil);
+    }
+    if (self.preferite) {
+        return NSLocalizedString(@"nessuna_preferita", nil);
+    }
+    if (self.usaEGetta) {
+        return NSLocalizedString(@"nessuna_usa_e_getta", nil);
+    }
+    return NSLocalizedString(@"nessuna_carta", nil);
+}
+
 - (void)ricarica
 {
     NSError *errore = nil;
@@ -114,7 +130,22 @@ static NSString *const OCRiusoCella = @"carta";
         return;
     }
 
+    _totale = carte.count;
+
+    // L'etichetta deve contenere il testo cercato, in qualunque punto.
+    // Maiuscole e accenti non contano: chi scrive «caffe» trova «Caffè».
+    if (self.filtro.length > 0) {
+        NSString *cercato = self.filtro;
+        NSPredicate *contiene = [NSPredicate predicateWithBlock:^BOOL(OCCarta *carta, NSDictionary *legami) {
+            return [carta.etichetta ?: @"" rangeOfString:cercato
+                                                 options:NSCaseInsensitiveSearch | NSDiacriticInsensitiveSearch]
+                       .location != NSNotFound;
+        }];
+        carte = [carte filteredArrayUsingPredicate:contiene];
+    }
+
     self.carte = [carte mutableCopy];
+    self.vuoto.text = [self testoVuoto];
     self.vuoto.hidden = self.carte.count > 0;
     [self.griglia reloadData];
 }
@@ -180,7 +211,10 @@ static NSString *const OCRiusoCella = @"carta";
     // Nella scheda con la stella no: le preferite arrivano dai due gruppi, che
     // hanno due ordini loro, e riordinare qui vorrebbe dire inventarne un terzo
     // che poi nessuno rilegge.
-    return !self.preferite;
+    //
+    // E neanche mentre si cerca: l'ordine salvato sarebbe quello delle sole
+    // carte visibili, e le altre uscirebbero dall'elenco.
+    return !self.preferite && self.filtro.length == 0;
 }
 
 - (void)collectionView:(UICollectionView *)griglia
@@ -194,6 +228,12 @@ static NSString *const OCRiusoCella = @"carta";
 
 - (void)trascinamento:(UILongPressGestureRecognizer *)gesto
 {
+    // Il gesto arriva lo stesso anche dove non si riordina: senza questo, al
+    // rilascio si salverebbe l'ordine della lista filtrata.
+    if (self.filtro.length > 0) {
+        return;
+    }
+
     CGPoint punto = [gesto locationInView:self.griglia];
 
     switch (gesto.state) {

@@ -10,6 +10,9 @@
     <string name="nessuna_usa_e_getta">Qui finiscono i buoni e i codici che si usano una volta sola.</string>
     <string name="scheda_preferite">Preferite</string>
     <string name="nessuna_preferita">Qui finiscono le carte con la stella.</string>
+    <string name="cerca_etichetta">Cerca per etichetta</string>
+    <string name="nessuna_trovata">Nessuna carta con questa etichetta.</string>
+    <string name="cancella_ricerca">Cancella la ricerca</string>
     <string name="preferita">Preferita</string>
     <string name="togli_preferita">Togli dalle preferite</string>
     <string name="aggiunta_preferite">Aggiunta alle preferite.</string>

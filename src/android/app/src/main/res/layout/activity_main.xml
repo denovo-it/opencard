@@ -53,6 +53,42 @@
                 android:layout_height="wrap_content"
                 android:text="@string/scheda_usa_e_getta" />
         </com.google.android.material.tabs.TabLayout>
+
+        <!-- La ricerca per etichetta vale per tutte le schede insieme: sta
+             sopra le pagine e non dentro, così non si perde cambiando scheda.
+             Il fondo è quello della lista, non l'arancione della barra. -->
+        <FrameLayout
+            android:id="@+id/ricerca_riquadro"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?android:colorBackground"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="8dp"
+            android:visibility="gone">
+
+            <!-- La X è messa a mano e non con endIconMode="clear_text", che la
+                 mostra solo col fuoco nel campo: chiusa la tastiera sparirebbe
+                 mentre il filtro è ancora acceso. -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/ricerca_contenitore"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/cerca_etichetta"
+                app:endIconContentDescription="@string/cancella_ricerca"
+                app:endIconDrawable="@drawable/ic_chiudi"
+                app:endIconMode="custom"
+                app:startIconDrawable="@drawable/ic_cerca">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/ricerca"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </FrameLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- Due pagine affiancate: si passa da una scheda all'altra anche

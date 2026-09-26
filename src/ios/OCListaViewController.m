@@ -16,6 +16,12 @@
 #import "OCTema.h"
 #import "OCTrasferimentoViewController.h"
 
+/// Il campo di ricerca compare solo quando la scheda aperta ha più di questo
+/// numero di carte. Con poche carte stanno tutte sullo schermo e si fa prima a
+/// toccarle: il campo occuperebbe solo spazio. Lo stesso valore è in
+/// MainActivity.kt.
+static const NSUInteger OCCartePerLaRicerca = 5;
+
 /// Contenitore del marchio nella barra.
 ///
 /// La barra di sistema misura la vista del titolo dalla sua dimensione
@@ -36,12 +42,16 @@
 @end
 
 @interface OCListaViewController () <UIPageViewControllerDataSource, UIPageViewControllerDelegate,
-                                     UIDocumentPickerDelegate>
+                                     UIDocumentPickerDelegate, UISearchBarDelegate>
 @property (nonatomic, strong) UISegmentedControl *schede;
 @property (nonatomic, strong) UIPageViewController *pagine;
 @property (nonatomic, strong) NSArray<OCGruppoViewController *> *gruppi;
 @property (nonatomic, strong) UIButton *aggiungi;
 @property (nonatomic, strong) UIView *schedeSfondo;
+/// La ricerca per etichetta, sopra le carte: vale per tutte le schede insieme.
+@property (nonatomic, strong) UISearchBar *ricerca;
+/// L'altezza del campo di ricerca: va a zero quando non c'è nessuna carta.
+@property (nonatomic, strong) NSLayoutConstraint *altezzaRicerca;
 /// Vero quando la scheda con la stella è in mezzo alle altre.
 @property (nonatomic, assign) BOOL conPreferite;
 /// Lo stesso per la scheda usa e getta: senza carte dentro non si mostra.
@@ -67,6 +77,7 @@
 
     [self preparaBarra];
     [self preparaSchede];
+    [self preparaRicerca];
     [self preparaPagine];
     [self preparaPulsanteAggiungi];
 
@@ -104,6 +115,7 @@
                            animated:NO
                          completion:nil];
     self.schede.selectedSegmentIndex = [self schedaCorrente];
+    [self aggiornaRicerca];
 }
 
 #pragma mark - Barra
@@ -217,6 +229,63 @@
     self.schedeSfondo = sfondo;
 }
 
+/// Il campo di ricerca sta fra le schede e le carte, fuori dalle pagine, così
+/// non si perde cambiando scheda. Filtra a ogni tasto, e la X del campo lo
+/// svuota: la mostra la barra di sistema quando c'è del testo, anche a
+/// tastiera chiusa.
+- (void)preparaRicerca
+{
+    self.ricerca = [UISearchBar new];
+    self.ricerca.searchBarStyle = UISearchBarStyleMinimal;
+    self.ricerca.placeholder = NSLocalizedString(@"cerca_etichetta", nil);
+    self.ricerca.delegate = self;
+    self.ricerca.searchTextField.clearButtonMode = UITextFieldViewModeAlways;
+    self.ricerca.hidden = YES;
+    self.ricerca.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:self.ricerca];
+
+    self.altezzaRicerca = [self.ricerca.heightAnchor constraintEqualToConstant:0];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.ricerca.topAnchor constraintEqualToAnchor:self.schedeSfondo.bottomAnchor],
+        [self.ricerca.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:4],
+        [self.ricerca.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-4],
+        self.altezzaRicerca,
+    ]];
+}
+
+- (void)searchBar:(UISearchBar *)campo textDidChange:(NSString *)testo
+{
+    NSString *filtro = [testo stringByTrimmingCharactersInSet:
+                                  [NSCharacterSet whitespaceCharacterSet]];
+    for (OCGruppoViewController *gruppo in self.gruppi) {
+        gruppo.filtro = filtro;
+    }
+}
+
+/// Il tasto di ricerca chiude la tastiera: le carte trovate sono già lì, e la
+/// tastiera ne coprirebbe metà.
+- (void)searchBarSearchButtonClicked:(UISearchBar *)campo
+{
+    [campo resignFirstResponder];
+}
+
+/// Il campo c'è solo se la scheda aperta ha abbastanza carte, contate prima
+/// del filtro. Quando sparisce si svuota, sia che si passi a una scheda più
+/// piccola sia che si scenda sotto la soglia eliminando una carta: nascosto,
+/// il filtro resterebbe acceso senza che si veda.
+- (void)aggiornaRicerca
+{
+    OCGruppoViewController *aperta = self.pagine.viewControllers.firstObject;
+    BOOL conRicerca = aperta.totale > OCCartePerLaRicerca;
+    if (!conRicerca && self.ricerca.text.length > 0) {
+        self.ricerca.text = @"";
+        [self searchBar:self.ricerca textDidChange:@""];
+    }
+    self.ricerca.hidden = !conRicerca;
+    self.altezzaRicerca.constant = conRicerca ? 56 : 0;
+}
+
 - (void)preparaPagine
 {
     __weak typeof(self) debole = self;
@@ -253,7 +322,7 @@
     [self.pagine didMoveToParentViewController:self];
 
     [NSLayoutConstraint activateConstraints:@[
-        [self.pagine.view.topAnchor constraintEqualToAnchor:self.schedeSfondo.bottomAnchor],
+        [self.pagine.view.topAnchor constraintEqualToAnchor:self.ricerca.bottomAnchor],
         [self.pagine.view.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
         [self.pagine.view.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.pagine.view.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
@@ -333,6 +402,7 @@
                           direction:verso
                            animated:YES
                          completion:nil];
+    [self aggiornaRicerca];
 }
 
 - (UIViewController *)pageViewController:(UIPageViewController *)pagine
@@ -360,6 +430,7 @@
 {
     if (completata) {
         self.schede.selectedSegmentIndex = [self schedaCorrente];
+        [self aggiornaRicerca];
     }
 }
 
@@ -371,6 +442,7 @@
         [gruppo ricarica];
     }
     [self aggiornaSchedaPreferite];
+    [self aggiornaRicerca];
 }
 
 /// Mette e toglie le due schede facoltative, la stella e l'usa e getta.
