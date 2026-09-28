@@ -357,6 +357,66 @@ Java_srl_denovo_opencard_Core_salva(JNIEnv *env, jclass classe, jint id, jboolea
     }
 }
 
+/* Un array di stringhe ASCII da una funzione del core che le dà per indice. */
+static jobjectArray tabella(JNIEnv *env, size_t n, const char *(*voce)(size_t))
+{
+    jclass classe_stringa = (*env)->FindClass(env, "java/lang/String");
+    jobjectArray array;
+    size_t i;
+
+    if (classe_stringa == NULL) {
+        return NULL;
+    }
+    array = (*env)->NewObjectArray(env, (jsize)n, classe_stringa, NULL);
+    for (i = 0; array != NULL && i < n; i++) {
+        jstring testo = (*env)->NewStringUTF(env, voce(i));
+
+        (*env)->SetObjectArrayElement(env, array, (jsize)i, testo);
+        (*env)->DeleteLocalRef(env, testo);
+    }
+    return array;
+}
+
+static const char *etichetta_per_indice(size_t i)
+{
+    return opencard_simbologia_etichetta((opencard_simbologia)i);
+}
+
+JNIEXPORT jobjectArray JNICALL
+Java_srl_denovo_opencard_Core_simbologieEtichette(JNIEnv *env, jclass classe)
+{
+    (void)classe;
+    return tabella(env, OPENCARD_SIM_QUANTE, etichetta_per_indice);
+}
+
+JNIEXPORT jobjectArray JNICALL
+Java_srl_denovo_opencard_Core_colori(JNIEnv *env, jclass classe)
+{
+    (void)classe;
+    return tabella(env, opencard_colori_n(), opencard_colore);
+}
+
+/* Per ogni simbologia un intero: 1 quadrata, 2 una riga, 4 zona bianca propria. */
+JNIEXPORT jintArray JNICALL
+Java_srl_denovo_opencard_Core_simbologieProprieta(JNIEnv *env, jclass classe)
+{
+    jint valori[OPENCARD_SIM_QUANTE];
+    jintArray array;
+    int s;
+
+    (void)classe;
+    for (s = 0; s < OPENCARD_SIM_QUANTE; s++) {
+        valori[s] = (opencard_simbologia_quadrata((opencard_simbologia)s) ? 1 : 0)
+                    | (opencard_simbologia_una_riga((opencard_simbologia)s) ? 2 : 0)
+                    | (opencard_simbologia_quiete_propria((opencard_simbologia)s) ? 4 : 0);
+    }
+    array = (*env)->NewIntArray(env, OPENCARD_SIM_QUANTE);
+    if (array != NULL) {
+        (*env)->SetIntArrayRegion(env, array, 0, OPENCARD_SIM_QUANTE, valori);
+    }
+    return array;
+}
+
 JNIEXPORT jboolean JNICALL
 Java_srl_denovo_opencard_Core_dataValida(JNIEnv *env, jclass classe, jstring testo)
 {

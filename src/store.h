@@ -229,6 +229,27 @@ const char *opencard_simbologia_nome(opencard_simbologia simbologia);
  * decidere da sé cosa fare invece di prendersi un valore a caso. */
 opencard_simbologia opencard_simbologia_da_nome(const char *nome);
 
+/* Il nome da mostrare all'utente ("Code 128", "QR code", ...), NULL se il
+ * numero non è una simbologia. Non è quello del JSON. */
+const char *opencard_simbologia_etichetta(opencard_simbologia simbologia);
+
+/* Vero per QR e Micro QR, che si disegnano come quadrato. */
+int opencard_simbologia_quadrata(opencard_simbologia simbologia);
+
+/* Vero per i codici a barre di una riga sola: la zona bianca la vogliono solo
+ * ai lati, e rimpiccioliti con il filtro si leggono lo stesso. Aztec, Data
+ * Matrix, PDF417 e i due QR la vogliono tutto intorno, con i moduli uguali. */
+int opencard_simbologia_una_riga(opencard_simbologia simbologia);
+
+/* Vero per EAN e UPC, che il core disegna già con la zona bianca ai lati: agli
+ * altri il margine lo lascia chi li mostra. */
+int opencard_simbologia_quiete_propria(opencard_simbologia simbologia);
+
+/* I colori fra cui l'id sceglie quello di una carta, gli stessi che il modulo
+ * offre per la scelta a mano. opencard_colore() torna NULL fuori elenco. */
+size_t opencard_colori_n(void);
+const char *opencard_colore(size_t i);
+
 /* Cambia la simbologia di una carta e basta. Aggiorna anche is_qrcode. */
 opencard_esito opencard_set_simbologia(int id, opencard_simbologia simbologia,
                                        opencard_errore *errore);

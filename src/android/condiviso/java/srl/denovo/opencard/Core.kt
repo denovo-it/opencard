@@ -43,18 +43,20 @@ data class Carta(
  * dell'enum del core: la posizione è il valore, quindi non si riordina.
  */
 object Simbologie {
-    val nomi = listOf(
-        "Code 128", "QR code", "Aztec", "Codabar", "Code 39", "Code 93",
-        "Data Matrix", "EAN-8", "EAN-13", "ITF", "PDF417", "UPC-A", "UPC-E",
-        "Micro QR", "GS1-128", "GS1 DataBar", "DataBar Expanded", "MSI Plessey",
-    )
+    /** I nomi da mostrare, dal core: l'indice è il numero della simbologia. */
+    val nomi: List<String> = Core.simbologieEtichette().toList()
 
     /** I due numeri del core che servono per nome anche qui fuori. */
     const val QR = 1
     const val MICROQR = 13
 
+    /** Dal core, una volta sola: 1 quadrata, 2 una riga, 4 zona bianca propria. */
+    private val proprieta = Core.simbologieProprieta()
+
+    private fun ha(simbologia: Int, bit: Int) = (proprieta.getOrElse(simbologia) { 0 } and bit) != 0
+
     /** Vero per le due che si disegnano come quadrato e non come barre. */
-    fun eQuadrato(simbologia: Int) = simbologia == QR || simbologia == MICROQR
+    fun eQuadrato(simbologia: Int) = ha(simbologia, 1)
 
     /**
      * Vero per i codici a barre di una riga sola: la zona bianca la vogliono
@@ -62,23 +64,14 @@ object Simbologie {
      * Aztec, Data Matrix, PDF417 e i due QR la vogliono tutto intorno, e i
      * loro moduli devono restare tutti uguali.
      */
-    fun eUnaRiga(simbologia: Int) =
-        simbologia !in setOf(QR, MICROQR, AZTEC, DATAMATRIX, PDF417)
+    fun eUnaRiga(simbologia: Int) = ha(simbologia, 2)
 
     /**
      * Vero per EAN e UPC: il core li disegna già con la zona bianca ai lati,
      * da 7 a 11 moduli. Gli altri escono senza, e il margine lo deve lasciare
      * chi li mostra.
      */
-    fun haLaSuaQuiete(simbologia: Int) = simbologia in setOf(EAN8, EAN13, UPCA, UPCE)
-
-    private const val AZTEC = 2
-    private const val DATAMATRIX = 6
-    private const val EAN8 = 7
-    private const val EAN13 = 8
-    private const val PDF417 = 10
-    private const val UPCA = 11
-    private const val UPCE = 12
+    fun haLaSuaQuiete(simbologia: Int) = ha(simbologia, 4)
 
     /**
      * Nessuna scelta dell'utente: la simbologia la decide l'app.
@@ -193,6 +186,13 @@ object Core {
 
     /** Il tipo di codice che sceglie Automatico: quello del codice, o il QR se non ci sta. */
     @JvmStatic external fun simbologiaAutomatica(code: String): Int
+
+    /** Tabelle del core che prima le app copiavano a mano: vedi [Simbologie]. */
+    @JvmStatic external fun simbologieEtichette(): Array<String>
+    @JvmStatic external fun simbologieProprieta(): IntArray
+
+    /** I colori fra cui l'id sceglie quello di una carta: sono quelli del modulo. */
+    @JvmStatic external fun colori(): Array<String>
 
     /** Il codice disegnato con la simbologia scelta, non con quella indovinata. */
     @JvmStatic external fun renderCodeSimbologia(code: String, simbologia: Int): ImmagineCodice

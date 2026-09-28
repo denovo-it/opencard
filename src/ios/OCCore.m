@@ -485,19 +485,20 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 
 #pragma mark - Simbologia
 
-/// I nomi da mostrare, non quelli del core: `opencard_simbologia_nome()` torna
-/// le sigle con cui la simbologia si scrive nel file, `code128` e `ean13`, che
-/// servono al formato e non si fanno leggere. L'ordine è quello dell'enum,
-/// quindi l'indice qui dentro è il numero da salvare nella carta.
+/// I nomi da mostrare, da `opencard_simbologia_etichetta()`: non le sigle con
+/// cui la simbologia si scrive nel file, `code128` e `ean13`, che servono al
+/// formato e non si fanno leggere. L'ordine è quello dell'enum, quindi l'indice
+/// qui dentro è il numero da salvare nella carta.
 + (NSArray<NSString *> *)nomiSimbologie
 {
     static NSArray<NSString *> *nomi = nil;
     static dispatch_once_t unaVolta;
     dispatch_once(&unaVolta, ^{
-        nomi = @[@"Code 128", @"QR code", @"Aztec", @"Codabar", @"Code 39", @"Code 93",
-                 @"Data Matrix", @"EAN-8", @"EAN-13", @"ITF", @"PDF417", @"UPC-A", @"UPC-E",
-                 @"Micro QR", @"GS1-128", @"GS1 DataBar", @"DataBar Expanded", @"MSI Plessey"];
-        NSAssert(nomi.count == OPENCARD_SIM_QUANTE, @"le simbologie del core sono cambiate");
+        NSMutableArray<NSString *> *dalCore = [NSMutableArray array];
+        for (int s = 0; s < OPENCARD_SIM_QUANTE; s++) {
+            [dalCore addObject:@(opencard_simbologia_etichetta((opencard_simbologia)s))];
+        }
+        nomi = [dalCore copy];
     });
     return nomi;
 }

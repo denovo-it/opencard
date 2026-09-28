@@ -657,7 +657,7 @@ class FormActivity : AppCompatActivity() {
      * lasciandolo com'è non si scrive niente nel file, ed è il caso normale.
      */
     private fun costruisciTavolozza() {
-        val colori = (listOf(coloreProposto) + COLORI).distinct()
+        val colori = (listOf(coloreProposto) + Core.colori()).distinct()
         val attuale = coloreScelto ?: coloreProposto
 
         tavolozza.removeAllViews()
@@ -795,9 +795,3 @@ class FormActivity : AppCompatActivity() {
         errore.visibility = if (messaggio.isEmpty()) View.GONE else View.VISIBLE
     }
 }
-
-/** Gli stessi colori che assegna il core, per la scelta a mano. */
-private val COLORI = listOf(
-    "#E53935", "#8E24AA", "#1E88E5", "#00897B", "#43A047", "#FB8C00",
-    "#6D4C41", "#039BE5", "#D81B60", "#3949AB", "#00ACC1", "#7CB342",
-)

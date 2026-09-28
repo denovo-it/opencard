@@ -445,6 +445,51 @@ const char *opencard_simbologia_nome(opencard_simbologia simbologia)
     return NOMI_SIMBOLOGIA[simbologia];
 }
 
+/* I nomi da mostrare nell'elenco del modulo, nell'ordine dei numeri. Fino
+ * alla 1.0.6 li copiavano a mano le due app. */
+static const char *const ETICHETTE_SIMBOLOGIA[OPENCARD_SIM_QUANTE] = {
+    "Code 128", "QR code", "Aztec", "Codabar", "Code 39", "Code 93",
+    "Data Matrix", "EAN-8", "EAN-13", "ITF", "PDF417", "UPC-A", "UPC-E",
+    "Micro QR", "GS1-128", "GS1 DataBar", "DataBar Expanded", "MSI Plessey"
+};
+
+const char *opencard_simbologia_etichetta(opencard_simbologia simbologia)
+{
+    if (simbologia < 0 || simbologia >= OPENCARD_SIM_QUANTE) {
+        return NULL;
+    }
+    return ETICHETTE_SIMBOLOGIA[simbologia];
+}
+
+int opencard_simbologia_quadrata(opencard_simbologia simbologia)
+{
+    return simbologia == OPENCARD_SIM_QR || simbologia == OPENCARD_SIM_MICROQR;
+}
+
+int opencard_simbologia_una_riga(opencard_simbologia simbologia)
+{
+    return simbologia >= 0 && simbologia < OPENCARD_SIM_QUANTE
+           && !opencard_simbologia_quadrata(simbologia)
+           && simbologia != OPENCARD_SIM_AZTEC && simbologia != OPENCARD_SIM_DATAMATRIX
+           && simbologia != OPENCARD_SIM_PDF417;
+}
+
+int opencard_simbologia_quiete_propria(opencard_simbologia simbologia)
+{
+    return simbologia == OPENCARD_SIM_EAN8 || simbologia == OPENCARD_SIM_EAN13
+           || simbologia == OPENCARD_SIM_UPCA || simbologia == OPENCARD_SIM_UPCE;
+}
+
+size_t opencard_colori_n(void)
+{
+    return (size_t)N_COLORI;
+}
+
+const char *opencard_colore(size_t i)
+{
+    return i < (size_t)N_COLORI ? COLORI[i] : NULL;
+}
+
 opencard_simbologia opencard_simbologia_da_nome(const char *nome)
 {
     int i;

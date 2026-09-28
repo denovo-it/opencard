@@ -13,11 +13,14 @@
 
 #include "store.h"
 
-/// Gli stessi colori che assegna il core, per la scelta a mano.
+/// Gli stessi colori che assegna il core, per la scelta a mano: li dà lui.
 static NSArray<NSString *> *OCColoriScelta(void)
 {
-    return @[@"#E53935", @"#8E24AA", @"#1E88E5", @"#00897B", @"#43A047", @"#FB8C00",
-             @"#6D4C41", @"#039BE5", @"#D81B60", @"#3949AB", @"#00ACC1", @"#7CB342"];
+    NSMutableArray<NSString *> *colori = [NSMutableArray array];
+    for (size_t i = 0; i < opencard_colori_n(); i++) {
+        [colori addObject:@(opencard_colore(i))];
+    }
+    return colori;
 }
 
 /// La simbologia del core che corrisponde a un formato di Vision, che è il
