@@ -892,14 +892,6 @@ Java_srl_denovo_opencard_Core_setPreferita(JNIEnv *env, jclass classe, jint id,
 }
 
 JNIEXPORT jobject JNICALL
-Java_srl_denovo_opencard_Core_renderCode(JNIEnv *env, jclass classe, jstring code,
-                                         jboolean isQrcode)
-{
-    (void)classe;
-    return disegna_codice(env, code, isQrcode, -1);
-}
-
-JNIEXPORT jobject JNICALL
 Java_srl_denovo_opencard_Core_renderCodeSimbologia(JNIEnv *env, jclass classe,
                                                    jstring code, jint simbologia)
 {

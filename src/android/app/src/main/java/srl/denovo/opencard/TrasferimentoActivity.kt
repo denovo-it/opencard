@@ -179,7 +179,7 @@ class TrasferimentoActivity : AppCompatActivity() {
                 // I bitmap si generano qui, sul thread dei dati: sono immagini
                 // grandi e farle mentre la giostra gira farebbe scattare tutto.
                 Core.trasfPrepara().map { testo ->
-                    Core.renderCode(testo, isQrcode = true).aBitmap()
+                    Core.renderCodeSimbologia(testo, Simbologie.QR).aBitmap()
                 }
             },
             { generate ->

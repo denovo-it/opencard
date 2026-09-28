@@ -10,6 +10,8 @@
 #import "OCScannerViewController.h"
 #import "OCTema.h"
 
+#include "store.h"
+
 @interface OCTrasferimentoViewController () <UIDocumentPickerDelegate>
 @property (nonatomic, strong) UIStackView *scelta;
 @property (nonatomic, strong) UIStackView *vetrina;
@@ -162,7 +164,7 @@
 
     NSMutableArray<UIImage *> *immagini = [NSMutableArray arrayWithCapacity:codici.count];
     for (NSString *testo in codici) {
-        UIImage *immagine = [OCCore immaginePerCodice:testo qrcode:YES errore:&errore];
+        UIImage *immagine = [OCCore immaginePerCodice:testo simbologia:OPENCARD_SIM_QR errore:&errore];
         if (immagine == nil) {
             [self avvisa:errore.localizedDescription];
             return;

@@ -177,7 +177,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     carta.identificativo = card->id;
     carta.etichetta = [NSString stringWithUTF8String:card->label];
     carta.codice = [NSString stringWithUTF8String:card->code];
-    carta.qrcode = card->is_qrcode != 0;
+    carta.qrcode = opencard_simbologia_quadrata(card->simbologia) != 0;
     carta.colore = [NSString stringWithUTF8String:colore];
     carta.coloreScelto = card->color[0] != '\0';
     carta.usaEGetta = card->disposable != 0;
@@ -370,33 +370,6 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     return [NSString stringWithUTF8String:uscita];
 }
 
-/// Il core restituisce i pixel in memoria, tre byte per pixel: qui diventano
-/// un'immagine, senza passare da un file.
-+ (UIImage *)immaginePerCodice:(NSString *)codice qrcode:(BOOL)qrcode errore:(NSError **)errore
-{
-    unsigned char *pixel = NULL;
-    char messaggio[128] = {0};
-    int larghezza = 0, altezza = 0;
-
-    int esito = opencard_render_bitmap(codice.UTF8String,
-                                       qrcode ? OPENCARD_QRCODE : OPENCARD_BARCODE,
-                                       &pixel, &larghezza, &altezza,
-                                       messaggio, sizeof(messaggio));
-    if (esito != 0 || pixel == NULL) {
-        if (errore != NULL) {
-            NSString *testo = messaggio[0] != '\0'
-                ? [NSString stringWithUTF8String:messaggio]
-                : NSLocalizedString(@"codice_non_generabile", nil);
-            *errore = [NSError errorWithDomain:OCDominioErrore
-                                          code:esito
-                                      userInfo:@{NSLocalizedDescriptionKey: testo}];
-        }
-        return nil;
-    }
-
-    return [self immagineDaPixel:pixel larghezza:larghezza altezza:altezza];
-}
-
 /// I pixel del core, tre byte l'uno, diventano un'immagine senza passare da un
 /// file. La memoria la libera CoreGraphics quando ha finito.
 + (UIImage *)immagineDaPixel:(unsigned char *)pixel
@@ -520,8 +493,8 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
                                (opencard_simbologia)simbologia) != 0;
 }
 
-/// I pixel del core diventano un'immagine. Uguale a immaginePerCodice:qrcode:,
-/// ma il tipo lo dice la simbologia invece del solo interruttore QR.
+/// Il core restituisce i pixel in memoria, tre byte per pixel: qui diventano
+/// un'immagine, senza passare da un file. Il tipo lo dice la simbologia.
 + (UIImage *)immaginePerCodice:(NSString *)codice
                     simbologia:(NSInteger)simbologia
                         errore:(NSError **)errore

@@ -107,9 +107,10 @@ typedef struct {
     char code[OPENCARD_CODE_MAX];
     /* Quale codice è. Il core la tiene sempre allineata a is_qrcode. */
     opencard_simbologia simbologia;
-    /* Vera solo per QR e Micro QR. Resta perché le due interfacce e i due
-     * ponti la leggono da sempre: sparisce quando useranno `simbologia`, e
-     * fino ad allora chi scrive l'una si vede aggiornare l'altra. */
+    /* Vera solo per QR e Micro QR, e il core la tiene allineata a
+     * `simbologia`. Dalla 1.0.7 le interfacce non la leggono più: resta perché
+     * da lei esce il campo "type" del file, che le versioni prima della 1.0.3
+     * leggono ancora ripristinando un backup. */
     int is_qrcode;
     char color[OPENCARD_COLOR_MAX];     /* "" se lo decide l'id */
     int disposable;

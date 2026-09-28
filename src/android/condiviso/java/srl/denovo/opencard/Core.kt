@@ -223,8 +223,6 @@ object Core {
     /** Il codice spezzato in blocchi di tre, per leggerlo e confrontarlo. */
     @JvmStatic external fun groupedCode(code: String): String
 
-    @JvmStatic external fun renderCode(code: String, isQrcode: Boolean): ImmagineCodice
-
     @JvmStatic external fun backupNome(oggi: String): String
     @JvmStatic external fun backupEsporta(quando: String): String
 

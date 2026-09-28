@@ -98,11 +98,6 @@ static const NSInteger OCSimbologiaAuto = -1;
 /// Il codice spezzato in blocchi di tre, per leggerlo e confrontarlo.
 + (NSString *)codiceRaggruppato:(NSString *)codice;
 
-/// Immagine del codice, disegnata dal core.
-+ (nullable UIImage *)immaginePerCodice:(NSString *)codice
-                                 qrcode:(BOOL)qrcode
-                                 errore:(NSError **)errore;
-
 /// Dove sta il file delle carte. Serve a chi deve svuotare i temporanei senza
 /// rischiare di portarsi via i dati, nel caso limite in cui finiscano li'.
 + (NSString *)directoryDati;
