@@ -234,6 +234,22 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     return opencard_next_id();
 }
 
++ (NSString *)salvaFoto:(NSData *)jpeg
+                   id:(NSInteger)identificativo
+               fronte:(BOOL)fronte
+               errore:(NSError **)errore
+{
+    char nome[OPENCARD_FOTO_MAX];
+    opencard_errore guasto;
+
+    if (opencard_foto_salva((int)identificativo, fronte ? 1 : 0, jpeg.bytes, jpeg.length,
+                            nome, sizeof(nome), &guasto) != OPENCARD_OK) {
+        [self riporta:errore da:&guasto];
+        return nil;
+    }
+    return [NSString stringWithUTF8String:nome];
+}
+
 + (NSString *)dataDaMostrare:(NSString *)scadenza
 {
     char mostrata[OPENCARD_DATA_MAX];

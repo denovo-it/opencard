@@ -68,6 +68,14 @@ static const NSInteger OCSimbologiaAuto = -1;
                  errore:(NSError **)errore;
 + (NSInteger)prossimoId;
 
+/// Scrive la foto di una carta, già compressa in JPEG, e torna il nome del
+/// file da mettere nella carta, o nil. Il nome lo sceglie il core, e le foto
+/// che nessuna carta nomina più le toglie lui dopo il salvataggio.
++ (nullable NSString *)salvaFoto:(NSData *)jpeg
+                              id:(NSInteger)identificativo
+                          fronte:(BOOL)fronte
+                          errore:(NSError **)errore;
+
 /// La scadenza da mostrare, "GG/MM/AAAA", da quella del file; "" se non c'è.
 + (NSString *)dataDaMostrare:(NSString *)scadenza;
 

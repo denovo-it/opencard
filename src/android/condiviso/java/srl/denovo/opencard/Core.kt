@@ -227,6 +227,13 @@ object Core {
 
     /** Toglie le foto che nessuna carta nomina: si chiama all'avvio. */
     @JvmStatic external fun pulisciFoto()
+
+    /**
+     * Scrive la foto di una carta, già compressa in JPEG, e torna il nome del
+     * file da mettere nella carta. Il nome lo sceglie il core, e le foto che
+     * nessuna carta nomina più le toglie lui dopo [salva].
+     */
+    @JvmStatic external fun salvaFoto(id: Int, fronte: Boolean, jpeg: ByteArray): String
     @JvmStatic external fun reorder(disposable: Boolean, ids: IntArray)
 
     @JvmStatic external fun colorForId(id: Int): String

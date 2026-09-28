@@ -396,13 +396,12 @@ class FormActivity : AppCompatActivity() {
                     // Come su iPhone: una foto che non si scrive si dice, e la
                     // carta non si salva. Prima si andava avanti in silenzio
                     // e la foto nuova semplicemente non c'era.
-                    nomi[lato] = Foto.salva(this, nuova, id, fronte)
+                    nomi[lato] = Foto.salva(nuova, id, fronte)
                         ?: throw OpenCardException(getString(R.string.foto_non_salvata))
                 }
-                fotoTolte[lato] -> {
-                    Foto.cancella(this, nomi[lato])
-                    nomi[lato] = ""
-                }
+                // Il file lo toglie il core, dopo che la carta è salvata: se
+                // il salvataggio non riesce, la foto resta.
+                fotoTolte[lato] -> nomi[lato] = ""
             }
         }
         return nomi

@@ -12,6 +12,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "third-party/cJSON.h"
 
@@ -976,16 +977,43 @@ static opencard_esito carica(opencard_lista *out, opencard_errore *errore)
     return esito;
 }
 
-/* Scrittura atomica: file temporaneo, fsync, rename. Se il sistema uccide
- * l'app a metà, il file vecchio resta intatto. */
+/* Scrittura atomica: file temporaneo accanto, fsync, rename. Se il sistema
+ * uccide l'app a metà, il file vecchio resta intatto. La usano il file delle
+ * carte e le foto. Il temporaneo non comincia col punto: se resta, la pulizia
+ * delle foto lo trova e lo toglie. */
+static opencard_esito scrivi_atomico(const char *percorso, const void *dati, size_t n,
+                                     opencard_errore *errore)
+{
+    char temporaneo[1100];
+    FILE *f;
+    int buono;
+
+    if (snprintf(temporaneo, sizeof(temporaneo), "%s.tmp", percorso)
+        >= (int)sizeof(temporaneo)) {
+        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+    }
+    f = fopen(temporaneo, "wb");
+    if (f == NULL) {
+        return segnala(errore, OPENCARD_ERR_IO);
+    }
+    buono = fwrite(dati, 1, n, f) == n && fflush(f) == 0 && fsync(fileno(f)) == 0;
+    if (fclose(f) != 0) {
+        buono = 0;
+    }
+    if (!buono || rename(temporaneo, percorso) != 0) {
+        remove(temporaneo);
+        return segnala(errore, OPENCARD_ERR_IO);
+    }
+    return OPENCARD_OK;
+}
+
 static opencard_esito salva(const opencard_lista *lista, opencard_errore *errore)
 {
     size_t i;
-    char temporaneo[1100];
     cJSON *radice;
     char *testo;
-    FILE *f;
     size_t lunghezza;
+    opencard_esito esito;
 
     if (percorso_dati[0] == '\0') {
         return segnala(errore, OPENCARD_ERR_ARGOMENTI);
@@ -1005,11 +1033,6 @@ static opencard_esito salva(const opencard_lista *lista, opencard_errore *errore
             return segnala(errore, OPENCARD_ERR_CARTA);
         }
     }
-    if (snprintf(temporaneo, sizeof(temporaneo), "%s.tmp", percorso_dati)
-        >= (int)sizeof(temporaneo)) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
-    }
-
     radice = (cJSON *)opencard_carte_a_json(lista, NULL);
     if (radice == NULL) {
         return segnala(errore, OPENCARD_ERR_MEMORIA);
@@ -1041,31 +1064,9 @@ static opencard_esito salva(const opencard_lista *lista, opencard_errore *errore
         lunghezza = pacchetto_n;
     }
 
-    f = fopen(temporaneo, "wb");
-    if (f == NULL) {
-        free(testo);
-        return segnala(errore, OPENCARD_ERR_IO);
-    }
-    if (fwrite(testo, 1, lunghezza, f) != lunghezza || fflush(f) != 0) {
-        fclose(f);
-        remove(temporaneo);
-        free(testo);
-        return segnala(errore, OPENCARD_ERR_IO);
-    }
-    if (fsync(fileno(f)) != 0) {
-        fclose(f);
-        remove(temporaneo);
-        free(testo);
-        return segnala(errore, OPENCARD_ERR_IO);
-    }
-    fclose(f);
+    esito = scrivi_atomico(percorso_dati, testo, lunghezza, errore);
     free(testo);
-
-    if (rename(temporaneo, percorso_dati) != 0) {
-        remove(temporaneo);
-        return segnala(errore, OPENCARD_ERR_IO);
-    }
-    return OPENCARD_OK;
+    return esito;
 }
 
 opencard_esito opencard_init_db(void)
@@ -1484,6 +1485,41 @@ static void pulisci_foto(const opencard_lista *lista)
     closedir(cartella);
 }
 
+opencard_esito opencard_foto_scrivi(const char *nome, const unsigned char *dati, size_t n,
+                                   opencard_errore *errore)
+{
+    char percorso[1100];
+
+    if (!opencard_foto_nome_sicuro(nome) || (dati == NULL && n > 0) || percorso_foto[0] == '\0'
+        || snprintf(percorso, sizeof(percorso), "%s/%s", percorso_foto, nome)
+           >= (int)sizeof(percorso)) {
+        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+    }
+    /* Su un telefono appena installato la cartella può non esserci ancora. */
+    mkdir(percorso_foto, 0700);
+    return scrivi_atomico(percorso, dati, n, errore);
+}
+
+opencard_esito opencard_foto_salva(int id, int fronte, const unsigned char *jpeg, size_t n,
+                                   char *nome, size_t nome_size, opencard_errore *errore)
+{
+    char scelto[OPENCARD_FOTO_MAX];
+    opencard_esito esito;
+
+    if (nome == NULL || nome_size == 0 || id < 1 || jpeg == NULL || n == 0) {
+        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+    }
+    nome[0] = '\0';
+    /* Lo schema dei nomi di Catima, card_<id>_<lato>, con l'estensione del
+     * JPEG: fino alla 1.0.7-dev lo componevano le due app, ognuna a modo suo. */
+    snprintf(scelto, sizeof(scelto), "card_%d_%s.jpg", id, fronte ? "front" : "back");
+    esito = opencard_foto_scrivi(scelto, jpeg, n, errore);
+    if (esito == OPENCARD_OK) {
+        copia(nome, nome_size, scelto);
+    }
+    return esito;
+}
+
 opencard_esito opencard_pulisci_foto(opencard_errore *errore)
 {
     opencard_lista tutte;
@@ -1560,6 +1596,12 @@ opencard_esito opencard_salva(const opencard_card *carta, int nuova,
         return segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     esito = salva(&tutte, errore);
+    /* Una foto tolta o sostituita col nome cambiato se ne va qui, dopo la
+     * scrittura riuscita: se la carta non si salva, le foto restano. Prima
+     * la cancellavano le app, e prima di salvare. */
+    if (esito == OPENCARD_OK) {
+        pulisci_foto(&tutte);
+    }
     opencard_lista_free(&tutte);
     return esito;
 }

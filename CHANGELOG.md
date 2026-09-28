@@ -1,5 +1,6 @@
 ## 1.0.7-dev (in lavorazione)
 
+- Le foto delle carte si scrivono intere: se l'app si chiude mentre salva una foto, resta quella di prima. Una foto tolta dal modulo se ne va solo quando la carta è salvata.
 - La scadenza si legge come 30/09/2026, sulla carta aperta e nel modulo, su Android e su iPhone. Prima sulla carta compariva 2026-09-30.
 - Su Android la scadenza si sceglie con il calendario del telefono.
 - Lo ZIP che esporta Catima si importa così com'è, senza doverne tirare fuori il CSV: prima OpenCard diceva che non era un backup. Come per il CSV, le carte si aggiungono a quelle che hai oppure prendono il loro posto.

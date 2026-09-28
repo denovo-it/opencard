@@ -9,6 +9,7 @@ package srl.denovo.opencard
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import java.io.ByteArrayOutputStream
 import java.io.File
 
 /**
@@ -37,25 +38,23 @@ object Foto {
     private fun cartella(contesto: Context): File =
         File(contesto.filesDir, "foto").apply { mkdirs() }
 
-    fun nome(id: Int, fronte: Boolean): String =
-        "card_${id}_${if (fronte) "front" else "back"}.jpg"
-
     /** Il file di una foto, dal nome che sta scritto nella carta. */
-    fun file(contesto: Context, nome: String): File = File(cartella(contesto), nome)
+    private fun file(contesto: Context, nome: String): File = File(cartella(contesto), nome)
 
     /**
      * Salva una foto e torna il nome da scrivere nella carta, oppure null se
-     * la scrittura non riesce. Un file che c'era già viene sostituito: le foto
-     * di una carta sono al massimo due.
+     * la scrittura non riesce. Qui si comprime soltanto: il nome del file e la
+     * scrittura, che è atomica, li fa il core, e un file che c'era già viene
+     * sostituito intero o lasciato com'era.
      */
-    fun salva(contesto: Context, immagine: Bitmap, id: Int, fronte: Boolean): String? {
-        val comeSiChiama = nome(id, fronte)
-        val dove = file(contesto, comeSiChiama)
+    fun salva(immagine: Bitmap, id: Int, fronte: Boolean): String? {
+        val jpeg = ByteArrayOutputStream()
+        if (!immagine.compress(Bitmap.CompressFormat.JPEG, QUALITA, jpeg)) {
+            return null
+        }
         return try {
-            dove.outputStream().use { immagine.compress(Bitmap.CompressFormat.JPEG, QUALITA, it) }
-            comeSiChiama
-        } catch (guasto: Exception) {
-            dove.delete()
+            Core.salvaFoto(id, fronte, jpeg.toByteArray())
+        } catch (guasto: OpenCardException) {
             null
         }
     }
@@ -109,11 +108,5 @@ object Foto {
             (immagine.height * scala).toInt(),
             true,
         )
-    }
-
-    fun cancella(contesto: Context, nome: String) {
-        if (nome.isNotEmpty()) {
-            file(contesto, nome).delete()
-        }
     }
 }

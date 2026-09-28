@@ -505,6 +505,37 @@ Java_srl_denovo_opencard_Core_delete(JNIEnv *env, jclass classe, jint id)
     }
 }
 
+/* Scrive la foto, già in JPEG, e torna il nome del file da mettere nella carta. */
+JNIEXPORT jstring JNICALL
+Java_srl_denovo_opencard_Core_salvaFoto(JNIEnv *env, jclass classe, jint id, jboolean fronte,
+                                        jbyteArray jpeg)
+{
+    char nome[OPENCARD_FOTO_MAX];
+    opencard_errore errore;
+    opencard_esito esito;
+    jsize quanti;
+    jbyte *byte;
+
+    (void)classe;
+    if (jpeg == NULL) {
+        return NULL;
+    }
+    quanti = (*env)->GetArrayLength(env, jpeg);
+    byte = (*env)->GetByteArrayElements(env, jpeg, NULL);
+    if (byte == NULL) {
+        lancia_memoria(env);
+        return NULL;
+    }
+    esito = opencard_foto_salva((int)id, fronte == JNI_TRUE, (const unsigned char *)byte,
+                                (size_t)quanti, nome, sizeof(nome), &errore);
+    (*env)->ReleaseByteArrayElements(env, jpeg, byte, JNI_ABORT);
+    if (esito != OPENCARD_OK) {
+        lancia(env, &errore);
+        return NULL;
+    }
+    return (*env)->NewStringUTF(env, nome);
+}
+
 JNIEXPORT void JNICALL
 Java_srl_denovo_opencard_Core_pulisciFoto(JNIEnv *env, jclass classe)
 {

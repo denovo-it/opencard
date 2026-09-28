@@ -9,8 +9,9 @@
 // qualche decina di kB a qualche MB per carta, e il passaggio a QR fra due
 // telefoni diventerebbe impossibile.
 //
-// I nomi sono gli stessi di Android, `card_<id>_<lato>.jpg`, così un archivio
-// scritto da un telefono si rilegge sull'altro senza conversioni.
+// I nomi, `card_<id>_<lato>.jpg`, e la scrittura li fa il core, uguali su
+// Android: qui si comprime e si legge. Le foto che nessuna carta nomina più le
+// toglie il core dopo il salvataggio.
 
 #import <UIKit/UIKit.h>
 
@@ -18,8 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface OCFoto : NSObject
 
-/// Il nome da scrivere nella carta.
-+ (NSString *)nomePerId:(NSInteger)identificativo fronte:(BOOL)fronte;
 
 /// Il percorso di una foto, dal nome che sta scritto nella carta.
 + (NSString *)percorsoPerNome:(NSString *)nome;
@@ -32,8 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// La foto, o `nil` se il file non c'è più.
 + (nullable UIImage *)leggi:(NSString *)nome;
 
-/// Toglie il file di una foto. Un nome vuoto non fa niente.
-+ (void)cancella:(nullable NSString *)nome;
 
 @end
 

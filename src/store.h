@@ -273,9 +273,9 @@ opencard_esito opencard_set_dettagli(int id, const char *note,
                                      opencard_errore *errore);
 
 /* I nomi dei file delle due foto, con le stesse regole di NULL e "".
- * I file li scrive la piattaforma, in <directory dei dati>/foto. Il core li
- * cancella quando nessuna carta li nomina più: dopo opencard_delete(),
- * opencard_replace_all() e opencard_pulisci_foto(). */
+ * I file li scrive opencard_foto_salva(), in <directory dei dati>/foto. Il
+ * core li cancella quando nessuna carta li nomina più: dopo opencard_salva(),
+ * opencard_delete(), opencard_replace_all() e opencard_pulisci_foto(). */
 opencard_esito opencard_set_foto(int id, const char *fronte, const char *retro,
                                  opencard_errore *errore);
 
@@ -291,9 +291,21 @@ opencard_esito opencard_set_foto(int id, const char *fronte, const char *retro,
  *
  * Il colore si tiene solo se è diverso da quello che l'id assegna da sé, come
  * in opencard_insert(). Una simbologia fuori elenco o una scadenza che non è
- * "AAAA-MM-GG" tornano OPENCARD_ERR_ARGOMENTI senza scrivere niente. */
+ * "AAAA-MM-GG" tornano OPENCARD_ERR_ARGOMENTI senza scrivere niente.
+ *
+ * Dopo la scrittura riuscita toglie le foto che nessuna carta nomina più:
+ * quella tolta dal modulo, o una sostituita con un nome diverso. Le app non
+ * cancellano foto. */
 opencard_esito opencard_salva(const opencard_card *carta, int nuova,
                               opencard_errore *errore);
+
+/* Scrive la foto di una carta, i byte del JPEG che la app ha già compresso,
+ * e mette in `nome` il nome del file da scrivere nella carta
+ * ("card_<id>_front.jpg" o "card_<id>_back.jpg"). La scrittura è atomica:
+ * se si ferma a metà, la foto che c'era resta intera. Una carta nuova chiede
+ * prima l'id a opencard_next_id(). `nome` almeno OPENCARD_FOTO_MAX. */
+opencard_esito opencard_foto_salva(int id, int fronte, const unsigned char *jpeg, size_t n,
+                                   char *nome, size_t nome_size, opencard_errore *errore);
 
 /* Vero se la scadenza si può salvare: vuota, oppure "AAAA-MM-GG" di un giorno
  * che esiste. Le interfacce la chiedono prima di salvare, per dirlo con parole
@@ -372,6 +384,12 @@ void opencard_utf8_ripara(char *s);
  * niente barre, niente "..", niente file nascosti. La lettura delle carte
  * toglie i nomi che non lo sono, e l'archivio non scrive altro. */
 int opencard_foto_nome_sicuro(const char *nome);
+
+/* Servizio interno, per l'importazione dei backup: scrive una foto con il suo
+ * nome nella cartella delle foto, in modo atomico. Un nome che non passa
+ * opencard_foto_nome_sicuro() torna OPENCARD_ERR_ARGOMENTI. */
+opencard_esito opencard_foto_scrivi(const char *nome, const unsigned char *dati, size_t n,
+                                   opencard_errore *errore);
 
 /* Servizio interno, condiviso con il modulo dei backup: il file dei dati e il
  * file di backup hanno lo stesso formato, quindi la lettura e la scrittura

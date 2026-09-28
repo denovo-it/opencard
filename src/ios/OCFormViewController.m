@@ -102,7 +102,8 @@ static const NSUInteger OCLimiteCodice = 500;
 /// non ce l'ha ancora, e il nome del file lo contiene.
 @property (nonatomic, strong, nullable) UIImage *fotoFronte;
 @property (nonatomic, strong, nullable) UIImage *fotoRetro;
-/// I nomi dei file già scritti, per sapere cosa cancellare se la foto si toglie.
+/// I nomi dei file già scritti: un lato che non cambia li tiene. Una foto
+/// tolta la cancella il core, dopo il salvataggio.
 @property (nonatomic, copy) NSString *nomeFotoFronte;
 @property (nonatomic, copy) NSString *nomeFotoRetro;
 /// Vere quando la foto l'ha scelta o tolta chi usa il modulo: solo allora il
@@ -997,7 +998,7 @@ static const NSUInteger OCLimiteCodice = 500;
             return NO;
         }
     } else if (self.fronteCambiata) {
-        [OCFoto cancella:fronte];
+        // Il file lo toglie il core, dopo che la carta è salvata.
         fronte = @"";
     }
 
@@ -1011,7 +1012,6 @@ static const NSUInteger OCLimiteCodice = 500;
             return NO;
         }
     } else if (self.retroCambiata) {
-        [OCFoto cancella:retro];
         retro = @"";
     }
 

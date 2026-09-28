@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 
 #include "third-party/cJSON.h"
 
@@ -296,22 +295,6 @@ static unsigned char *leggi_foto(const char *nome, size_t *quanti)
     return byte;
 }
 
-static void scrivi_foto(const char *nome, const unsigned char *dati, size_t quanti)
-{
-    char percorso[1100];
-    FILE *f;
-
-    /* La cartella la crea la piattaforma alla prima foto: su un telefono
-     * appena installato può non esserci ancora. */
-    mkdir(opencard_store_cartella_foto(), 0700);
-    if (!percorso_foto(nome, percorso, sizeof(percorso))
-        || (f = fopen(percorso, "wb")) == NULL) {
-        return;
-    }
-    fwrite(dati, 1, quanti, f);
-    fclose(f);
-}
-
 /* L'archivio: l'elenco e le foto che esistono davvero, una volta ciascuna. */
 static opencard_esito scrivi_archivio(const opencard_lista *tutte,
                                       const char *esportato_il,
@@ -480,7 +463,9 @@ static opencard_esito leggi_archivio(const unsigned char *dati, size_t quanti,
                        || strcmp(out->carte[j].foto_retro, base) == 0;
         }
         if (nominata) {
-            scrivi_foto(base, lettura.voci[i].dati, lettura.voci[i].quanti);
+            /* Atomica come le altre: se si ferma a metà, la foto che c'era
+             * con quel nome resta intera. */
+            opencard_foto_scrivi(base, lettura.voci[i].dati, lettura.voci[i].quanti, NULL);
         }
     }
     opencard_zip_libera(&lettura);

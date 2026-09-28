@@ -3,6 +3,7 @@
 // Parte di OpenCard. Rilasciato sotto AGPL v3; licenza commerciale su richiesta.
 
 #import "OCFoto.h"
+#import "OCCore.h"
 
 /// Il lato lungo a cui si riducono le foto prima di salvarle.
 static const CGFloat OCLatoMassimo = 1600;
@@ -24,12 +25,6 @@ static const CGFloat OCQualita = 0.85;
                                                attributes:nil
                                                     error:NULL];
     return dove;
-}
-
-+ (NSString *)nomePerId:(NSInteger)identificativo fronte:(BOOL)fronte
-{
-    return [NSString stringWithFormat:@"card_%ld_%@.jpg",
-            (long)identificativo, fronte ? @"front" : @"back"];
 }
 
 + (NSString *)percorsoPerNome:(NSString *)nome
@@ -63,16 +58,14 @@ static const CGFloat OCQualita = 0.85;
 
 + (NSString *)salva:(UIImage *)immagine id:(NSInteger)identificativo fronte:(BOOL)fronte
 {
-    NSString *nome = [self nomePerId:identificativo fronte:fronte];
+    // Qui si comprime soltanto: il nome del file e la scrittura atomica li fa
+    // il core, uguali su Android.
     NSData *byte = UIImageJPEGRepresentation([self rimpicciolita:immagine], OCQualita);
 
     if (byte == nil) {
         return nil;
     }
-    if (![byte writeToFile:[self percorsoPerNome:nome] atomically:YES]) {
-        return nil;
-    }
-    return nome;
+    return [OCCore salvaFoto:byte id:identificativo fronte:fronte errore:NULL];
 }
 
 + (UIImage *)leggi:(NSString *)nome
@@ -81,14 +74,6 @@ static const CGFloat OCQualita = 0.85;
         return nil;
     }
     return [UIImage imageWithContentsOfFile:[self percorsoPerNome:nome]];
-}
-
-+ (void)cancella:(NSString *)nome
-{
-    if (nome.length == 0) {
-        return;
-    }
-    [[NSFileManager defaultManager] removeItemAtPath:[self percorsoPerNome:nome] error:NULL];
 }
 
 @end
