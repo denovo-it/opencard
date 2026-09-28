@@ -772,10 +772,8 @@ class FormActivity : AppCompatActivity() {
             .setPositiveButton(R.string.elimina) { _, _ ->
                 Dati.fai(
                     {
+                        // Le foto della carta le toglie il core.
                         Core.delete(id)
-                        // I file delle foto non li guarderebbe piu' nessuno:
-                        // restare li' vorrebbe dire occupare spazio per sempre.
-                        Foto.cancellaDiCarta(this, id)
                     },
                     {
                         WidgetCarta.aggiornaTutti(this)

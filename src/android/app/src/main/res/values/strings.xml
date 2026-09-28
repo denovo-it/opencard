@@ -126,7 +126,6 @@
     <string name="immagine_non_letta">The image couldn\'t be read.</string>
     <string name="contenuto_non_disponibile">Content not available.</string>
     <string name="apertura_non_riuscita">The card file can\'t be opened.</string>
-    <string name="oggetto_email_errore">OpenCard: error</string>
     <string name="errore_imprevisto">Unexpected error.</string>
     <string name="core_io">The file can\'t be read or written.</string>
     <string name="core_json">The file isn\'t readable: it doesn\'t hold an OpenCard backup.</string>
@@ -145,7 +144,6 @@
     <string name="nota">Note</string>
     <string name="scadenza">Expiry</string>
     <string name="saldo">Balance</string>
-    <string name="scadenza_aiuto">yyyy-mm-dd</string>
     <string name="scadenza_non_valida">Write the expiry date as yyyy-mm-dd.</string>
     <string name="scadenza_nessuna">None</string>
     <string name="foto_fronte">Front photo</string>
@@ -169,10 +167,8 @@
     <string name="esporta_come">How to export</string>
     <string name="esporta_archivio">Archive with the photos</string>
     <string name="esporta_csv">CSV for other apps</string>
-    <string name="csv_importate">Cards added from CSV.</string>
     <string name="qr_su_file">Save the codes to a file</string>
     <string name="qr_salvato">Codes saved to the file.</string>
-    <string name="qr_privacy_file">The file holds your card numbers: keep it as you would keep the cards.</string>
     <string name="impostazioni">Settings</string>
     <string name="backup_cloud">Include the cards in the phone backup</string>
     <string name="backup_cloud_acceso_android">The cards go into the Android automatic backup and end up on Google\'s cloud along with other apps\' data. On a new phone you get them back the first time you open the app.</string>

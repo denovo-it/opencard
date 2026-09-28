@@ -171,9 +171,7 @@ static jobject carta_a_java(JNIEnv *env, jclass classe, jmethodID costruttore,
     /* `coloreScelto` dice se il colore è stato deciso dall'utente: serve al
      * form, che altrimenti non saprebbe se mostrare la scelta o il predefinito. */
     oggetto = (*env)->NewObject(env, classe, costruttore,
-                                (jint)card->id, label, code,
-                                (jboolean)(card->is_qrcode ? JNI_TRUE : JNI_FALSE),
-                                color,
+                                (jint)card->id, label, code, color,
                                 (jboolean)(card->color[0] != '\0' ? JNI_TRUE : JNI_FALSE),
                                 (jboolean)(card->disposable ? JNI_TRUE : JNI_FALSE),
                                 (jboolean)(card->favorite ? JNI_TRUE : JNI_FALSE),
@@ -202,7 +200,7 @@ static jobjectArray lista_a_java(JNIEnv *env, const opencard_lista *lista)
         return NULL;
     }
     costruttore = (*env)->GetMethodID(env, classe, "<init>",
-                                      "(ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ZZZI"
+                                      "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZI"
                                       "Ljava/lang/String;Ljava/lang/String;"
                                       "Ljava/lang/String;Ljava/lang/String;"
                                       "Ljava/lang/String;)V");
@@ -311,7 +309,7 @@ Java_srl_denovo_opencard_Core_get(JNIEnv *env, jclass classe, jint id)
         return NULL;
     }
     costruttore = (*env)->GetMethodID(env, classe_carta, "<init>",
-                                      "(ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ZZZI"
+                                      "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZI"
                                       "Ljava/lang/String;Ljava/lang/String;"
                                       "Ljava/lang/String;Ljava/lang/String;"
                                       "Ljava/lang/String;)V");
@@ -385,6 +383,16 @@ Java_srl_denovo_opencard_Core_delete(JNIEnv *env, jclass classe, jint id)
     if (opencard_delete((int)id, &errore) != OPENCARD_OK) {
         lancia(env, &errore);
     }
+}
+
+JNIEXPORT void JNICALL
+Java_srl_denovo_opencard_Core_pulisciFoto(JNIEnv *env, jclass classe)
+{
+    (void)env;
+    (void)classe;
+    /* Niente eccezione: se il file delle carte non si legge le foto restano,
+     * e l'errore lo mostra già l'apertura. */
+    opencard_pulisci_foto(NULL);
 }
 
 JNIEXPORT void JNICALL
@@ -909,35 +917,6 @@ Java_srl_denovo_opencard_Core_setFoto(JNIEnv *env, jclass classe, jint id,
     if (opencard_set_foto((int)id, fronte_c, retro_c, &errore) != OPENCARD_OK) {
         lancia(env, &errore);
     }
-}
-
-JNIEXPORT jbyteArray JNICALL
-Java_srl_denovo_opencard_Core_backupEsportaCifrato(JNIEnv *env, jclass classe,
-                                                   jstring quando, jstring password)
-{
-    char quando_c[64];
-    char password_c[256];
-    unsigned char *pacchetto = NULL;
-    size_t quanti = 0;
-    opencard_errore errore;
-    jbyteArray fuori;
-
-    (void)classe;
-    if (!stringa(env, quando, quando_c, sizeof(quando_c))
-        || !stringa(env, password, password_c, sizeof(password_c))) {
-        return NULL;
-    }
-    if (opencard_backup_esporta_cifrato(quando_c, password_c, &pacchetto, &quanti,
-                                        &errore) != OPENCARD_OK) {
-        lancia(env, &errore);
-        return NULL;
-    }
-    fuori = (*env)->NewByteArray(env, (jsize)quanti);
-    if (fuori != NULL) {
-        (*env)->SetByteArrayRegion(env, fuori, 0, (jsize)quanti, (const jbyte *)pacchetto);
-    }
-    opencard_cripto_free(pacchetto);
-    return fuori;
 }
 
 JNIEXPORT jboolean JNICALL

@@ -20,7 +20,6 @@ data class Carta(
     val id: Int,
     val label: String,
     val code: String,
-    val isQrcode: Boolean,
     /** Colore da usare: quello scelto a mano, oppure quello che spetta all'id. */
     val colore: String,
     /** Vero se il colore l'ha scelto l'utente, non l'id. */
@@ -217,8 +216,11 @@ object Core {
 
     @JvmStatic external fun delete(id: Int)
 
-    /** Cancella tutte le carte in una scrittura sola. Le foto le toglie la UI. */
+    /** Cancella tutte le carte in una scrittura sola, foto comprese. */
     @JvmStatic external fun azzeraTutto()
+
+    /** Toglie le foto che nessuna carta nomina: si chiama all'avvio. */
+    @JvmStatic external fun pulisciFoto()
     @JvmStatic external fun reorder(disposable: Boolean, ids: IntArray)
 
     @JvmStatic external fun colorForId(id: Int): String
@@ -233,12 +235,6 @@ object Core {
 
     /** Legge un backup e lo applica. Restituisce quante carte sono entrate. */
     @JvmStatic external fun backupRipristina(dati: ByteArray): Int
-
-    /**
-     * Il backup chiuso con una password. Password vuota non si accetta: la
-     * scelta di cifrare o no la fa l'interfaccia, non il core.
-     */
-    @JvmStatic external fun backupEsportaCifrato(quando: String, password: String): ByteArray
 
     /** Vero se il file letto è un backup cifrato: serve per sapere se chiedere la password. */
     @JvmStatic external fun backupCifrato(dati: ByteArray): Boolean
@@ -280,7 +276,7 @@ object Core {
     fun oggi(): String = SimpleDateFormat("yyyyMMdd", Locale.ITALY).format(Date())
 
     /** Istante attuale in ISO 8601, per l'intestazione del backup. In UTC con
-     *  la Z scritta, come `BackupNelCloud.quandoIso()`: il fuso con `XXX`
+     *  la Z scritta: il fuso con `XXX`
      *  Android lo conosce solo dall'API 24, e su Android 6 l'esportazione
      *  chiudeva l'app. Il campo, `exported_at`, non lo rilegge nessuno. */
     fun adesso(): String =

@@ -655,7 +655,6 @@ class MainActivity : AppCompatActivity() {
                     Csv.eCsv(aperto) -> {
                         if (sostituisciCsv) {
                             Core.azzeraTutto()
-                            Foto.cancellaTutte(this)
                         }
                         aggiungiDaCsv(Csv.leggi(aperto))
                     }

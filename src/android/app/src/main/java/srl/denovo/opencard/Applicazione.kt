@@ -41,7 +41,7 @@ class Applicazione : Application() {
             Dati.apri(this)
         } catch (e: Throwable) {
             Log.e("OpenCard", "apertura dei dati fallita", e)
-            Dati.erroreDiApertura = e.message ?: "Non riesco ad aprire il file delle carte."
+            Dati.erroreDiApertura = e.message ?: getString(R.string.apertura_non_riuscita)
         }
     }
 }

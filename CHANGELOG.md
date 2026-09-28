@@ -1,5 +1,8 @@
 ## 1.0.7-dev (in lavorazione)
 
+- Eliminando una carta ne sparivano i dati ma non le foto: su iPhone restavano sempre, anche dopo «Cancella tutti i tuoi dati». Su Android restavano quando la carta si eliminava dall'elenco. Ora le foto se ne vanno con la carta. Al primo avvio l'app toglie quelle rimaste dalle versioni precedenti, che finivano anche nel backup del telefono.
+- Su un telefono Android in inglese, quando il file delle carte non si apre, il messaggio compare in inglese e non più in italiano.
+
 ## 1.0.6
 
 - Quando una scheda ha più di 5 carte, in cima alla lista compare un campo di ricerca: scrivendo una parte dell'etichetta restano solo le carte che la contengono, senza badare a maiuscole e accenti. La X a destra svuota il campo e fa tornare tutte le carte. Mentre si cerca le carte non si spostano con la pressione prolungata.

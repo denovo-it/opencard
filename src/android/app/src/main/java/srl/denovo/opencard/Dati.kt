@@ -47,6 +47,9 @@ object Dati {
         // meglio un file leggibile che un'app che non si apre.
         Core.storeChiave(ChiaveDati.dammi(contesto))
         ripristinaDalCloud(contesto)
+        // Le foto rimaste dalle versioni che eliminando una carta dall'elenco
+        // non le cancellavano.
+        Core.pulisciFoto()
     }
 
     /**

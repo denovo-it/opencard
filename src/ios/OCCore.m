@@ -177,6 +177,9 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return NO;
     }
+    // Le foto rimaste dalle versioni che eliminando una carta non le
+    // cancellavano. Se il file non si legge restano dove sono.
+    opencard_pulisci_foto(NULL);
     return YES;
 }
 
@@ -664,63 +667,12 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     return YES;
 }
 
-+ (NSData *)esportaBackupCifrato:(NSString *)password errore:(NSError **)errore
-{
-    NSDateFormatter *formato = [NSDateFormatter new];
-    formato.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssXXX";
-    formato.locale = [NSLocale localeWithLocaleIdentifier:@"it_IT"];
-
-    unsigned char *byte = NULL;
-    size_t quanti = 0;
-    opencard_errore guasto;
-
-    if (opencard_backup_esporta_cifrato([formato stringFromDate:[NSDate date]].UTF8String,
-                                        password.UTF8String, &byte, &quanti,
-                                        &guasto) != OPENCARD_OK || byte == NULL) {
-        [self riporta:errore da:&guasto];
-        return nil;
-    }
-
-    NSData *dati = [NSData dataWithBytes:byte length:quanti];
-    opencard_cripto_free(byte);
-    return dati;
-}
-
 + (BOOL)backupCifrato:(NSData *)dati
 {
     if (dati.length == 0 || dati.bytes == NULL) {
         return NO;
     }
     return opencard_cripto_e_cifrato((const unsigned char *)dati.bytes, dati.length) != 0;
-}
-
-+ (NSInteger)ripristinaBackupFile:(NSData *)dati
-                         password:(NSString *)password
-                           errore:(NSError **)errore
-{
-    opencard_lista lista;
-    opencard_errore guasto;
-
-    if (dati.length == 0 || dati.bytes == NULL) {
-        opencard_errore vuoto = {OPENCARD_ERR_JSON, 0, {0}, 0};
-        [self riporta:errore da:&vuoto];
-        return -1;
-    }
-    if (opencard_backup_leggi_file((const unsigned char *)dati.bytes, dati.length,
-                                   password.length > 0 ? password.UTF8String : "",
-                                   &lista, &guasto) != OPENCARD_OK) {
-        [self riporta:errore da:&guasto];
-        return -1;
-    }
-    if (opencard_replace_all(&lista, &guasto) != OPENCARD_OK) {
-        opencard_lista_free(&lista);
-        [self riporta:errore da:&guasto];
-        return -1;
-    }
-
-    NSInteger quante = (NSInteger)lista.n;
-    opencard_lista_free(&lista);
-    return quante;
 }
 
 + (NSData *)cifra:(NSData *)dati password:(NSString *)password errore:(NSError **)errore

@@ -50,7 +50,7 @@ class BackupNelCloud : BackupAgent() {
         try {
             Core.storeInit(filesDir.absolutePath)
             Core.storeChiave(ChiaveDati.dammi(this))
-            esportato.writeText(Core.backupEsporta(quandoIso()))
+            esportato.writeText(Core.backupEsporta(Core.adesso()))
             fullBackupFile(esportato, dati)
 
             // Le foto sono file JPEG a parte e nella carta viaggia solo il
@@ -69,11 +69,6 @@ class BackupNelCloud : BackupAgent() {
             esportato.delete()
         }
     }
-
-    private fun quandoIso(): String =
-        java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
-            .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
-            .format(java.util.Date())
 
     /* Il backup a chiave e valore non si usa, l'app dichiara `fullBackupOnly`.
      * I due metodi sono obbligatori e restano vuoti. */

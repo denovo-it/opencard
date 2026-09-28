@@ -7,7 +7,6 @@
 #import "OCArchivio.h"
 #import "OCCore.h"
 #import "OCCsv.h"
-#import "OCFoto.h"
 #import "OCImpostazioniViewController.h"
 #import "OCDettaglioViewController.h"
 #import "OCFormViewController.h"
@@ -919,12 +918,9 @@ static const NSUInteger OCCartePerLaRicerca = 5;
         quante = [OCCore ripristinaBackup:elenco errore:&errore];
     } else if ([OCCsv eCsv:aperto]) {
         // Il CSV si aggiunge in fondo, a meno che chi importa non abbia scelto
-        // di sostituire: allora prima si fa pulizia, foto comprese.
+        // di sostituire: allora prima si fa pulizia, foto comprese (le toglie
+        // il core).
         if (sostituisciCsv) {
-            for (OCCarta *carta in [OCCore tutteLeCarte:NULL]) {
-                [OCFoto cancella:carta.fotoFronte];
-                [OCFoto cancella:carta.fotoRetro];
-            }
             if (![OCCore azzeraTutto:&errore]) {
                 [self avvisa:errore.localizedDescription];
                 return;

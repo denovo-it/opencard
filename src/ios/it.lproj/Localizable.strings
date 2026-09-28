@@ -124,7 +124,6 @@
 "immagine_non_letta" = "Non sono riuscito a leggere l'immagine.";
 "contenuto_non_disponibile" = "Contenuto non disponibile.";
 "apertura_non_riuscita" = "Non riesco ad aprire il file delle carte.";
-"oggetto_email_errore" = "OpenCard: errore";
 "errore_imprevisto" = "Errore imprevisto.";
 "core_io" = "Il file non si legge o non si scrive.";
 "core_json" = "Il file non è leggibile: non contiene un backup di OpenCard.";
@@ -143,7 +142,6 @@
 "nota" = "Nota";
 "scadenza" = "Scadenza";
 "saldo" = "Saldo";
-"scadenza_aiuto" = "aaaa-mm-gg";
 "scadenza_non_valida" = "La scadenza va scritta come aaaa-mm-gg.";
 "scadenza_nessuna" = "Nessuna";
 "foto_fronte" = "Foto fronte";
@@ -167,10 +165,8 @@
 "esporta_come" = "Come esportare";
 "esporta_archivio" = "Archivio con le foto";
 "esporta_csv" = "CSV per altre app";
-"csv_importate" = "Carte aggiunte da CSV.";
 "qr_su_file" = "Salva i codici su file";
 "qr_salvato" = "Codici salvati sul file.";
-"qr_privacy_file" = "Nel file ci sono i numeri delle tue tessere: tienilo come terresti le tessere.";
 "impostazioni" = "Impostazioni";
 "backup_cloud" = "Includi le carte nel backup del telefono";
 "backup_cloud_acceso_ios" = "Le carte rientrano nel backup del telefono: se hai acceso iCloud ci finiscono anche loro, insieme ai dati delle altre app, e cambiando iPhone le ritrovi.";

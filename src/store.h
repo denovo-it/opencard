@@ -237,8 +237,9 @@ opencard_esito opencard_set_dettagli(int id, const char *note,
                                      opencard_errore *errore);
 
 /* I nomi dei file delle due foto, con le stesse regole di NULL e "".
- * Il core non tocca i file: li scrive e li cancella la piattaforma, che sa
- * dove stanno. */
+ * I file li scrive la piattaforma, in <directory dei dati>/foto. Il core li
+ * cancella quando nessuna carta li nomina più: dopo opencard_delete(),
+ * opencard_replace_all() e opencard_pulisci_foto(). */
 opencard_esito opencard_set_foto(int id, const char *fronte, const char *retro,
                                  opencard_errore *errore);
 
@@ -248,9 +249,16 @@ opencard_esito opencard_set_foto(int id, const char *fronte, const char *retro,
 opencard_esito opencard_reorder(int disposable, const int *ids, size_t n,
                                 opencard_errore *errore);
 
-/* Sostituisce tutte le carte: la usa il ripristino di un backup. */
+/* Sostituisce tutte le carte: la usa il ripristino di un backup, e con una
+ * lista vuota l'azzeramento. Le foto che la lista non nomina vengono tolte:
+ * chi ripristina un archivio scrive prima le foto e poi chiama questa. */
 opencard_esito opencard_replace_all(const opencard_lista *lista,
                                     opencard_errore *errore);
+
+/* Toglie le foto che nessuna carta nomina. Le app la chiamano all'avvio, per
+ * i file rimasti dalle versioni che eliminando una carta non li cancellavano.
+ * Se il file delle carte non si legge non tocca niente. */
+opencard_esito opencard_pulisci_foto(opencard_errore *errore);
 
 /* Mette le carte in fondo a quelle che ci sono, con id nuovi: la usa il
  * passaggio delle carte fra due telefoni, dove gli id di chi cede non

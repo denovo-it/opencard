@@ -126,7 +126,6 @@
     <string name="immagine_non_letta">Non sono riuscito a leggere l\'immagine.</string>
     <string name="contenuto_non_disponibile">Contenuto non disponibile.</string>
     <string name="apertura_non_riuscita">Non riesco ad aprire il file delle carte.</string>
-    <string name="oggetto_email_errore">OpenCard: errore</string>
     <string name="errore_imprevisto">Errore imprevisto.</string>
     <string name="core_io">Il file non si legge o non si scrive.</string>
     <string name="core_json">Il file non è leggibile: non contiene un backup di OpenCard.</string>
@@ -145,7 +144,6 @@
     <string name="nota">Nota</string>
     <string name="scadenza">Scadenza</string>
     <string name="saldo">Saldo</string>
-    <string name="scadenza_aiuto">aaaa-mm-gg</string>
     <string name="scadenza_non_valida">La scadenza va scritta come aaaa-mm-gg.</string>
     <string name="scadenza_nessuna">Nessuna</string>
     <string name="foto_fronte">Foto fronte</string>
@@ -169,10 +167,8 @@
     <string name="esporta_come">Come esportare</string>
     <string name="esporta_archivio">Archivio con le foto</string>
     <string name="esporta_csv">CSV per altre app</string>
-    <string name="csv_importate">Carte aggiunte da CSV.</string>
     <string name="qr_su_file">Salva i codici su file</string>
     <string name="qr_salvato">Codici salvati sul file.</string>
-    <string name="qr_privacy_file">Nel file ci sono i numeri delle tue tessere: tienilo come terresti le tessere.</string>
     <string name="impostazioni">Impostazioni</string>
     <string name="backup_cloud">Includi le carte nel backup del telefono</string>
     <string name="backup_cloud_acceso_android">Le carte entrano nel backup automatico di Android e finiscono sul cloud di Google insieme ai dati delle altre app. Cambiando telefono le ritrovi al primo avvio.</string>

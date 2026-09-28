@@ -172,18 +172,8 @@ static const NSInteger OCSimbologiaAuto = -1;
 /// Butta via tutte le carte in una scrittura sola.
 + (BOOL)azzeraTutto:(NSError **)errore;
 
-/// Il backup chiuso con una password. Password vuota non si accetta: la scelta
-/// di cifrare o no la fa l'interfaccia, non il core.
-+ (nullable NSData *)esportaBackupCifrato:(NSString *)password errore:(NSError **)errore;
-
 /// Vero se il file letto è un backup cifrato, cioè se va chiesta la password.
 + (BOOL)backupCifrato:(NSData *)dati;
-
-/// Ripristina da un file in chiaro o cifrato. Password vuota per i file in
-/// chiaro. Torna quante carte sono entrate, -1 se fallisce.
-+ (NSInteger)ripristinaBackupFile:(NSData *)dati
-                         password:(NSString *)password
-                           errore:(NSError **)errore;
 
 /// Cifra e decifra un pacchetto qualsiasi con la stessa cassaforte del backup:
 /// servono allo ZIP, dove dentro ci sono anche le foto.

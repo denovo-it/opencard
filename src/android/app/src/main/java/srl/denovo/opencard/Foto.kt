@@ -116,19 +116,4 @@ object Foto {
             file(contesto, nome).delete()
         }
     }
-
-    /** Tutte le foto, quando si azzerano le carte. */
-    fun cancellaTutte(contesto: Context) {
-        cartella(contesto).listFiles()?.forEach { it.delete() }
-    }
-
-    /**
-     * Le foto di una carta cancellata. Si chiama dopo la cancellazione: i file
-     * restati indietro non li guarderebbe più nessuno e occuperebbero spazio
-     * per sempre.
-     */
-    fun cancellaDiCarta(contesto: Context, id: Int) {
-        cancella(contesto, nome(id, fronte = true))
-        cancella(contesto, nome(id, fronte = false))
-    }
 }

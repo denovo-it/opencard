@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 #include <unistd.h>
 
 #include "third-party/cJSON.h"
@@ -33,6 +34,7 @@ static const char *const COLORI[] = {
 
 static char percorso_dati[1024];
 static char percorso_flag[1024];
+static char percorso_foto[1024];
 
 /* La chiave del file dei dati, quando la piattaforma ce l'ha data. Tutti zeri
  * e `con_chiave` a zero vuol dire file in chiaro, come prima. */
@@ -224,6 +226,10 @@ opencard_esito opencard_store_init(const char *directory_dati)
     }
     if (snprintf(percorso_flag, sizeof(percorso_flag), "%s/.splash_shown",
                  directory_dati) >= (int)sizeof(percorso_flag)) {
+        return OPENCARD_ERR_ARGOMENTI;
+    }
+    if (snprintf(percorso_foto, sizeof(percorso_foto), "%s/foto",
+                 directory_dati) >= (int)sizeof(percorso_foto)) {
         return OPENCARD_ERR_ARGOMENTI;
     }
     return OPENCARD_OK;
@@ -1308,6 +1314,53 @@ opencard_esito opencard_update(int id, const char *label, const char *code,
     return esito;
 }
 
+/* Toglie dalla cartella delle foto i file che nessuna carta della lista
+ * nomina. Si chiama solo dopo una scrittura riuscita, con la lista appena
+ * scritta: se il file delle carte non si legge o non si scrive, le foto
+ * restano dove sono. Una cartella che non c'è vuol dire nessuna foto. */
+static void pulisci_foto(const opencard_lista *lista)
+{
+    DIR *cartella;
+    struct dirent *voce;
+    char percorso[1100];
+    size_t i;
+
+    if (percorso_foto[0] == '\0' || (cartella = opendir(percorso_foto)) == NULL) {
+        return;
+    }
+    while ((voce = readdir(cartella)) != NULL) {
+        int nominata = 0;
+
+        if (voce->d_name[0] == '.') {
+            continue;
+        }
+        for (i = 0; i < lista->n && !nominata; i++) {
+            nominata = strcmp(lista->carte[i].foto_fronte, voce->d_name) == 0 ||
+                       strcmp(lista->carte[i].foto_retro, voce->d_name) == 0;
+        }
+        if (!nominata &&
+            snprintf(percorso, sizeof(percorso), "%s/%s", percorso_foto,
+                     voce->d_name) < (int)sizeof(percorso)) {
+            unlink(percorso);
+        }
+    }
+    closedir(cartella);
+}
+
+opencard_esito opencard_pulisci_foto(opencard_errore *errore)
+{
+    opencard_lista tutte;
+    opencard_esito esito;
+
+    esito = carica(&tutte, errore);
+    if (esito != OPENCARD_OK) {
+        return esito;
+    }
+    pulisci_foto(&tutte);
+    opencard_lista_free(&tutte);
+    return OPENCARD_OK;
+}
+
 opencard_esito opencard_delete(int id, opencard_errore *errore)
 {
     opencard_lista tutte;
@@ -1325,6 +1378,9 @@ opencard_esito opencard_delete(int id, opencard_errore *errore)
     }
     tutte.n = scritte;
     esito = salva(&tutte, errore);
+    if (esito == OPENCARD_OK) {
+        pulisci_foto(&tutte);
+    }
     opencard_lista_free(&tutte);
     return esito;
 }
@@ -1403,11 +1459,17 @@ opencard_esito opencard_reorder(int disposable, const int *ids, size_t n,
 opencard_esito opencard_replace_all(const opencard_lista *lista,
                                     opencard_errore *errore)
 {
+    opencard_esito esito;
+
     if (lista == NULL) {
         return segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     azzera_errore(errore);
-    return salva(lista, errore);
+    esito = salva(lista, errore);
+    if (esito == OPENCARD_OK) {
+        pulisci_foto(lista);
+    }
+    return esito;
 }
 
 opencard_esito opencard_append_all(const opencard_lista *lista,
