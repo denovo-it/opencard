@@ -45,6 +45,10 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 @property (nonatomic, strong) UISegmentedControl *schede;
 /// Il selettore aperto per importare: il delegato è lo stesso dell'esportazione.
 @property (nonatomic, weak) UIDocumentPickerViewController *selettoreImporta;
+/// La rotella dell'esportazione e dell'importazione, e la finestra che resta
+/// ferma finché lavorano.
+@property (nonatomic, strong, nullable) UIActivityIndicatorView *rotella;
+@property (nonatomic, weak, nullable) UIWindow *finestraFerma;
 @property (nonatomic, strong) UIPageViewController *pagine;
 @property (nonatomic, strong) NSArray<OCGruppoViewController *> *gruppi;
 @property (nonatomic, strong) UIButton *aggiungi;
@@ -683,18 +687,60 @@ static const NSUInteger OCCartePerLaRicerca = 5;
     [self presentViewController:domanda animated:YES completion:nil];
 }
 
+#pragma mark - Lavoro lungo
+
+/// Esportazione e importazione girano fuori dal thread principale: con una
+/// password la chiave si ricava con Argon2 su 32 MiB, e un file preparato ne
+/// può chiedere fino a 256, mentre l'interfaccia restava ferma senza dire
+/// niente. Intanto c'è la rotella e la finestra non accetta tocchi: così
+/// nessun'altra chiamata al core parte dall'interfaccia, e il core resta usato
+/// da un thread alla volta, come vuole.
+- (void)inizioLavoro
+{
+    UIActivityIndicatorView *rotella = [[UIActivityIndicatorView alloc]
+        initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleLarge];
+    rotella.center = CGPointMake(CGRectGetMidX(self.view.bounds), CGRectGetMidY(self.view.bounds));
+    rotella.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin
+                               | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin;
+    [self.view addSubview:rotella];
+    [rotella startAnimating];
+    self.rotella = rotella;
+    self.finestraFerma = self.view.window;
+    self.finestraFerma.userInteractionEnabled = NO;
+}
+
+- (void)fineLavoro
+{
+    [self.rotella removeFromSuperview];
+    self.rotella = nil;
+    self.finestraFerma.userInteractionEnabled = YES;
+    self.finestraFerma = nil;
+}
+
 - (void)scriviBackupCsv:(BOOL)csv password:(NSString *)password
 {
-    NSError *errore = nil;
+    [self inizioLavoro];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSError *errore = nil;
+        // Archivio con le foto o CSV, e la password che chiude tutto: lo fa il
+        // core, uguale su Android.
+        NSData *contenuto = [OCCore esportaCsv:csv password:password errore:&errore];
 
-    // Archivio con le foto o CSV, e la password che chiude tutto: lo fa il
-    // core, uguale su Android.
-    NSData *contenuto = [OCCore esportaCsv:csv password:password errore:&errore];
-    if (contenuto == nil) {
-        [self avvisa:errore.localizedDescription];
-        return;
-    }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self fineLavoro];
+            if (contenuto == nil) {
+                [self avvisa:errore.localizedDescription];
+                return;
+            }
+            [self offriBackup:contenuto csv:csv password:password];
+        });
+    });
+}
 
+/// Il file esportato, dato al selettore di sistema perché l'utente lo metta
+/// dove vuole.
+- (void)offriBackup:(NSData *)contenuto csv:(BOOL)csv password:(NSString *)password
+{
     // Un archivio si chiama .zip, e uno chiuso con la password .opencard:
     // l'estensione deve dire cosa trova chi apre il file, non cosa c'è dentro.
     NSString *nudo = [[OCCore nomeBackup] stringByDeletingPathExtension];
@@ -851,23 +897,29 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 
 - (void)scriviLeCarte:(NSData *)dati password:(NSString *)password sostituisciCsv:(BOOL)sostituisciCsv
 {
-    NSError *errore = nil;
+    [self inizioLavoro];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSError *errore = nil;
+        // Archivio, CSV o JSON, con o senza password: il core riconosce il
+        // file, rimette a posto le foto e scrive le carte in una volta.
+        NSInteger quante = [OCCore importa:dati
+                                  password:password
+                               sostituisci:sostituisciCsv
+                                    errore:&errore];
 
-    // Archivio, CSV o JSON, con o senza password: il core riconosce il file,
-    // rimette a posto le foto e scrive le carte in una volta.
-    NSInteger quante = [OCCore importa:dati
-                              password:password
-                           sostituisci:sostituisciCsv
-                                errore:&errore];
-    if (quante < 0) {
-        [self avvisa:errore.localizedDescription];
-        return;
-    }
-    [self ricaricaTutto];
-    /* Il singolare e il plurale li sceglie il sistema, dal .stringsdict: ci
-     * sono lingue dove le forme non sono due. */
-    [self avvisa:[NSString localizedStringWithFormat:
-                  NSLocalizedString(@"carte_ripristinate", nil), (long)quante]];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self fineLavoro];
+            if (quante < 0) {
+                [self avvisa:errore.localizedDescription];
+                return;
+            }
+            [self ricaricaTutto];
+            /* Il singolare e il plurale li sceglie il sistema, dal
+             * .stringsdict: ci sono lingue dove le forme non sono due. */
+            [self avvisa:[NSString localizedStringWithFormat:
+                          NSLocalizedString(@"carte_ripristinate", nil), (long)quante]];
+        });
+    });
 }
 
 - (void)apriImpostazioni
