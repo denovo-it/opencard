@@ -196,6 +196,139 @@ static void colore_da_intero(const char *testo, char *out, size_t out_size)
 
 /* ------------------------------------------------------------- in uscita */
 
+static void togli_spazi(const char *s, char *out, size_t out_size);
+
+/* Le valute che scriviamo in `balancetype`. Catima ci passa sopra
+ * Currency.getInstance(), che per un codice sconosciuto lancia un'eccezione e
+ * ferma l'importazione: meglio un elenco corto e sicuro. */
+static const char *const VALUTE[] = {
+    "EUR", "USD", "GBP", "CHF", "PLN", "CZK", "SEK", "NOK", "DKK", "HUF",
+    "RON", "JPY", "CAD", "AUD", NULL
+};
+
+static int uguale_senza_maiuscole(const char *a, const char *b)
+{
+    for (; *a != '\0' && *b != '\0'; a++, b++) {
+        char x = (*a >= 'a' && *a <= 'z') ? (char)(*a - 32) : *a;
+        char y = (*b >= 'a' && *b <= 'z') ? (char)(*b - 32) : *b;
+
+        if (x != y) {
+            return 0;
+        }
+    }
+    return *a == *b;
+}
+
+/* Il codice ISO di un'unità scritta a mano, o "" per tutto il resto: per
+ * Catima un saldo senza valuta è in punti, ed è quello che vuol dire «340
+ * punti». */
+static const char *valuta(const char *unita)
+{
+    int i;
+
+    if (strcmp(unita, "\xE2\x82\xAC") == 0 || uguale_senza_maiuscole(unita, "euro")) {
+        return "EUR";
+    }
+    if (strcmp(unita, "\xC2\xA3") == 0) {
+        return "GBP";
+    }
+    if (strcmp(unita, "$") == 0) {
+        return "USD";
+    }
+    for (i = 0; VALUTE[i] != NULL; i++) {
+        if (uguale_senza_maiuscole(unita, VALUTE[i])) {
+            return VALUTE[i];
+        }
+    }
+    return "";
+}
+
+/* Quanti byte è lunga l'unità in testa al saldo ("€", "£", "$" o tre lettere
+ * seguite da uno spazio o da una cifra), 0 se non c'è. */
+static size_t unita_in_testa(const char *s)
+{
+    if (strncmp(s, "\xE2\x82\xAC", 3) == 0) {
+        return 3;
+    }
+    if (strncmp(s, "\xC2\xA3", 2) == 0) {
+        return 2;
+    }
+    if (s[0] == '$') {
+        return 1;
+    }
+    if (strlen(s) > 3 && ((s[0] | 32) >= 'a' && (s[0] | 32) <= 'z')
+        && ((s[1] | 32) >= 'a' && (s[1] | 32) <= 'z')
+        && ((s[2] | 32) >= 'a' && (s[2] | 32) <= 'z')
+        && (s[3] == ' ' || (s[3] >= '0' && s[3] <= '9'))) {
+        return 3;
+    }
+    return 0;
+}
+
+/* Il nostro saldo è testo libero, quello di Catima un numero in `balance` e la
+ * valuta in `balancetype`: se il testo comincia con un numero si divide, con
+ * il punto come separatore dei decimali. «12,50 €» diventa 12.50 e EUR, «340
+ * punti» 340 e niente, «gratis» niente e niente: Catima un saldo che non è un
+ * numero lo butta via comunque. */
+static void saldo_per_catima(const char *saldo, char *numero, size_t numero_size,
+                             char *tipo, size_t tipo_size)
+{
+    char pulito[OPENCARD_SALDO_MAX], unita[OPENCARD_SALDO_MAX];
+    const char *p;
+    size_t testa, n = 0, i, k;
+    size_t punti = 0, virgole = 0;
+    char ultimo = 0;
+
+    numero[0] = '\0';
+    tipo[0] = '\0';
+    togli_spazi(saldo, pulito, sizeof(pulito));
+
+    testa = unita_in_testa(pulito);
+    snprintf(unita, sizeof(unita), "%.*s", (int)testa, pulito);
+    p = pulito + testa;
+    while (*p == ' ') {
+        p++;
+    }
+    if (*p == '-' || *p == '+') {
+        if (*p == '-' && n + 1 < numero_size) {
+            numero[n++] = '-';
+        }
+        p++;
+    }
+    if (*p < '0' || *p > '9') {
+        numero[0] = '\0';
+        return;
+    }
+    for (i = 0; (p[i] >= '0' && p[i] <= '9') || p[i] == '.' || p[i] == ','; i++) {
+        punti += p[i] == '.';
+        virgole += p[i] == ',';
+        if (p[i] == '.' || p[i] == ',') {
+            ultimo = p[i];
+        }
+    }
+    /* Il separatore dei decimali è l'ultimo, se ci sono tutti e due («1.234,50»)
+     * o se compare una volta sola; ripetuto da solo separa le migliaia. */
+    for (k = 0; k < i && n + 1 < numero_size; k++) {
+        char c = p[k];
+
+        if (c >= '0' && c <= '9') {
+            numero[n++] = c;
+        } else if (c == ultimo && (punti + virgole == 1 || (punti > 0 && virgole > 0))
+                   && strchr(p + k + 1, ultimo) == NULL) {
+            numero[n++] = '.';
+        }
+    }
+    if (n > 0 && numero[n - 1] == '.') {
+        n--;
+    }
+    numero[n] = '\0';
+
+    if (testa == 0) {
+        togli_spazi(p + i, unita, sizeof(unita));
+    }
+    snprintf(tipo, tipo_size, "%s", valuta(unita));
+}
+
 typedef struct {
     char *p;
     size_t n;
@@ -273,6 +406,7 @@ opencard_esito opencard_csv_scrivi(const opencard_lista *lista, char **uscita,
     for (i = 0; ok && i < lista->n; i++) {
         const opencard_card *carta = &lista->carte[i];
         char id[16], millis[24], colore[OPENCARD_COLOR_MAX], intero[16];
+        char balance[OPENCARD_SALDO_MAX], balancetype[8];
         int s = (int)carta->simbologia;
 
         snprintf(id, sizeof(id), "%d", carta->id);
@@ -281,14 +415,16 @@ opencard_esito opencard_csv_scrivi(const opencard_lista *lista, char **uscita,
          * saprebbe calcolare. */
         opencard_card_color(carta, colore, sizeof(colore));
         colore_intero(colore, intero, sizeof(intero));
+        saldo_per_catima(carta->saldo, balance, sizeof(balance),
+                         balancetype, sizeof(balancetype));
 
         ok = campo(&b, id, 1)
              && campo(&b, carta->label, 0)
              && campo(&b, carta->note, 0)
              && campo(&b, "", 0)                        /* validfrom */
              && campo(&b, millis, 0)
-             && campo(&b, carta->saldo, 0)
-             && campo(&b, "", 0)                        /* balancetype */
+             && campo(&b, balance, 0)
+             && campo(&b, balancetype, 0)
              && campo(&b, carta->code, 0)
              && campo(&b, "", 0)                        /* barcodeid */
              && campo(&b, s >= 0 && s < N_NOMI ? NOMI_CATIMA[s] : "CODE_128", 0)

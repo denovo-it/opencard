@@ -82,7 +82,7 @@ typedef enum {
 typedef enum {
     OPENCARD_FILE_JSON = 0,     /* il backup dei tempi prima delle foto, o altro */
     OPENCARD_FILE_ARCHIVIO = 1,
-    OPENCARD_FILE_CSV = 2,
+    OPENCARD_FILE_CSV = 2,      /* anche lo ZIP di Catima, che ha dentro un CSV */
     OPENCARD_FILE_CIFRATO = 3
 } opencard_tipo_file;
 
@@ -101,7 +101,8 @@ opencard_esito opencard_esporta(opencard_formato formato, const char *esportato_
                                 opencard_errore *errore);
 
 /* Legge un file salvato con opencard_esporta(), o un backup JSON, o un CSV di
- * Catima, e lo scrive nel file dei dati in una scrittura sola.
+ * Catima, sciolto o dentro lo ZIP che Catima esporta, e lo scrive nel file dei
+ * dati in una scrittura sola.
  *
  * Archivio e JSON sostituiscono le carte che ci sono. Il CSV si aggiunge in
  * fondo, oppure con `sostituisci` prende il loro posto. Le foto dell'archivio

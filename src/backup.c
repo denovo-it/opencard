@@ -210,6 +210,43 @@ opencard_esito opencard_backup_leggi(const char *testo, size_t lunghezza,
 /* ----------------------------------------------------- esportare e importare */
 
 #define NOME_ELENCO "opencard.json"
+/* Il CSV dentro lo ZIP che esporta Catima. */
+#define NOME_CATIMA "catima.csv"
+
+/* Il nome di una voce senza le cartelle davanti. */
+static const char *base_nome(const char *nome)
+{
+    const char *barra = strrchr(nome, '/');
+
+    return barra != NULL ? barra + 1 : nome;
+}
+
+/* La voce con quel nome, o NULL. */
+static const opencard_zip_voce *voce(const opencard_zip_lettura *lettura, const char *nome)
+{
+    size_t i;
+
+    for (i = 0; i < lettura->n; i++) {
+        if (strcmp(base_nome(lettura->voci[i].nome), nome) == 0) {
+            return &lettura->voci[i];
+        }
+    }
+    return NULL;
+}
+
+/* Vero se è lo ZIP di Catima: dentro c'è catima.csv e non il nostro elenco. */
+static int zip_di_catima(const unsigned char *dati, size_t quanti)
+{
+    opencard_zip_lettura lettura;
+    int si;
+
+    if (opencard_zip_leggi(dati, quanti, &lettura, NULL) != OPENCARD_OK) {
+        return 0;
+    }
+    si = voce(&lettura, NOME_CATIMA) != NULL && voce(&lettura, NOME_ELENCO) == NULL;
+    opencard_zip_libera(&lettura);
+    return si;
+}
 
 opencard_tipo_file opencard_file_tipo(const unsigned char *dati, size_t quanti)
 {
@@ -224,7 +261,8 @@ opencard_tipo_file opencard_file_tipo(const unsigned char *dati, size_t quanti)
         return OPENCARD_FILE_CIFRATO;
     }
     if (opencard_zip_e_archivio(dati, quanti)) {
-        return OPENCARD_FILE_ARCHIVIO;
+        /* Lo ZIP di Catima porta un CSV: la domanda è quella del CSV. */
+        return zip_di_catima(dati, quanti) ? OPENCARD_FILE_CSV : OPENCARD_FILE_ARCHIVIO;
     }
     return OPENCARD_FILE_JSON;
 }
@@ -392,27 +430,31 @@ opencard_esito opencard_esporta(opencard_formato formato, const char *esportato_
     return esito;
 }
 
-/* Le carte di un archivio, con le foto rimesse a posto. */
+/* Le carte di un archivio, con le foto rimesse a posto. Uno ZIP di Catima
+ * dà le carte del suo CSV e `*e_csv` a 1: le sue immagini hanno nomi che le
+ * nostre carte non conoscono, e restano fuori. */
 static opencard_esito leggi_archivio(const unsigned char *dati, size_t quanti,
-                                     opencard_lista *out, opencard_errore *errore)
+                                     opencard_lista *out, int *e_csv,
+                                     opencard_errore *errore)
 {
     opencard_zip_lettura lettura;
     opencard_esito esito;
-    const opencard_zip_voce *elenco = NULL;
+    const opencard_zip_voce *elenco, *catima;
     size_t i, j;
 
     memset(out, 0, sizeof(*out));
+    *e_csv = 0;
     esito = opencard_zip_leggi(dati, quanti, &lettura, errore);
     if (esito != OPENCARD_OK) {
         return esito;
     }
-    for (i = 0; i < lettura.n && elenco == NULL; i++) {
-        const char *base = strrchr(lettura.voci[i].nome, '/');
-
-        base = base != NULL ? base + 1 : lettura.voci[i].nome;
-        if (strcmp(base, NOME_ELENCO) == 0) {
-            elenco = &lettura.voci[i];
-        }
+    elenco = voce(&lettura, NOME_ELENCO);
+    catima = voce(&lettura, NOME_CATIMA);
+    if (elenco == NULL && catima != NULL) {
+        esito = opencard_csv_leggi(catima->dati, catima->quanti, out, errore);
+        opencard_zip_libera(&lettura);
+        *e_csv = 1;
+        return esito;
     }
     if (elenco == NULL) {
         opencard_zip_libera(&lettura);
@@ -429,10 +471,9 @@ static opencard_esito leggi_archivio(const unsigned char *dati, size_t quanti,
      * carte entrino nel file: se poi la scrittura fallisce, restano file che
      * nessuna carta nomina e che la pulizia toglie. */
     for (i = 0; i < lettura.n; i++) {
-        const char *base = strrchr(lettura.voci[i].nome, '/');
+        const char *base = base_nome(lettura.voci[i].nome);
         int nominata = 0;
 
-        base = base != NULL ? base + 1 : lettura.voci[i].nome;
         if (!nome_sicuro(base) || strcmp(base, NOME_ELENCO) == 0) {
             continue;
         }
@@ -459,7 +500,7 @@ opencard_esito opencard_importa(const unsigned char *dati, size_t quanti,
     opencard_lista lista;
     opencard_esito esito;
     size_t i;
-    int aggiungi = 0;
+    int aggiungi = 0, e_csv = 0;
 
     if (quante != NULL) {
         *quante = 0;
@@ -487,15 +528,10 @@ opencard_esito opencard_importa(const unsigned char *dati, size_t quanti,
     /* Tre forme, in ordine di quanto sono recenti: l'archivio con le foto, il
      * CSV di un'altra app, e il solo JSON dei backup fatti prima delle foto. */
     if (opencard_zip_e_archivio(aperto, aperto_n)) {
-        esito = leggi_archivio(aperto, aperto_n, &lista, errore);
+        esito = leggi_archivio(aperto, aperto_n, &lista, &e_csv, errore);
     } else if (opencard_csv_e_csv(aperto, aperto_n)) {
         esito = opencard_csv_leggi(aperto, aperto_n, &lista, errore);
-        if (esito == OPENCARD_OK && sostituisci) {
-            for (i = 0; i < lista.n; i++) {
-                lista.carte[i].id = (int)i + 1;
-            }
-        }
-        aggiungi = !sostituisci;
+        e_csv = 1;
     } else {
         esito = opencard_backup_leggi((const char *)aperto, aperto_n, &lista, errore);
     }
@@ -506,6 +542,14 @@ opencard_esito opencard_importa(const unsigned char *dati, size_t quanti,
     if (esito != OPENCARD_OK) {
         return esito;
     }
+    /* Il CSV, sciolto o dentro lo ZIP di Catima, si aggiunge oppure prende il
+     * posto delle carte; sostituendo, gli id ripartono da 1. */
+    if (e_csv && sostituisci) {
+        for (i = 0; i < lista.n; i++) {
+            lista.carte[i].id = (int)i + 1;
+        }
+    }
+    aggiungi = e_csv && !sostituisci;
 
     /* Una scrittura sola. Sostituendo, il core toglie anche le foto delle
      * carte che se ne vanno. */
