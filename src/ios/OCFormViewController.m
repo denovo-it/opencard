@@ -105,6 +105,12 @@ static const NSUInteger OCLimiteCodice = 500;
 /// I nomi dei file già scritti, per sapere cosa cancellare se la foto si toglie.
 @property (nonatomic, copy) NSString *nomeFotoFronte;
 @property (nonatomic, copy) NSString *nomeFotoRetro;
+/// Vere quando la foto l'ha scelta o tolta chi usa il modulo: solo allora il
+/// file si scrive o si cancella. Una foto lasciata com'era resta il file che
+/// c'è: riscriverla a ogni salvataggio la ricomprimeva in JPEG, e perdeva
+/// qualità a ogni modifica del nome.
+@property (nonatomic, assign) BOOL fronteCambiata;
+@property (nonatomic, assign) BOOL retroCambiata;
 @property (nonatomic, strong) UIButton *riquadroFronte;
 @property (nonatomic, strong) UIButton *riquadroRetro;
 /// Per chi arriva la foto che sta scegliendo: 0 il codice, 1 il fronte, 2 il retro.
@@ -706,7 +712,7 @@ static const NSUInteger OCLimiteCodice = 500;
                                                   style:UIAlertActionStyleDestructive
                                                 handler:^(UIAlertAction *azione) {
             (void)azione;
-            [self mostraFoto:nil per:lato];
+            [self cambiaFoto:nil per:lato];
         }]];
     }
     [scelte addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
@@ -727,6 +733,17 @@ static const NSUInteger OCLimiteCodice = 500;
     selettore.sourceType = sorgente;
     selettore.delegate = self;
     [self presentViewController:selettore animated:YES completion:nil];
+}
+
+/// Una foto scelta o tolta da chi usa il modulo, non quella letta dalla carta.
+- (void)cambiaFoto:(nullable UIImage *)immagine per:(NSInteger)lato
+{
+    if (lato == 1) {
+        self.fronteCambiata = YES;
+    } else {
+        self.retroCambiata = YES;
+    }
+    [self mostraFoto:immagine per:lato];
 }
 
 - (void)mostraFoto:(UIImage *)immagine per:(NSInteger)lato
@@ -967,10 +984,11 @@ static const NSUInteger OCLimiteCodice = 500;
                 retro:(NSString **)nomeRetro
                errore:(NSError **)errore
 {
-    NSString *fronte = @"";
-    NSString *retro = @"";
+    // Un lato che non è cambiato tiene il file e il nome che aveva.
+    NSString *fronte = self.nomeFotoFronte ?: @"";
+    NSString *retro = self.nomeFotoRetro ?: @"";
 
-    if (self.fotoFronte != nil) {
+    if (self.fronteCambiata && self.fotoFronte != nil) {
         fronte = [OCFoto salva:self.fotoFronte id:quale fronte:YES] ?: @"";
         if (fronte.length == 0) {
             if (errore != NULL) {
@@ -979,11 +997,12 @@ static const NSUInteger OCLimiteCodice = 500;
             }
             return NO;
         }
-    } else if (self.nomeFotoFronte.length > 0) {
-        [OCFoto cancella:self.nomeFotoFronte];
+    } else if (self.fronteCambiata) {
+        [OCFoto cancella:fronte];
+        fronte = @"";
     }
 
-    if (self.fotoRetro != nil) {
+    if (self.retroCambiata && self.fotoRetro != nil) {
         retro = [OCFoto salva:self.fotoRetro id:quale fronte:NO] ?: @"";
         if (retro.length == 0) {
             if (errore != NULL) {
@@ -992,8 +1011,9 @@ static const NSUInteger OCLimiteCodice = 500;
             }
             return NO;
         }
-    } else if (self.nomeFotoRetro.length > 0) {
-        [OCFoto cancella:self.nomeFotoRetro];
+    } else if (self.retroCambiata) {
+        [OCFoto cancella:retro];
+        retro = @"";
     }
 
     *nomeFronte = fronte;
@@ -1168,7 +1188,7 @@ static const NSUInteger OCLimiteCodice = 500;
         if (per == 0) {
             [self leggiDaImmagine:immagine];
         } else {
-            [self mostraFoto:immagine per:per];
+            [self cambiaFoto:immagine per:per];
         }
     }];
 }
