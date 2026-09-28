@@ -188,8 +188,11 @@ class FormActivity : AppCompatActivity() {
         bottoneRetro = findViewById(R.id.foto_retro)
         anteprimaFronte = findViewById(R.id.anteprima_fronte)
         anteprimaRetro = findViewById(R.id.anteprima_retro)
-        bottoneFronte.setOnClickListener { scegliFoto(FRONTE) }
-        bottoneRetro.setOnClickListener { scegliFoto(RETRO) }
+        // Il pulsante fa quello che dice: con la foto si chiama «Togli la foto»
+        // e la toglie, senza la sceglie. Fino alla 1.0.7-dev apriva sempre il
+        // selettore, e la foto si toglieva solo toccando l'anteprima.
+        bottoneFronte.setOnClickListener { togliOScegli(FRONTE) }
+        bottoneRetro.setOnClickListener { togliOScegli(RETRO) }
         anteprimaFronte.setOnClickListener { togliFoto(FRONTE) }
         anteprimaRetro.setOnClickListener { togliFoto(RETRO) }
         simbologia = findViewById(R.id.simbologia)
@@ -356,6 +359,11 @@ class FormActivity : AppCompatActivity() {
         fotoNuove[latoInCorso] = Foto.riduci(letta)
         fotoTolte[latoInCorso] = false
         mostraAnteprime()
+    }
+
+    private fun togliOScegli(lato: Int) {
+        val anteprima = if (lato == FRONTE) anteprimaFronte else anteprimaRetro
+        if (anteprima.visibility == View.VISIBLE) togliFoto(lato) else scegliFoto(lato)
     }
 
     private fun togliFoto(lato: Int) {
