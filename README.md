@@ -24,12 +24,13 @@ arrivano dal telefono. L'app per Apple Watch è in arrivo.
 
 ## Requisiti
 
-- **Android 6.0** (API 23) o successivo. L'app è compilata contro l'API 36 e
-  contiene il codice nativo per `arm64-v8a` e `armeabi-v7a`.
-- **iOS 15.0** o successivo, solo iPhone. Sono gli stessi modelli di iOS 13,
-  dall'iPhone 6s e dal primo SE in su, con il sistema aggiornato.
-- **Wear OS 3** (API 30) o successivo per l'app dell'orologio, collegato a un
-  telefono Android con OpenCard: il telefono manda le carte all'orologio via
+- **Android da 6.0 (API 23) a 16 (API 36)**, la versione per cui l'app è
+  compilata; Android 17 non è ancora stato provato. L'app contiene il codice
+  nativo per `arm64-v8a` e `armeabi-v7a`.
+- **iOS da 15.0 a 27**, solo iPhone. La 15.0 gira sugli stessi modelli di
+  iOS 13, dall'iPhone 6s e dal primo SE in su, con il sistema aggiornato.
+- **Wear OS da 3 (API 30) a 6 (API 36)** per l'app dell'orologio, collegato a
+  un telefono Android con OpenCard: il telefono manda le carte all'orologio via
   Bluetooth, senza passare da internet.
 - **Apple Watch**: in arrivo.
 
