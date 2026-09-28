@@ -23,6 +23,13 @@
  * gigabyte da un file scritto apposta. */
 #define ARCHIVIO_MAX (64u * 1024u * 1024u)
 
+/* E quanti se ne estraggono in tutto, sommando le voci. Senza, bastava un
+ * archivio di poche centinaia di KB con migliaia di voci che puntano agli
+ * stessi dati compressi, ognuna da 64 MB, per far finire la memoria. Il doppio
+ * del tetto perché un archivio nostro da 64 MB compressi, con l'elenco JSON
+ * che si comprime molto, estratto passa un poco i 64. */
+#define ESTRATTI_MAX (2u * ARCHIVIO_MAX)
+
 /* ---------------------------------------------------------------- buffer */
 
 typedef struct {
@@ -347,7 +354,7 @@ opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
                                   opencard_errore *errore)
 {
     const unsigned char *fine;
-    size_t inizio_indice, i, quante;
+    size_t inizio_indice, i, quante, estratti = 0;
     const unsigned char *voce;
 
     if (dati == NULL || out == NULL || quanti == 0) {
@@ -396,6 +403,13 @@ opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
             || distesa > ARCHIVIO_MAX || dove + TESTA_LOCALE > quanti) {
             opencard_zip_libera(out);
             return fallisci(errore, OPENCARD_ERR_JSON);
+        }
+        /* Prima di allocare: la somma si ferma al tetto senza aver chiesto
+         * la memoria delle voci che lo superano. */
+        estratti += distesa;
+        if (estratti > ESTRATTI_MAX) {
+            opencard_zip_libera(out);
+            return fallisci(errore, OPENCARD_ERR_TROPPO_GRANDE);
         }
         memcpy(out->voci[i].nome, voce + TESTA_INDICE, lunghezza_nome);
         out->voci[i].nome[lunghezza_nome] = '\0';

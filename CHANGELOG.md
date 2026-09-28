@@ -7,7 +7,7 @@
 - Su un telefono Android in inglese, quando il file delle carte non si apre, il messaggio compare in inglese e non più in italiano.
 - Un CSV salvato con la password e riaperto con «Sostituisci» prende il posto delle carte che hai. Prima si aggiungeva e le carte restavano doppie.
 - Una carta arrivata da un backup con il colore scritto male si apre in modifica: prima su Android l'app si chiudeva. Il colore torna quello assegnato dall'app.
-- L'importazione rifiuta gli archivi ZIP che dichiarano per i file una dimensione diversa da quella vera. Da un backup si tolgono i nomi di foto che puntano fuori dalla cartella delle foto: la carta entra senza quella foto.
+- L'importazione rifiuta gli archivi ZIP che dichiarano per i file una dimensione diversa da quella vera, o che estratti occuperebbero più di 128 MB. Da un backup si tolgono i nomi di foto che puntano fuori dalla cartella delle foto: la carta entra senza quella foto.
 - Un backup con molte foto si riapre fino a 64 MB. Prima l'app rifiutava i file sopra i 10 MB, anche quelli che aveva appena esportato lei. Se le foto superano i 64 MB, l'esportazione lo dice subito invece di creare un file che non si riapre.
 - Da Catima, una carta con il valore del codice a barre diverso dal numero della carta entra con il codice giusto. Prima OpenCard disegnava il numero della carta e alla cassa si leggeva un altro codice. Il numero della carta finisce in fondo alla nota.
 - Su iPhone le foto di una carta non perdono più qualità quando si modifica la carta: prima si ricomprimevano a ogni salvataggio, anche se non erano cambiate.

@@ -48,7 +48,8 @@ opencard_esito opencard_zip_scrivi(const opencard_zip_voce *voci, size_t n,
                                    unsigned char **fuori, size_t *fuori_n,
                                    opencard_errore *errore);
 
-/* Legge un archivio. Le voci escono nell'ordine in cui stanno nell'indice. */
+/* Legge un archivio. Le voci escono nell'ordine in cui stanno nell'indice.
+ * Uno che estratto supera i 128 MB in tutto torna OPENCARD_ERR_TROPPO_GRANDE. */
 opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
                                   opencard_zip_lettura *out,
                                   opencard_errore *errore);
