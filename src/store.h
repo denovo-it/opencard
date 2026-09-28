@@ -69,7 +69,7 @@ typedef enum {
 } opencard_simbologia;
 
 /* Codici di errore. Le stringhe da mostrare le compone la UI, che sa in che
- * lingua sta parlando: opencard_errore_testo() dà la versione italiana. */
+ * lingua sta parlando, dai pezzi di opencard_errore_scomponi(). */
 typedef enum {
     OPENCARD_OK = 0,
     OPENCARD_ERR_IO = -1,           /* il file non si legge o non si scrive */
@@ -322,8 +322,22 @@ void opencard_color_for_id(int id, char *out, size_t out_size);
 /* Colore di una carta: quello scelto a mano, altrimenti quello dell'id. */
 void opencard_card_color(const opencard_card *card, char *out, size_t out_size);
 
-/* Messaggio italiano per un errore, pronto da mostrare. */
-void opencard_errore_testo(const opencard_errore *errore, char *out, size_t out_size);
+/* Il messaggio di un errore, a pezzi, perché lo scriva ogni app nella sua
+ * lingua: la chiave del testo nei file di src/lingue ("core_formato", o
+ * "errore_imprevisto" per un codice che non ha un testo suo) e fino a due
+ * argomenti già scritti, per i segnaposto {1:testo} e {2:testo}. Quelli che
+ * non servono restano vuoti.
+ *
+ * Fino alla 1.0.6 le tabelle erano tre: una per app e una in italiano qui.
+ * lingue/genera.py --controlla verifica che ogni chiave di questa funzione
+ * esista nei JSON delle lingue. */
+typedef struct {
+    const char *chiave;
+    char primo[OPENCARD_LABEL_MAX];
+    char secondo[OPENCARD_LABEL_MAX];
+} opencard_errore_parti;
+
+void opencard_errore_scomponi(const opencard_errore *errore, opencard_errore_parti *out);
 
 /* Ripara una stringa in posto perché diventi UTF-8 valido.
  *

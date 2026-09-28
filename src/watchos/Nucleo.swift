@@ -138,11 +138,15 @@ enum Nucleo {
 
     // MARK: - Stringhe C
 
+    /// Il messaggio nella lingua dell'orologio: la chiave e gli argomenti li dà
+    /// il core, la frase sta nei file di lingua, come sull'iPhone.
     private static func errore(_ guasto: opencard_errore) -> GuastoNucleo {
         var copia = guasto
-        var messaggio = [CChar](repeating: 0, count: 256)
-        opencard_errore_testo(&copia, &messaggio, messaggio.count)
-        return GuastoNucleo(description: stringa(messaggio))
+        var parti = opencard_errore_parti()
+        opencard_errore_scomponi(&copia, &parti)
+        let formato = NSLocalizedString(String(cString: parti.chiave), comment: "")
+        return GuastoNucleo(description: String(format: formato, testo(parti.primo),
+                                                testo(parti.secondo)))
     }
 
     private static func stringa(_ byte: [CChar]) -> String {

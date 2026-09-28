@@ -1627,78 +1627,50 @@ opencard_esito opencard_append_all(const opencard_lista *lista,
     return esito;
 }
 
-void opencard_errore_testo(const opencard_errore *errore, char *out, size_t out_size)
+void opencard_errore_scomponi(const opencard_errore *errore, opencard_errore_parti *out)
 {
-    if (out == NULL || out_size == 0) {
+    const char *chiave = "errore_imprevisto";
+
+    if (out == NULL) {
         return;
     }
-    if (errore == NULL || errore->codice == OPENCARD_OK) {
-        copia(out, out_size, "");
+    out->primo[0] = '\0';
+    out->secondo[0] = '\0';
+    if (errore == NULL) {
+        out->chiave = chiave;
         return;
     }
 
     switch (errore->codice) {
-    case OPENCARD_ERR_IO:
-        copia(out, out_size, "Il file non si legge o non si scrive.");
-        break;
-    case OPENCARD_ERR_JSON:
-        copia(out, out_size,
-              "Il file non è leggibile: non contiene un backup di OpenCard.");
-        break;
-    case OPENCARD_ERR_FORMATO:
-        copia(out, out_size, "Il file non è un backup di OpenCard.");
-        break;
+    case OPENCARD_ERR_IO:               chiave = "core_io"; break;
+    case OPENCARD_ERR_JSON:             chiave = "core_json"; break;
+    case OPENCARD_ERR_FORMATO:          chiave = "core_formato"; break;
     case OPENCARD_ERR_SCHEMA:
-        snprintf(out, out_size,
-                 "Backup creato da un'altra versione di OpenCard (formato %d). "
-                 "Questa versione legge il formato %d.",
-                 errore->schema_trovato, OPENCARD_SCHEMA_VERSION);
+        chiave = "core_schema";
+        snprintf(out->primo, sizeof(out->primo), "%d", errore->schema_trovato);
+        snprintf(out->secondo, sizeof(out->secondo), "%d", OPENCARD_SCHEMA_VERSION);
         break;
     case OPENCARD_ERR_CARTA:
+        snprintf(out->primo, sizeof(out->primo), "%d", errore->posizione);
         if (errore->dettaglio[0] != '\0') {
-            snprintf(out, out_size, "Carta %d (%s): dati non validi.",
-                     errore->posizione, errore->dettaglio);
+            chiave = "core_carta";
+            copia(out->secondo, sizeof(out->secondo), errore->dettaglio);
         } else {
-            snprintf(out, out_size, "Carta %d: formato non valido.",
-                     errore->posizione);
+            chiave = "core_carta_senza_dettaglio";
         }
         break;
-    case OPENCARD_ERR_MEMORIA:
-        copia(out, out_size, "Memoria esaurita.");
-        break;
-    case OPENCARD_ERR_NON_TROVATA:
-        copia(out, out_size, "La carta non esiste più.");
-        break;
-    case OPENCARD_ERR_ALTRO_TRASF:
-        copia(out, out_size,
-              "Questo codice appartiene a un altro passaggio di carte. "
-              "Ricomincia da capo su tutti e due i telefoni.");
-        break;
-    case OPENCARD_ERR_TRASF_INCOMPLETO:
-        copia(out, out_size, "Mancano ancora dei codici da inquadrare.");
-        break;
-    case OPENCARD_ERR_TRASF_ROTTO:
-        copia(out, out_size,
-              "I codici letti non tornano. Ricomincia il passaggio delle carte.");
-        break;
+    case OPENCARD_ERR_MEMORIA:          chiave = "core_memoria"; break;
+    case OPENCARD_ERR_NON_TROVATA:      chiave = "core_non_trovata"; break;
+    case OPENCARD_ERR_ALTRO_TRASF:      chiave = "core_altro_trasferimento"; break;
+    case OPENCARD_ERR_TRASF_INCOMPLETO: chiave = "core_trasferimento_incompleto"; break;
+    case OPENCARD_ERR_TRASF_ROTTO:      chiave = "core_trasferimento_rotto"; break;
     case OPENCARD_ERR_TRASF_VERSIONE:
-        snprintf(out, out_size,
-                 "Il codice arriva da una versione più recente di OpenCard "
-                 "(formato %d). Aggiorna l'app su questo telefono.",
-                 errore->schema_trovato);
+        chiave = "core_trasferimento_versione";
+        snprintf(out->primo, sizeof(out->primo), "%d", errore->schema_trovato);
         break;
-    case OPENCARD_ERR_TRASF_TROPPE:
-        copia(out, out_size,
-              "Le carte sono troppe per il passaggio con i QR. "
-              "Usa l'esportazione su file.");
-        break;
-    case OPENCARD_ERR_PASSWORD:
-        copia(out, out_size,
-              "La password non apre questo backup, oppure il file è stato "
-              "modificato.");
-        break;
-    default:
-        copia(out, out_size, "Errore imprevisto.");
-        break;
+    case OPENCARD_ERR_TRASF_TROPPE:     chiave = "core_trasferimento_troppe"; break;
+    case OPENCARD_ERR_PASSWORD:         chiave = "core_password"; break;
+    default:                            break;
     }
+    out->chiave = chiave;
 }

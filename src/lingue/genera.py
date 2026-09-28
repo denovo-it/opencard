@@ -18,6 +18,13 @@ Da lanciare dalla radice del progetto:
 Il secondo modo serve alla compilazione e ai controlli: esce con 1 se un file
 generato non corrisponde al JSON, cioè se qualcuno ha modificato a mano un
 `strings.xml` o un `Localizable.strings`.
+
+I messaggi degli errori del core: `opencard_errore_scomponi()` in `src/store.c`
+dà la chiave (`core_...` o `errore_imprevisto`) e gli argomenti già scritti.
+Da qui esce anche `TestiCore.kt`, la tabella da chiave a `R.string` per
+Android, così nessuno cerca le stringhe per nome (la riduzione delle risorse le
+toglierebbe). `--controlla` verifica che ogni chiave del core esista nei JSON e
+che i segnaposto di quelle frasi siano tutti `{n:testo}`.
 """
 
 import json
@@ -68,6 +75,49 @@ def per_piattaforma(voci, suffisso_da_tenere):
 
 def per_orologio(voci):
     return {c: t for c, t in voci.items() if c == "app_name" or c.endswith(SUFFISSO_OROLOGIO)}
+
+
+# I messaggi degli errori del core. L'app per Apple Watch li mostra, e li
+# prende insieme alle sue frasi; l'orologio Wear OS li manda solo al log.
+PREFISSO_CORE = "core_"
+ERRORE_GENERICO = "errore_imprevisto"
+
+
+def e_errore_core(chiave):
+    return chiave.startswith(PREFISSO_CORE) or chiave == ERRORE_GENERICO
+
+
+def per_apple_watch(voci):
+    return {c: t for c, t in voci.items()
+            if c == "app_name" or c.endswith(SUFFISSO_OROLOGIO) or e_errore_core(c)}
+
+
+def testi_core_kotlin(voci):
+    """La tabella da chiave del core a R.string, per Errori.kt."""
+    chiavi = [c for c in voci if e_errore_core(c)]
+    righe = [f"// {INTESTAZIONE}", "", "package srl.denovo.opencard", "",
+             "/** L'id del testo di un errore del core, dalla chiave di opencard_errore_scomponi(). */",
+             "internal fun testoCore(chiave: String): Int = when (chiave) {"]
+    righe += [f'    "{c}" -> R.string.{c}' for c in chiavi if c != ERRORE_GENERICO]
+    righe += [f"    else -> R.string.{ERRORE_GENERICO}", "}"]
+    return "\n".join(righe) + "\n"
+
+
+CHIAVE_NEL_CORE = re.compile(r'"((?:' + PREFISSO_CORE + r')[a-z_]+|' + ERRORE_GENERICO + r')"')
+
+
+def controlla_chiavi_core(voci):
+    """Le chiavi che il core può dare esistono, e i loro segnaposto sono testo."""
+    sorgente = (RADICE / "src/store.c").read_text(encoding="utf-8")
+    inizio = sorgente.index("void opencard_errore_scomponi(")
+    corpo = sorgente[inizio:sorgente.index("\n}\n", inizio)]
+    problemi = [f"manca nei JSON la chiave {c} di opencard_errore_scomponi()"
+                for c in sorted(set(CHIAVE_NEL_CORE.findall(corpo))) if c not in voci]
+    for chiave, testo in voci.items():
+        for _, tipo in SEGNAPOSTO.findall(testo) if e_errore_core(chiave) else []:
+            if tipo != "testo":
+                problemi.append(f"{chiave}: il core passa testo, non {{n:{tipo}}}")
+    return problemi
 
 
 def dividi_plurali(voci):
@@ -167,8 +217,11 @@ def destinazioni(lingua, voci):
         (RADICE / "src/ios" / f"{lingua}.lproj" / "Localizable.strings",
          testo_iphone(di_iphone).encode("utf-8")),
         (RADICE / "src/watchos" / f"{lingua}.lproj" / "Localizable.strings",
-         testo_iphone(per_orologio(voci)).encode("utf-8")),
+         testo_iphone(per_apple_watch(voci)).encode("utf-8")),
     ]
+    if lingua == LINGUA_BASE:
+        fatti.append((RADICE / "src/android/app/src/main/java/srl/denovo/opencard/TestiCore.kt",
+                      testi_core_kotlin(voci).encode("utf-8")))
     plurali = stringsdict(di_iphone)
     if plurali is not None:
         fatti.append((RADICE / "src/ios" / f"{lingua}.lproj" / "Localizable.stringsdict", plurali))
@@ -195,6 +248,14 @@ def main():
             percorso.parent.mkdir(parents=True, exist_ok=True)
             percorso.write_bytes(contenuto)
             print(f"scritto {percorso.relative_to(RADICE)} ({len(voci)} voci)")
+
+    problemi = []
+    for lingua in lingue:
+        problemi += [f"{lingua}.json: {p}" for p in controlla_chiavi_core(leggi(lingua))]
+    if problemi:
+        for p in problemi:
+            print(f"ERRORE: {p}")
+        return 1
 
     # Le traduzioni possono restare indietro, ma una chiave in più o scritta
     # storta non arriva da nessuna parte: meglio dirlo qui che a compilazione fatta.

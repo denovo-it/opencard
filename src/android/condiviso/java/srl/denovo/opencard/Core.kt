@@ -181,6 +181,14 @@ object Core {
         note: String, scadenza: String, saldo: String, fotoFronte: String, fotoRetro: String,
     )
 
+    /**
+     * I pezzi del messaggio di un errore del core: la chiave del testo nei
+     * file di lingua e i due argomenti già scritti. Li usa [Errori].
+     */
+    @JvmStatic external fun erroreParti(
+        codice: Int, posizione: Int, dettaglio: String, schemaTrovato: Int,
+    ): Array<String>
+
     /** Vero se la scadenza si può salvare: vuota, oppure "AAAA-MM-GG". */
     @JvmStatic external fun dataValida(testo: String): Boolean
 

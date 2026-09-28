@@ -417,6 +417,45 @@ Java_srl_denovo_opencard_Core_simbologieProprieta(JNIEnv *env, jclass classe)
     return array;
 }
 
+/* I pezzi del messaggio di un errore: chiave del testo e i due argomenti. */
+JNIEXPORT jobjectArray JNICALL
+Java_srl_denovo_opencard_Core_erroreParti(JNIEnv *env, jclass classe, jint codice,
+                                          jint posizione, jstring dettaglio, jint schema)
+{
+    opencard_errore errore;
+    opencard_errore_parti parti;
+    jclass classe_stringa;
+    jobjectArray array;
+    const char *pezzi[3];
+    int i;
+
+    (void)classe;
+    memset(&errore, 0, sizeof(errore));
+    errore.codice = (opencard_esito)codice;
+    errore.posizione = (int)posizione;
+    errore.schema_trovato = (int)schema;
+    if (!stringa(env, dettaglio, errore.dettaglio, sizeof(errore.dettaglio))) {
+        return NULL;
+    }
+    opencard_errore_scomponi(&errore, &parti);
+
+    classe_stringa = (*env)->FindClass(env, "java/lang/String");
+    if (classe_stringa == NULL) {
+        return NULL;
+    }
+    array = (*env)->NewObjectArray(env, 3, classe_stringa, NULL);
+    pezzi[0] = parti.chiave;
+    pezzi[1] = parti.primo;
+    pezzi[2] = parti.secondo;
+    for (i = 0; array != NULL && i < 3; i++) {
+        jstring testo = stringa_verso_java(env, pezzi[i]);
+
+        (*env)->SetObjectArrayElement(env, array, i, testo);
+        (*env)->DeleteLocalRef(env, testo);
+    }
+    return array;
+}
+
 JNIEXPORT jboolean JNICALL
 Java_srl_denovo_opencard_Core_dataValida(JNIEnv *env, jclass classe, jstring testo)
 {

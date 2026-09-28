@@ -1,5 +1,20 @@
 /* generato da src/lingue/genera.py: non modificarlo a mano */
 
 "app_name" = "OpenCard";
+"errore_imprevisto" = "Unexpected error.";
+"core_io" = "The file can't be read or written.";
+"core_json" = "The file isn't readable: it doesn't hold an OpenCard backup.";
+"core_formato" = "The file isn't an OpenCard backup.";
+"core_schema" = "Backup made by another version of OpenCard (format %1$@). This version reads format %2$@.";
+"core_carta" = "Card %1$@ (%2$@): invalid data.";
+"core_carta_senza_dettaglio" = "Card %1$@: invalid format.";
+"core_memoria" = "Out of memory.";
+"core_non_trovata" = "The card no longer exists.";
+"core_altro_trasferimento" = "This code belongs to another card transfer. Start over on both phones.";
+"core_trasferimento_incompleto" = "There are still codes left to scan.";
+"core_trasferimento_rotto" = "The codes read don't add up. Start the card transfer again.";
+"core_trasferimento_versione" = "The code comes from a newer version of OpenCard (format %1$@). Update the app on this phone.";
+"core_trasferimento_troppe" = "There are too many cards for the QR transfer. Use export to file.";
+"core_password" = "The password does not open this backup, or the file has been changed.";
 "nessuna_carta_wear" = "No cards yet. Open OpenCard on your phone: they arrive on their own.";
 "errore_dati_wear" = "The cards can't be read. Open OpenCard on your phone to send them again.";
