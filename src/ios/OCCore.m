@@ -234,6 +234,14 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     return opencard_next_id();
 }
 
++ (NSString *)dataDaMostrare:(NSString *)scadenza
+{
+    char mostrata[OPENCARD_DATA_MAX];
+
+    opencard_data_da_mostrare(scadenza.UTF8String, mostrata, sizeof(mostrata));
+    return [NSString stringWithUTF8String:mostrata] ?: @"";
+}
+
 #pragma mark - Scrittura
 
 + (BOOL)salva:(NSInteger)identificativo

@@ -203,9 +203,12 @@
 
                 <!-- Non si scrive a mano: si tocca e si apre il calendario, cosi'
                      la data e' sempre nel formato che il core accetta. La X in
-                     fondo la svuota. -->
+                     fondo la svuota. Mostra "GG/MM/AAAA", ma il valore da
+                     salvare lo tiene FormActivity: saveEnabled a false perche'
+                     ruotando lo schermo il testo non torni senza il valore. -->
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/scadenza"
+                    android:saveEnabled="false"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:cursorVisible="false"

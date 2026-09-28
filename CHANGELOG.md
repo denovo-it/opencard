@@ -1,5 +1,6 @@
 ## 1.0.7-dev (in lavorazione)
 
+- La scadenza si legge come 30/09/2026, sulla carta aperta e nel modulo, su Android e su iPhone. Prima sulla carta compariva 2026-09-30.
 - Su Android la scadenza si sceglie con il calendario del telefono.
 - Lo ZIP che esporta Catima si importa così com'è, senza doverne tirare fuori il CSV: prima OpenCard diceva che non era un backup. Come per il CSV, le carte si aggiungono a quelle che hai oppure prendono il loro posto.
 - Nel CSV per le altre app il saldo esce diviso in numero e valuta, come lo vuole Catima: «12,50 €» arriva a Catima come 12,50 euro, mentre prima Catima lo scartava. Un saldo in punti arriva come numero.

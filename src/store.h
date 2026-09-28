@@ -300,6 +300,12 @@ opencard_esito opencard_salva(const opencard_card *carta, int nuova,
  * loro. */
 int opencard_data_valida(const char *testo);
 
+/* La scadenza come la vede chi usa l'app, "GG/MM/AAAA", dalla "AAAA-MM-GG"
+ * del file. Una data vuota o non valida dà "". `out` almeno 11 byte.
+ * La scrive il core perché esca uguale dai due telefoni; nel file e nei
+ * backup resta "AAAA-MM-GG". */
+void opencard_data_da_mostrare(const char *scadenza, char *out, size_t out_size);
+
 /* Riscrive l'ordine di un gruppo lasciando l'altro dov'è.
  * Se gli id non sono esattamente quelli del gruppo non tocca niente: meglio un
  * riordino perso che una carta persa. */

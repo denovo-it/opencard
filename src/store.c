@@ -1503,6 +1503,18 @@ int opencard_data_valida(const char *testo)
     return data_valida(testo);
 }
 
+void opencard_data_da_mostrare(const char *scadenza, char *out, size_t out_size)
+{
+    if (out == NULL || out_size == 0) {
+        return;
+    }
+    out[0] = '\0';
+    if (scadenza == NULL || scadenza[0] == '\0' || !data_valida(scadenza)) {
+        return;
+    }
+    snprintf(out, out_size, "%.2s/%.2s/%.4s", scadenza + 8, scadenza + 5, scadenza);
+}
+
 opencard_esito opencard_salva(const opencard_card *carta, int nuova,
                               opencard_errore *errore)
 {

@@ -468,6 +468,20 @@ Java_srl_denovo_opencard_Core_dataValida(JNIEnv *env, jclass classe, jstring tes
     return opencard_data_valida(buffer) ? JNI_TRUE : JNI_FALSE;
 }
 
+JNIEXPORT jstring JNICALL
+Java_srl_denovo_opencard_Core_dataDaMostrare(JNIEnv *env, jclass classe, jstring scadenza)
+{
+    char buffer[32];
+    char mostrata[OPENCARD_DATA_MAX];
+
+    (void)classe;
+    if (!stringa(env, scadenza, buffer, sizeof(buffer))) {
+        return NULL;
+    }
+    opencard_data_da_mostrare(buffer, mostrata, sizeof(mostrata));
+    return (*env)->NewStringUTF(env, mostrata);
+}
+
 JNIEXPORT jint JNICALL
 Java_srl_denovo_opencard_Core_simbologiaAutomatica(JNIEnv *env, jclass classe, jstring code)
 {

@@ -331,7 +331,8 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
     }
     if (carta.scadenza.length > 0) {
         [righe addObject:[NSString stringWithFormat:@"%@: %@",
-                          NSLocalizedString(@"scadenza", nil), carta.scadenza]];
+                          NSLocalizedString(@"scadenza", nil),
+                          [OCCore dataDaMostrare:carta.scadenza]]];
     }
     if (carta.note.length > 0) {
         [righe addObject:carta.note];

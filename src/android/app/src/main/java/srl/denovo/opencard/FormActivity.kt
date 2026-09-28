@@ -78,6 +78,9 @@ class FormActivity : AppCompatActivity() {
     private var simbologiaNota = Simbologie.AUTO
     private lateinit var nota: EditText
     private lateinit var scadenza: EditText
+    /** La scadenza come la vuole il core, "AAAA-MM-GG" o vuota: il campo mostra
+     *  "GG/MM/AAAA", e al salvataggio si prende questa. */
+    private var scadenzaScelta = ""
     private lateinit var riquadroScadenza: TextInputLayout
     private lateinit var saldo: EditText
     private lateinit var bottoneFronte: Button
@@ -170,7 +173,7 @@ class FormActivity : AppCompatActivity() {
         // fuoco, e questo campo il fuoco non lo prende mai apposta, perche' la
         // data si sceglie dal calendario e non si scrive.
         riquadroScadenza = findViewById(R.id.riquadro_scadenza)
-        riquadroScadenza.setEndIconOnClickListener { scadenza.setText("") }
+        riquadroScadenza.setEndIconOnClickListener { mostraScadenza("") }
         scadenza.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(testo: Editable?) {
                 riquadroScadenza.isEndIconVisible = !testo.isNullOrEmpty()
@@ -276,7 +279,7 @@ class FormActivity : AppCompatActivity() {
                 codice.setText(carta.code)
                 mostraSimbologia(carta.simbologia)
                 nota.setText(carta.note)
-                scadenza.setText(carta.scadenza)
+                mostraScadenza(carta.scadenza)
                 saldo.setText(carta.saldo)
                 fotoAttuali = arrayOf(carta.fotoFronte, carta.fotoRetro)
                 mostraAnteprime()
@@ -291,6 +294,12 @@ class FormActivity : AppCompatActivity() {
         )
     }
 
+    /** La scadenza scelta, e nel campo come la legge chi usa l'app. */
+    private fun mostraScadenza(valore: String) {
+        scadenzaScelta = valore
+        scadenza.setText(Core.dataDaMostrare(valore))
+    }
+
     /**
      * Il calendario per la scadenza.
      *
@@ -300,7 +309,7 @@ class FormActivity : AppCompatActivity() {
      * sempre "AAAA-MM-GG".
      */
     private fun chiediLaData() {
-        val scritta = scadenza.text.toString().trim()
+        val scritta = scadenzaScelta
         val oggi = Calendar.getInstance()
         var anno = oggi.get(Calendar.YEAR)
         var mese = oggi.get(Calendar.MONTH)
@@ -315,7 +324,7 @@ class FormActivity : AppCompatActivity() {
         // chiama le API della barra di stato deprecate da Android 15, ed era
         // lui a far segnalare a Play l'edge-to-edge.
         DatePickerDialog(this, { _, a, m, g ->
-            scadenza.setText(String.format(Locale.US, "%04d-%02d-%02d", a, m + 1, g))
+            mostraScadenza(String.format(Locale.US, "%04d-%02d-%02d", a, m + 1, g))
         }, anno, mese, giorno).apply {
             setTitle(R.string.scadenza)
         }.show()
@@ -703,7 +712,7 @@ class FormActivity : AppCompatActivity() {
             mostraErrore(getString(R.string.simbologia_non_ci_sta, Simbologie.nomi[scelta]))
             return
         }
-        val quandoScade = scadenza.text.toString().trim()
+        val quandoScade = scadenzaScelta
         // La data la controlla anche il core, che rifiuta la carta: qui si
         // chiede prima, per dirlo con parole nostre invece che con
         // un'eccezione.

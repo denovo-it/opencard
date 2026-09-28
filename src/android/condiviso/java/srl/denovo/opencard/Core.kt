@@ -192,6 +192,9 @@ object Core {
     /** Vero se la scadenza si può salvare: vuota, oppure "AAAA-MM-GG". */
     @JvmStatic external fun dataValida(testo: String): Boolean
 
+    /** La scadenza da mostrare, "GG/MM/AAAA", da quella del file; "" se non c'è. */
+    @JvmStatic external fun dataDaMostrare(scadenza: String): String
+
     /** Il tipo di codice che sceglie Automatico: quello del codice, o il QR se non ci sta. */
     @JvmStatic external fun simbologiaAutomatica(code: String): Int
 

@@ -633,9 +633,8 @@ static const NSUInteger OCLimiteCodice = 500;
 {
     NSString *testo = NSLocalizedString(@"scadenza_nessuna", nil);
     if (self.dataScadenza != nil) {
-        testo = [NSDateFormatter localizedStringFromDate:self.dataScadenza
-                                               dateStyle:NSDateFormatterMediumStyle
-                                               timeStyle:NSDateFormatterNoStyle];
+        // «GG/MM/AAAA» dal core, come nel dettaglio e su Android.
+        testo = [OCCore dataDaMostrare:[self scadenzaScritta]];
     }
     [self.scadenza setTitle:testo forState:UIControlStateNormal];
     self.togliScadenza.hidden = self.dataScadenza == nil;

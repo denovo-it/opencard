@@ -68,6 +68,9 @@ static const NSInteger OCSimbologiaAuto = -1;
                  errore:(NSError **)errore;
 + (NSInteger)prossimoId;
 
+/// La scadenza da mostrare, "GG/MM/AAAA", da quella del file; "" se non c'è.
++ (NSString *)dataDaMostrare:(NSString *)scadenza;
+
 /// La carta del modulo, tutta insieme, in una scrittura sola. Con `nuova` va
 /// in fondo con il suo id, da chiedere prima a `prossimoId` perché il nome
 /// delle foto lo contiene; senza, prende il posto della carta con quell'id.

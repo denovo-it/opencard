@@ -126,7 +126,7 @@ class DettaglioActivity : AppCompatActivity() {
             righe += getString(R.string.saldo) + ": " + carta.saldo
         }
         if (carta.scadenza.isNotEmpty()) {
-            righe += getString(R.string.scadenza) + ": " + carta.scadenza
+            righe += getString(R.string.scadenza) + ": " + Core.dataDaMostrare(carta.scadenza)
         }
         if (carta.note.isNotEmpty()) {
             righe += carta.note
