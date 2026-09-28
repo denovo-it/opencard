@@ -638,11 +638,11 @@ static size_t colonna(const riga_csv *intestazione, const char *nome)
 }
 
 enum { C_STORE, C_NOTE, C_EXPIRY, C_BALANCE, C_BALANCETYPE, C_CARDID,
-       C_BARCODETYPE, C_HEADERCOLOR, C_STARSTATUS, C_QUANTE };
+       C_BARCODEID, C_BARCODETYPE, C_HEADERCOLOR, C_STARSTATUS, C_QUANTE };
 
 static const char *const NOMI_COLONNE[C_QUANTE] = {
     "store", "note", "expiry", "balance", "balancetype", "cardid",
-    "barcodetype", "headercolor", "starstatus"
+    "barcodeid", "barcodetype", "headercolor", "starstatus"
 };
 
 static int metti_in_lista(opencard_lista *lista, const opencard_card *carta)
@@ -694,6 +694,7 @@ opencard_esito opencard_csv_leggi(const unsigned char *dati, size_t quanti,
     while ((letta = prossima_riga(t, quanti, &pos, &riga)) == 1) {
         opencard_card carta;
         char campo_saldo[OPENCARD_SALDO_MAX];
+        const char *barcodeid;
 
         /* La tabella finisce dove finiscono le colonne: dopo c'è la riga vuota
          * e poi i collegamenti ai gruppi. */
@@ -707,7 +708,13 @@ opencard_esito opencard_csv_leggi(const unsigned char *dati, size_t quanti,
 
         memset(&carta, 0, sizeof(carta));
         metti(carta.label, sizeof(carta.label), valore(&riga, dove[C_STORE]));
-        metti(carta.code, sizeof(carta.code), valore(&riga, dove[C_CARDID]));
+        /* In Catima `cardid` è il numero della carta e `barcodeid`, quando
+         * c'è, il valore che il codice a barre porta davvero: disegnano quello
+         * (LoyaltyCardMainImageRenderer). Da noi il campo è uno, e alla cassa
+         * conta il codice. */
+        barcodeid = valore(&riga, dove[C_BARCODEID]);
+        metti(carta.code, sizeof(carta.code),
+              barcodeid[0] != '\0' ? barcodeid : valore(&riga, dove[C_CARDID]));
         carta.simbologia = simbologia_da_catima(valore(&riga, dove[C_BARCODETYPE]),
                                                 carta.code);
         carta.is_qrcode = carta.simbologia == OPENCARD_SIM_QR
@@ -716,6 +723,16 @@ opencard_esito opencard_csv_leggi(const unsigned char *dati, size_t quanti,
                          sizeof(carta.color));
         carta.favorite = strcmp(valore(&riga, dove[C_STARSTATUS]), "1") == 0;
         metti(carta.note, sizeof(carta.note), valore(&riga, dove[C_NOTE]));
+        /* Il numero della carta, se è diverso dal codice, non si perde: va in
+         * fondo alla nota, su una riga sua. Solo il numero, perché il core
+         * non sa in che lingua parla l'app. */
+        if (barcodeid[0] != '\0' && strcmp(barcodeid, valore(&riga, dove[C_CARDID])) != 0) {
+            char nota[OPENCARD_NOTE_MAX * 2];
+
+            snprintf(nota, sizeof(nota), "%s%s%s", carta.note,
+                     carta.note[0] != '\0' ? "\n" : "", valore(&riga, dove[C_CARDID]));
+            metti(carta.note, sizeof(carta.note), nota);
+        }
         data_da_millis(valore(&riga, dove[C_EXPIRY]), carta.scadenza,
                        sizeof(carta.scadenza));
         saldo_leggibile(valore(&riga, dove[C_BALANCE]),
