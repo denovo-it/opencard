@@ -594,6 +594,9 @@ class MainActivity : AppCompatActivity() {
 
     /** La password si chiede solo se il file ce l'ha: chi non l'ha mai usata non vede niente di nuovo. */
     private fun chiediPasswordSeServe(dati: ByteArray) {
+        // Qui si arriva dopo «Sostituisci», o senza carte: anche un CSV chiuso
+        // con la password prende il posto di quelle che ci sono. Con false si
+        // aggiungeva, e le carte finivano doppie.
         if (Core.fileTipo(dati) == Core.FILE_CIFRATO) {
             chiediPassword(
                 R.string.password_apri_titolo,
@@ -601,13 +604,13 @@ class MainActivity : AppCompatActivity() {
                 vuotoAmmesso = false,
                 // Qui non si salva niente: si apre un file che c'e' gia'.
                 bottone = R.string.apri,
-            ) { password -> scriviLeCarte(dati, password) }
+            ) { password -> scriviLeCarte(dati, password, sostituisciCsv = true) }
         } else {
-            scriviLeCarte(dati, "")
+            scriviLeCarte(dati, "", sostituisciCsv = true)
         }
     }
 
-    private fun scriviLeCarte(dati: ByteArray, password: String, sostituisciCsv: Boolean = false) {
+    private fun scriviLeCarte(dati: ByteArray, password: String, sostituisciCsv: Boolean) {
         Dati.chiedi(
             // Archivio, CSV o JSON, con o senza password: il core riconosce il
             // file, rimette a posto le foto e scrive le carte in una volta.

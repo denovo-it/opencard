@@ -832,8 +832,11 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 /// vede niente di nuovo.
 - (void)chiediPasswordSeServe:(NSData *)contenuto
 {
+    // Qui si arriva dopo «Sostituisci», o senza carte: anche un CSV chiuso con
+    // la password prende il posto di quelle che ci sono. Con NO si aggiungeva,
+    // e le carte finivano doppie.
     if ([OCCore tipoFile:contenuto] != OCTipoFileCifrato) {
-        [self scriviLeCarte:contenuto password:@""];
+        [self scriviLeCarte:contenuto password:@"" sostituisciCsv:YES];
         return;
     }
     [self chiediPasswordConTitolo:NSLocalizedString(@"password_apri_titolo", nil)
@@ -842,13 +845,8 @@ static const NSUInteger OCCartePerLaRicerca = 5;
                           // Qui non si salva niente: si apre un file che c'è già.
                           bottone:NSLocalizedString(@"apri", nil)
                               poi:^(NSString *password) {
-        [self scriviLeCarte:contenuto password:password];
+        [self scriviLeCarte:contenuto password:password sostituisciCsv:YES];
     }];
-}
-
-- (void)scriviLeCarte:(NSData *)dati password:(NSString *)password
-{
-    [self scriviLeCarte:dati password:password sostituisciCsv:NO];
 }
 
 - (void)scriviLeCarte:(NSData *)dati password:(NSString *)password sostituisciCsv:(BOOL)sostituisciCsv

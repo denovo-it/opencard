@@ -5,6 +5,9 @@
 - Nel CSV per le altre app il saldo esce diviso in numero e valuta, come lo vuole Catima: «12,50 €» arriva a Catima come 12,50 euro, mentre prima Catima lo scartava. Un saldo in punti arriva come numero.
 - Eliminando una carta ne sparivano i dati ma non le foto: su iPhone restavano sempre, anche dopo «Cancella tutti i tuoi dati». Su Android restavano quando la carta si eliminava dall'elenco. Ora le foto se ne vanno con la carta. Al primo avvio l'app toglie quelle rimaste dalle versioni precedenti, che finivano anche nel backup del telefono.
 - Su un telefono Android in inglese, quando il file delle carte non si apre, il messaggio compare in inglese e non più in italiano.
+- Un CSV salvato con la password e riaperto con «Sostituisci» prende il posto delle carte che hai. Prima si aggiungeva e le carte restavano doppie.
+- Una carta arrivata da un backup con il colore scritto male si apre in modifica: prima su Android l'app si chiudeva. Il colore torna quello assegnato dall'app.
+- L'importazione rifiuta gli archivi ZIP che dichiarano per i file una dimensione diversa da quella vera. Da un backup si tolgono i nomi di foto che puntano fuori dalla cartella delle foto: la carta entra senza quella foto.
 
 ## 1.0.6
 

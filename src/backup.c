@@ -267,15 +267,6 @@ opencard_tipo_file opencard_file_tipo(const unsigned char *dati, size_t quanti)
     return OPENCARD_FILE_JSON;
 }
 
-/* Un nome di foto che resta dentro la cartella: niente barre, niente "..",
- * niente file nascosti. Un archivio costruito male potrebbe portare
- * `../../altro`, e un file scritto fuori dalla cartella sarebbe un guaio. */
-static int nome_sicuro(const char *nome)
-{
-    return nome[0] != '\0' && nome[0] != '.' && strchr(nome, '/') == NULL
-           && strchr(nome, '\\') == NULL && strstr(nome, "..") == NULL;
-}
-
 static int percorso_foto(const char *nome, char *out, size_t out_size)
 {
     const char *cartella = opencard_store_cartella_foto();
@@ -359,7 +350,7 @@ static opencard_esito scrivi_archivio(const opencard_lista *tutte,
         for (j = 0; j < 2; j++) {
             int gia = 0;
 
-            if (!nome_sicuro(foto[j])) {
+            if (!opencard_foto_nome_sicuro(foto[j])) {
                 continue;
             }
             for (k = 1; k < n && !gia; k++) {
@@ -474,7 +465,7 @@ static opencard_esito leggi_archivio(const unsigned char *dati, size_t quanti,
         const char *base = base_nome(lettura.voci[i].nome);
         int nominata = 0;
 
-        if (!nome_sicuro(base) || strcmp(base, NOME_ELENCO) == 0) {
+        if (!opencard_foto_nome_sicuro(base) || strcmp(base, NOME_ELENCO) == 0) {
             continue;
         }
         for (j = 0; j < out->n && !nominata; j++) {

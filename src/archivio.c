@@ -414,6 +414,13 @@ opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
         }
 
         if (metodo == 0) {
+            /* Senza compressione le due lunghezze sono la stessa. Il controllo
+             * qui sopra guarda la compressa e la copia usa la distesa: se
+             * l'indice le dà diverse, si leggerebbe oltre la fine del file. */
+            if (compressa != distesa) {
+                opencard_zip_libera(out);
+                return fallisci(errore, OPENCARD_ERR_JSON);
+            }
             contenuto = malloc(distesa + 1);
             if (contenuto == NULL) {
                 opencard_zip_libera(out);

@@ -661,7 +661,7 @@ class FormActivity : AppCompatActivity() {
         colori.forEach { colore ->
             val quadretto = layoutInflater.inflate(R.layout.item_colore, tavolozza, false)
             val scheda = quadretto.findViewById<MaterialCardView>(R.id.quadretto)
-            scheda.setCardBackgroundColor(Color.parseColor(colore))
+            scheda.setCardBackgroundColor(coloreCarta(colore))
             scheda.strokeWidth = if (colore.equals(attuale, ignoreCase = true)) 8 else 0
             scheda.setOnClickListener {
                 coloreScelto = colore

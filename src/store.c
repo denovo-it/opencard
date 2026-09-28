@@ -537,6 +537,31 @@ static int data_valida(const char *testo)
     return 1;
 }
 
+/* Un colore si tiene solo scritto per intero, "#RRGGBB": il file arriva anche
+ * da fuori, e le interfacce lo passano così com'è al sistema, che con
+ * qualsiasi altra cosa si ferma. */
+static int colore_valido(const char *testo)
+{
+    int i;
+
+    if (strlen(testo) != 7 || testo[0] != '#') {
+        return 0;
+    }
+    for (i = 1; i < 7; i++) {
+        char c = testo[i];
+        if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int opencard_foto_nome_sicuro(const char *nome)
+{
+    return nome != NULL && nome[0] != '\0' && nome[0] != '.' && strchr(nome, '/') == NULL
+           && strchr(nome, '\\') == NULL && strstr(nome, "..") == NULL;
+}
+
 static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema_del_file,
                                     opencard_card *out, opencard_errore *errore)
 {
@@ -629,6 +654,10 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
     opencard_utf8_ripara(out->label);
     opencard_utf8_ripara(out->code);
     opencard_utf8_ripara(out->color);
+    /* Un colore che non si legge non ferma la carta: torna quello dell'id. */
+    if (!colore_valido(out->color)) {
+        out->color[0] = '\0';
+    }
     out->disposable = cJSON_IsTrue(disposable) ? 1 : 0;
     /* Campo assente vuol dire "non preferita": è così che i file scritti
      * dalle versioni precedenti restano validi senza convertire niente. */
@@ -668,6 +697,15 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
         opencard_utf8_ripara(out->foto_retro);
     } else if (foto_retro != NULL && !cJSON_IsNull(foto_retro)) {
         return segnala(errore, OPENCARD_ERR_CARTA);
+    }
+    /* Le interfacce aprono e cancellano le foto per nome, dentro la loro
+     * cartella: un nome come "../opencard.json" farebbe cancellare il file
+     * delle carte. Si toglie il nome, la carta resta. */
+    if (!opencard_foto_nome_sicuro(out->foto_fronte)) {
+        out->foto_fronte[0] = '\0';
+    }
+    if (!opencard_foto_nome_sicuro(out->foto_retro)) {
+        out->foto_retro[0] = '\0';
     }
 
     if (errore != NULL) {

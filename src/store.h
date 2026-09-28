@@ -352,6 +352,11 @@ void opencard_errore_scomponi(const opencard_errore *errore, opencard_errore_par
  * costruito apposta può far cadere l'app. */
 void opencard_utf8_ripara(char *s);
 
+/* Vero se il nome di una foto resta dentro la cartella delle foto: non vuoto,
+ * niente barre, niente "..", niente file nascosti. La lettura delle carte
+ * toglie i nomi che non lo sono, e l'archivio non scrive altro. */
+int opencard_foto_nome_sicuro(const char *nome);
+
 /* Servizio interno, condiviso con il modulo dei backup: il file dei dati e il
  * file di backup hanno lo stesso formato, quindi la lettura e la scrittura
  * delle carte sono le stesse. I puntatori sono `void *` per non far entrare
