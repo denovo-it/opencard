@@ -93,6 +93,7 @@ opencard_tipo_file opencard_file_tipo(const unsigned char *dati, size_t quanti);
  * cifra male. Le foto nominate da una carta ma sparite dal disco si saltano,
  * e una foto nominata da due carte entra una volta.
  * `esportato_il` è l'istante ISO 8601, dato dalla piattaforma.
+ * Un file che supererebbe OPENCARD_FILE_MAX torna OPENCARD_ERR_TROPPO_GRANDE.
  * Chi chiama libera con opencard_cripto_free().
  */
 opencard_esito opencard_esporta(opencard_formato formato, const char *esportato_il,
@@ -110,7 +111,8 @@ opencard_esito opencard_esporta(opencard_formato formato, const char *esportato_
  * carta nomina: il nome non può portare fuori dalla cartella.
  *
  * Un file cifrato senza password torna OPENCARD_ERR_PASSWORD. Un archivio
- * senza opencard.json torna OPENCARD_ERR_FORMATO. In `quante`, se non è NULL,
+ * senza opencard.json torna OPENCARD_ERR_FORMATO. Uno più grande di
+ * OPENCARD_FILE_MAX torna OPENCARD_ERR_TROPPO_GRANDE. In `quante`, se non è NULL,
  * le carte entrate.
  */
 opencard_esito opencard_importa(const unsigned char *dati, size_t quanti,

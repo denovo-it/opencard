@@ -412,13 +412,25 @@ opencard_esito opencard_esporta(opencard_formato formato, const char *esportato_
     if (password == NULL || password[0] == '\0') {
         *byte = chiaro;
         *quanti = chiaro_n;
-        return OPENCARD_OK;
+    } else {
+        esito = opencard_cripto_cifra(chiaro, chiaro_n, password, byte, quanti, errore);
+        /* In chiaro qui dentro ci sono i numeri delle tessere e le foto. */
+        crypto_wipe(chiaro, chiaro_n);
+        free(chiaro);
+        if (esito != OPENCARD_OK) {
+            return esito;
+        }
     }
-    esito = opencard_cripto_cifra(chiaro, chiaro_n, password, byte, quanti, errore);
-    /* In chiaro qui dentro ci sono i numeri delle tessere e le foto. */
-    crypto_wipe(chiaro, chiaro_n);
-    free(chiaro);
-    return esito;
+    /* Un file che l'importazione rifiuterebbe non esce: meglio saperlo adesso
+     * che il giorno in cui serve il ripristino. */
+    if (*quanti > OPENCARD_FILE_MAX) {
+        crypto_wipe(*byte, *quanti);
+        free(*byte);
+        *byte = NULL;
+        *quanti = 0;
+        return segnala(errore, OPENCARD_ERR_TROPPO_GRANDE);
+    }
+    return OPENCARD_OK;
 }
 
 /* Le carte di un archivio, con le foto rimesse a posto. Uno ZIP di Catima
@@ -503,6 +515,9 @@ opencard_esito opencard_importa(const unsigned char *dati, size_t quanti,
      * a zero vorrebbe dire "misura la stringa", su un buffer senza NUL. */
     if (quanti == 0) {
         return segnala(errore, OPENCARD_ERR_JSON);
+    }
+    if (quanti > OPENCARD_FILE_MAX) {
+        return segnala(errore, OPENCARD_ERR_TROPPO_GRANDE);
     }
     if (opencard_cripto_e_cifrato(dati, quanti)) {
         if (password == NULL || password[0] == '\0') {

@@ -116,6 +116,11 @@ typedef NS_ENUM(NSInteger, OCTipoFile) {
 
 + (OCTipoFile)tipoFile:(NSData *)dati;
 
+/// Il file più grande che l'importazione accetta e che l'esportazione produce
+/// (`OPENCARD_FILE_MAX`), e il messaggio per chi ne sceglie uno più grande.
++ (long long)fileMassimo;
++ (NSString *)testoFileTroppoGrande;
+
 /// Il file da salvare con tutte le carte: l'archivio con le foto, oppure il
 /// CSV di Catima. Con la password non vuota esce chiuso, foto comprese.
 + (nullable NSData *)esportaCsv:(BOOL)csv password:(NSString *)password errore:(NSError **)errore;

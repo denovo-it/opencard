@@ -88,8 +88,18 @@ typedef enum {
     OPENCARD_ERR_TRASF_TROPPE = -13,    /* troppe carte per stare nei QR */
     /* Backup cifrato: password sbagliata o pacchetto manomesso. I due casi
      * danno lo stesso codice apposta, non si distinguono da fuori. */
-    OPENCARD_ERR_PASSWORD = -14
+    OPENCARD_ERR_PASSWORD = -14,
+    /* Il file da importare, o quello che l'esportazione produrrebbe, supera
+     * OPENCARD_FILE_MAX. */
+    OPENCARD_ERR_TROPPO_GRANDE = -15
 } opencard_esito;
+
+/* Il file più grande che l'importazione accetta e che l'esportazione produce:
+ * lo stesso numero dalle due parti, così un backup uscito dall'app si riapre
+ * sempre. Una foto salvata pesa circa 230 KB, quindi ci stanno più di cento
+ * carte con fronte e retro; il tetto tiene fuori il file sbagliato, che le
+ * app caricano tutto in memoria. */
+#define OPENCARD_FILE_MAX (64u * 1024u * 1024u)
 
 /* Che cosa è andato storto, per comporre un messaggio utile all'utente.
  * `posizione` conta le carte da 1, `dettaglio` può essere il nome

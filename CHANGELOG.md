@@ -8,6 +8,7 @@
 - Un CSV salvato con la password e riaperto con «Sostituisci» prende il posto delle carte che hai. Prima si aggiungeva e le carte restavano doppie.
 - Una carta arrivata da un backup con il colore scritto male si apre in modifica: prima su Android l'app si chiudeva. Il colore torna quello assegnato dall'app.
 - L'importazione rifiuta gli archivi ZIP che dichiarano per i file una dimensione diversa da quella vera. Da un backup si tolgono i nomi di foto che puntano fuori dalla cartella delle foto: la carta entra senza quella foto.
+- Un backup con molte foto si riapre fino a 64 MB. Prima l'app rifiutava i file sopra i 10 MB, anche quelli che aveva appena esportato lei. Se le foto superano i 64 MB, l'esportazione lo dice subito invece di creare un file che non si riapre.
 
 ## 1.0.6
 

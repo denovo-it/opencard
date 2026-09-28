@@ -742,16 +742,16 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 
     BOOL protetto = [scelto startAccessingSecurityScopedResource];
 
-    /* Un backup vero pesa qualche decina di kilobyte: dieci megabyte coprono
-     * qualsiasi caso reale. Il tetto tiene fuori il file sbagliato scelto per
-     * errore, che verrebbe caricato tutto in memoria prima di scoprirlo. */
+    /* Il tetto è quello del core, lo stesso dell'esportazione: tiene fuori il
+     * file sbagliato scelto per errore, che verrebbe caricato tutto in memoria
+     * prima di scoprirlo, e lascia entrare ogni backup uscito dall'app. */
     NSNumber *dimensione = nil;
     [scelto getResourceValue:&dimensione forKey:NSURLFileSizeKey error:NULL];
-    if (dimensione != nil && dimensione.longLongValue > 10 * 1024 * 1024) {
+    if (dimensione != nil && dimensione.longLongValue > [OCCore fileMassimo]) {
         if (protetto) {
             [scelto stopAccessingSecurityScopedResource];
         }
-        [self avvisa:NSLocalizedString(@"backup_troppo_grande", nil)];
+        [self avvisa:[OCCore testoFileTroppoGrande]];
         return;
     }
 

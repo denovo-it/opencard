@@ -1019,6 +1019,14 @@ Java_srl_denovo_opencard_Core_fileTipo(JNIEnv *env, jclass classe, jbyteArray da
     return tipo;
 }
 
+/* Il file più grande che l'importazione accetta: Kotlin smette di leggere lì. */
+JNIEXPORT jint JNICALL
+Java_srl_denovo_opencard_Core_fileMassimo(JNIEnv *env, jclass classe)
+{
+    (void)env; (void)classe;
+    return (jint)OPENCARD_FILE_MAX;
+}
+
 JNIEXPORT jint JNICALL
 Java_srl_denovo_opencard_Core_importa(JNIEnv *env, jclass classe, jbyteArray dati,
                                       jstring password, jboolean sostituisci)

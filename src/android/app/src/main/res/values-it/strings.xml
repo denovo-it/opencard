@@ -67,7 +67,6 @@
     <string name="backup_annullato">Esportazione annullata.</string>
     <string name="backup_non_scritto">Esportazione non riuscita.</string>
     <string name="backup_non_letto">Non sono riuscito a leggere il file.</string>
-    <string name="backup_troppo_grande">Il file è troppo grande per essere un backup di OpenCard.</string>
     <string name="niente_da_esportare">Non c\'è ancora nessuna carta da esportare.</string>
     <string name="trasferisci">Copia tra telefoni</string>
     <string name="trasferimento_titolo">Copia tra telefoni</string>
@@ -141,6 +140,7 @@
     <string name="core_trasferimento_versione">Il codice arriva da una versione più recente di OpenCard (formato %1$s). Aggiorna l\'app su questo telefono.</string>
     <string name="core_trasferimento_troppe">Le carte sono troppe per il passaggio con i QR. Usa l\'esportazione su file.</string>
     <string name="core_password">La password non apre questo backup, oppure il file è stato modificato.</string>
+    <string name="core_troppo_grande">Il backup supera i %1$s MB, il massimo che OpenCard riesce a riaprire.</string>
     <string name="nota">Nota</string>
     <string name="scadenza">Scadenza</string>
     <string name="saldo">Saldo</string>

@@ -257,6 +257,15 @@ object Core {
     const val FILE_CSV = 2
     const val FILE_CIFRATO = 3
 
+    /** Il file più grande che [importa] accetta e che [esporta] produce, OPENCARD_FILE_MAX. */
+    @JvmStatic external fun fileMassimo(): Int
+
+    /** OPENCARD_ERR_TROPPO_GRANDE di store.h: il file supera [fileMassimo]. */
+    const val ERRORE_TROPPO_GRANDE = -15
+
+    /** OPENCARD_ERR_MEMORIA di store.h. */
+    const val ERRORE_MEMORIA = -6
+
     /* Passaggio delle carte fra due telefoni con i QR. Il formato e il perché
      * delle scelte stanno in src/transfer.h. */
 

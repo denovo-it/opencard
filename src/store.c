@@ -1708,6 +1708,10 @@ void opencard_errore_scomponi(const opencard_errore *errore, opencard_errore_par
         break;
     case OPENCARD_ERR_TRASF_TROPPE:     chiave = "core_trasferimento_troppe"; break;
     case OPENCARD_ERR_PASSWORD:         chiave = "core_password"; break;
+    case OPENCARD_ERR_TROPPO_GRANDE:
+        chiave = "core_troppo_grande";
+        snprintf(out->primo, sizeof(out->primo), "%u", OPENCARD_FILE_MAX / (1024u * 1024u));
+        break;
     default:                            break;
     }
     out->chiave = chiave;

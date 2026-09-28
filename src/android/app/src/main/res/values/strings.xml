@@ -67,7 +67,6 @@
     <string name="backup_annullato">Export canceled.</string>
     <string name="backup_non_scritto">Export failed.</string>
     <string name="backup_non_letto">The file couldn\'t be read.</string>
-    <string name="backup_troppo_grande">The file is too big to be an OpenCard backup.</string>
     <string name="niente_da_esportare">There are no cards to export yet.</string>
     <string name="trasferisci">Copy between phones</string>
     <string name="trasferimento_titolo">Copy between phones</string>
@@ -141,6 +140,7 @@
     <string name="core_trasferimento_versione">The code comes from a newer version of OpenCard (format %1$s). Update the app on this phone.</string>
     <string name="core_trasferimento_troppe">There are too many cards for the QR transfer. Use export to file.</string>
     <string name="core_password">The password does not open this backup, or the file has been changed.</string>
+    <string name="core_troppo_grande">The backup is over %1$s MB, the most OpenCard can open.</string>
     <string name="nota">Note</string>
     <string name="scadenza">Expiry</string>
     <string name="saldo">Balance</string>

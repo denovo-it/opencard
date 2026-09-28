@@ -376,6 +376,17 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     return (OCTipoFile)opencard_file_tipo((const unsigned char *)dati.bytes, dati.length);
 }
 
++ (long long)fileMassimo
+{
+    return OPENCARD_FILE_MAX;
+}
+
++ (NSString *)testoFileTroppoGrande
+{
+    opencard_errore errore = {OPENCARD_ERR_TROPPO_GRANDE, 0, {0}, 0};
+    return [self testoDi:&errore];
+}
+
 + (NSData *)esportaCsv:(BOOL)csv password:(NSString *)password errore:(NSError **)errore
 {
     NSDateFormatter *formato = [NSDateFormatter new];

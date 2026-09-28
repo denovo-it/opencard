@@ -16,5 +16,6 @@
 "core_trasferimento_versione" = "The code comes from a newer version of OpenCard (format %1$@). Update the app on this phone.";
 "core_trasferimento_troppe" = "There are too many cards for the QR transfer. Use export to file.";
 "core_password" = "The password does not open this backup, or the file has been changed.";
+"core_troppo_grande" = "The backup is over %1$@ MB, the most OpenCard can open.";
 "nessuna_carta_wear" = "No cards yet. Open OpenCard on your phone: they arrive on their own.";
 "errore_dati_wear" = "The cards can't be read. Open OpenCard on your phone to send them again.";

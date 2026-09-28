@@ -7,6 +7,7 @@ package srl.denovo.opencard
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.os.Bundle
 import android.annotation.SuppressLint
 import android.text.Editable
@@ -537,16 +538,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun leggiBackup(sorgente: Uri) {
         // Lettura sul thread dei dati: il file può stare su un provider lento
-        // (Drive) e sul thread dell'interfaccia sarebbe un ANR. Il tetto tiene
-        // fuori il file sbagliato scelto per errore: un backup vero pesa
-        // qualche decina di kilobyte. Si legge prima di fare domande, perché
-        // la domanda giusta dipende da che file è.
+        // (Drive) e sul thread dell'interfaccia sarebbe un ANR. Il tetto è
+        // quello del core, lo stesso dell'esportazione: tiene fuori il file
+        // sbagliato scelto per errore e lascia entrare ogni backup dell'app.
+        // Si legge prima di fare domande, perché la domanda giusta dipende da
+        // che file è.
         Dati.chiedi(
             {
                 val dati = try {
-                    contentResolver.openInputStream(sorgente)?.use { leggiConTetto(it) }
+                    val misura = misura(sorgente)
+                    contentResolver.openInputStream(sorgente)?.use { leggiConTetto(it, misura) }
                 } catch (e: OpenCardException) {
                     throw e
+                } catch (e: OutOfMemoryError) {
+                    // Un Error, non un'eccezione: senza, l'app si chiude.
+                    throw OpenCardException(Core.ERRORE_MEMORIA, 0, "", 0)
                 } catch (e: Exception) {
                     null
                 } ?: throw OpenCardException(getString(R.string.backup_non_letto))
@@ -623,18 +629,44 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    /** Legge tutto il flusso, ma si ferma se supera i dieci megabyte. */
-    private fun leggiConTetto(flusso: java.io.InputStream): ByteArray {
-        val tetto = 10 * 1024 * 1024
+    /** Quanto è grande il file secondo il sistema, -1 se non lo sa. */
+    private fun misura(sorgente: Uri): Long =
+        contentResolver.query(sorgente, arrayOf(OpenableColumns.SIZE), null, null, null)?.use {
+            if (it.moveToFirst() && !it.isNull(0)) it.getLong(0) else -1L
+        } ?: -1L
+
+    /**
+     * Legge tutto il file, ma non oltre il tetto del core.
+     *
+     * Conta la memoria: raccolto in un ByteArrayOutputStream, un file oltre i
+     * 64 MB faceva chiedere un buffer da 128, e su Bliss l'app si chiudeva.
+     * Con la misura nota si legge in un array della misura giusta, senza
+     * raddoppi e senza la copia finale; senza, la raccolta si ferma prima di
+     * scrivere il blocco che la porterebbe oltre il tetto.
+     */
+    private fun leggiConTetto(flusso: java.io.InputStream, misura: Long): ByteArray {
+        val tetto = Core.fileMassimo()
+        val troppoGrande = OpenCardException(Core.ERRORE_TROPPO_GRANDE, 0, "", 0)
+        if (misura > tetto) throw troppoGrande
+        if (misura >= 0) {
+            val dati = ByteArray(misura.toInt())
+            var letti = 0
+            while (letti < dati.size) {
+                val n = flusso.read(dati, letti, dati.size - letti)
+                if (n < 0) return dati.copyOf(letti)
+                letti += n
+            }
+            // Più lungo di quanto diceva il sistema: meglio non fidarsi.
+            if (flusso.read() >= 0) throw OpenCardException(getString(R.string.backup_non_letto))
+            return dati
+        }
         val raccolta = java.io.ByteArrayOutputStream()
         val blocco = ByteArray(64 * 1024)
         while (true) {
             val letti = flusso.read(blocco)
             if (letti < 0) return raccolta.toByteArray()
+            if (raccolta.size() + letti > tetto) throw troppoGrande
             raccolta.write(blocco, 0, letti)
-            if (raccolta.size() > tetto) {
-                throw OpenCardException(getString(R.string.backup_troppo_grande))
-            }
         }
     }
 

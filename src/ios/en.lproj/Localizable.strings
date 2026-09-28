@@ -66,7 +66,6 @@
 "backup_annullato" = "Export canceled.";
 "backup_non_scritto" = "Export failed.";
 "backup_non_letto" = "The file couldn't be read.";
-"backup_troppo_grande" = "The file is too big to be an OpenCard backup.";
 "niente_da_esportare" = "There are no cards to export yet.";
 "trasferisci" = "Copy between phones";
 "trasferimento_titolo" = "Copy between phones";
@@ -139,6 +138,7 @@
 "core_trasferimento_versione" = "The code comes from a newer version of OpenCard (format %1$@). Update the app on this phone.";
 "core_trasferimento_troppe" = "There are too many cards for the QR transfer. Use export to file.";
 "core_password" = "The password does not open this backup, or the file has been changed.";
+"core_troppo_grande" = "The backup is over %1$@ MB, the most OpenCard can open.";
 "nota" = "Note";
 "scadenza" = "Expiry";
 "saldo" = "Balance";

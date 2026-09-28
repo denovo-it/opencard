@@ -18,5 +18,6 @@ internal fun testoCore(chiave: String): Int = when (chiave) {
     "core_trasferimento_versione" -> R.string.core_trasferimento_versione
     "core_trasferimento_troppe" -> R.string.core_trasferimento_troppe
     "core_password" -> R.string.core_password
+    "core_troppo_grande" -> R.string.core_troppo_grande
     else -> R.string.errore_imprevisto
 }
