@@ -130,36 +130,9 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     return directory;
 }
 
-/// Recupera il file delle carte se è rimasto in una posizione usata da
-/// un'installazione precedente: aggiornando l'app il sistema conserva i dati,
-/// ma sotto un'altra directory, e senza questo l'app partirebbe vuota.
-+ (void)recuperaDatiEsistentiIn:(NSString *)directory
-{
-    NSFileManager *fm = [NSFileManager defaultManager];
-    NSString *attuale = [directory stringByAppendingPathComponent:@"opencard.json"];
-
-    if ([fm fileExistsAtPath:attuale]) {
-        return;
-    }
-
-    NSArray<NSString *> *possibili = @[
-        [directory stringByAppendingPathComponent:@"flet/opencard.json"],
-        [directory stringByAppendingPathComponent:@"flet/app/opencard.json"],
-    ];
-
-    for (NSString *candidato in possibili) {
-        if ([fm fileExistsAtPath:candidato]) {
-            // Si copia, non si sposta: se qualcosa va storto l'originale resta.
-            [fm copyItemAtPath:candidato toPath:attuale error:NULL];
-            return;
-        }
-    }
-}
-
 + (BOOL)apriConErrore:(NSError **)errore
 {
     NSString *directory = [self directoryDati];
-    [self recuperaDatiEsistentiIn:directory];
 
     opencard_errore guasto = {OPENCARD_ERR_IO, 0, {0}, 0};
 

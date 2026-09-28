@@ -39,7 +39,6 @@ object Dati {
     fun apri(contesto: Context) {
         applicazione = contesto.applicationContext
         fileCarte = File(contesto.filesDir, "opencard.json")
-        recuperaDatiEsistenti(contesto)
         Core.storeInit(contesto.filesDir.absolutePath)
         // La chiave prima di qualsiasi lettura: un file cifrato senza chiave
         // non si apre, e senza questa riga l'app direbbe che il file è rotto.
@@ -70,34 +69,6 @@ object Dati {
             // l'app parte vuota, che è quello che succedeva prima.
         } finally {
             arrivato.delete()
-        }
-    }
-
-    /**
-     * Recupera il file delle carte se è rimasto in una posizione usata da
-     * un'installazione precedente.
-     *
-     * Aggiornando l'app il sistema conserva il container, quindi il file c'è
-     * ancora ma sotto un'altra directory: senza questo l'utente aprirebbe l'app
-     * e la troverebbe vuota, con le carte ancora sul telefono ma invisibili.
-     *
-     * Si copia, non si sposta: se qualcosa va storto l'originale resta dov'è.
-     */
-    private fun recuperaDatiEsistenti(contesto: Context) {
-        val attuale = File(contesto.filesDir, "opencard.json")
-        if (attuale.exists()) return
-
-        val possibili = listOf(
-            File(contesto.filesDir, "flet/opencard.json"),
-            File(contesto.filesDir, "flet/app/opencard.json"),
-        )
-        val trovato = possibili.firstOrNull { it.exists() && it.length() > 0 } ?: return
-
-        try {
-            trovato.copyTo(attuale, overwrite = false)
-        } catch (e: Exception) {
-            // Se non si riesce si parte da vuoto: il file di partenza resta
-            // intatto e le carte si recuperano da un backup.
         }
     }
 
