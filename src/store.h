@@ -295,9 +295,9 @@ opencard_esito opencard_set_foto(int id, const char *fronte, const char *retro,
 opencard_esito opencard_salva(const opencard_card *carta, int nuova,
                               opencard_errore *errore);
 
-/* Vero se la scadenza si può salvare: vuota, oppure "AAAA-MM-GG" in cifre.
- * Non controlla che il giorno esista. Le interfacce la chiedono prima di
- * salvare, per dirlo con parole loro. */
+/* Vero se la scadenza si può salvare: vuota, oppure "AAAA-MM-GG" di un giorno
+ * che esiste. Le interfacce la chiedono prima di salvare, per dirlo con parole
+ * loro. */
 int opencard_data_valida(const char *testo);
 
 /* Riscrive l'ordine di un gruppo lasciando l'altro dov'è.

@@ -11,6 +11,9 @@
 - Un backup con molte foto si riapre fino a 64 MB. Prima l'app rifiutava i file sopra i 10 MB, anche quelli che aveva appena esportato lei. Se le foto superano i 64 MB, l'esportazione lo dice subito invece di creare un file che non si riapre.
 - Aprire un archivio per importarlo chiede meno memoria e meno tempo: su Android l'app lo decomprimeva tre volte, foto comprese, ora una sola.
 - Da Catima, una carta con il valore del codice a barre diverso dal numero della carta entra con il codice giusto. Prima OpenCard disegnava il numero della carta e alla cassa si leggeva un altro codice. Il numero della carta finisce in fondo alla nota.
+- Una carta senza nome o senza codice, arrivata per esempio dal passaggio con i QR, non rende più illeggibile tutto il file delle carte: l'app la rifiuta e lo dice.
+- La scadenza deve essere un giorno che esiste. Una carta salvata con una data impossibile si apre lo stesso, senza quella data.
+- Su Android, se una foto non si salva, l'app lo dice invece di salvare la carta senza la foto.
 - Su iPhone l'esportazione e l'importazione con la password non bloccano più lo schermo senza dire niente: mentre l'app calcola la chiave compare la rotella.
 - Su iPhone le foto di una carta non perdono più qualità quando si modifica la carta: prima si ricomprimevano a ogni salvataggio, anche se non erano cambiate.
 

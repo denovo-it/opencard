@@ -384,10 +384,11 @@ class FormActivity : AppCompatActivity() {
             val nuova = fotoNuove[lato]
             when {
                 nuova != null -> {
-                    val scritta = Foto.salva(this, nuova, id, fronte)
-                    if (scritta != null) {
-                        nomi[lato] = scritta
-                    }
+                    // Come su iPhone: una foto che non si scrive si dice, e la
+                    // carta non si salva. Prima si andava avanti in silenzio
+                    // e la foto nuova semplicemente non c'era.
+                    nomi[lato] = Foto.salva(this, nuova, id, fronte)
+                        ?: throw OpenCardException(getString(R.string.foto_non_salvata))
                 }
                 fotoTolte[lato] -> {
                     Foto.cancella(this, nomi[lato])

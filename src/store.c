@@ -513,10 +513,10 @@ static void allinea_is_qrcode(opencard_card *card)
                        || card->simbologia == OPENCARD_SIM_MICROQR) ? 1 : 0;
 }
 
-/* Una data si accetta vuota oppure scritta per intero: "AAAA-MM-GG". Non
- * controlla che il giorno esista davvero, controlla che sia una data e non
- * testo libero, perché è su questo che poi si ordina e si avvisa. */
-static int data_valida(const char *testo)
+/* Una data scritta per intero, "AAAA-MM-GG" in cifre, oppure vuota. Guarda
+ * solo la forma: è il controllo di sempre sulla lettura dei file, dove testo
+ * libero al posto della data vuol dire carta malformata. */
+static int forma_di_data(const char *testo)
 {
     int i;
 
@@ -535,6 +535,34 @@ static int data_valida(const char *testo)
         }
     }
     return 1;
+}
+
+/* Come forma_di_data(), e in più il giorno deve esistere: mese da 1 a 12,
+ * giorno dentro il mese, il 29 febbraio solo negli anni bisestili. Fino alla
+ * 1.0.7-dev passava anche «2026-13-45», che il calendario delle app e
+ * l'esportazione verso Catima poi leggevano come un'altra data. */
+static int data_valida(const char *testo)
+{
+    static const int GIORNI[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    int anno, mese, giorno, massimo;
+
+    if (!forma_di_data(testo)) {
+        return 0;
+    }
+    if (testo == NULL || testo[0] == '\0') {
+        return 1;
+    }
+    anno = atoi(testo);
+    mese = atoi(testo + 5);
+    giorno = atoi(testo + 8);
+    if (mese < 1 || mese > 12) {
+        return 0;
+    }
+    massimo = GIORNI[mese - 1];
+    if (mese == 2 && ((anno % 4 == 0 && anno % 100 != 0) || anno % 400 == 0)) {
+        massimo = 29;
+    }
+    return giorno >= 1 && giorno <= massimo;
 }
 
 /* Un colore si tiene solo scritto per intero, "#RRGGBB": il file arriva anche
@@ -679,10 +707,15 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
         return segnala(errore, OPENCARD_ERR_CARTA);
     }
     if (cJSON_IsString(scadenza) && scadenza->valuestring != NULL) {
-        if (!data_valida(scadenza->valuestring)) {
+        if (!forma_di_data(scadenza->valuestring)) {
             return segnala(errore, OPENCARD_ERR_CARTA);
         }
-        copia(out->scadenza, sizeof(out->scadenza), scadenza->valuestring);
+        /* Una data con la forma giusta ma che non esiste, scritta dalle
+         * versioni che non lo controllavano, si toglie e la carta resta:
+         * rifiutarla renderebbe illeggibile tutto il file. */
+        if (data_valida(scadenza->valuestring)) {
+            copia(out->scadenza, sizeof(out->scadenza), scadenza->valuestring);
+        }
     } else if (scadenza != NULL && !cJSON_IsNull(scadenza)) {
         return segnala(errore, OPENCARD_ERR_CARTA);
     }
@@ -947,6 +980,7 @@ static opencard_esito carica(opencard_lista *out, opencard_errore *errore)
  * l'app a metà, il file vecchio resta intatto. */
 static opencard_esito salva(const opencard_lista *lista, opencard_errore *errore)
 {
+    size_t i;
     char temporaneo[1100];
     cJSON *radice;
     char *testo;
@@ -955,6 +989,21 @@ static opencard_esito salva(const opencard_lista *lista, opencard_errore *errore
 
     if (percorso_dati[0] == '\0') {
         return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+    }
+    /* Non si scrive un file che poi non si rilegge: carta_da_json() rifiuta
+     * nome e codice vuoti, e una carta così rende illeggibili tutte le altre.
+     * Qui passano tutte le scritture, anche quelle che non vengono dal modulo,
+     * come il passaggio con i QR. */
+    for (i = 0; lista != NULL && i < lista->n; i++) {
+        const opencard_card *carta = &lista->carte[i];
+
+        if (carta->label[0] == '\0' || carta->code[0] == '\0' || !data_valida(carta->scadenza)) {
+            if (errore != NULL) {
+                errore->posizione = (int)i + 1;
+                copia(errore->dettaglio, sizeof(errore->dettaglio), carta->label);
+            }
+            return segnala(errore, OPENCARD_ERR_CARTA);
+        }
     }
     if (snprintf(temporaneo, sizeof(temporaneo), "%s.tmp", percorso_dati)
         >= (int)sizeof(temporaneo)) {
