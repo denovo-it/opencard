@@ -517,19 +517,9 @@ class MainActivity : AppCompatActivity() {
         val password = passwordBackup
         Dati.chiedi(
             {
-                // Dentro l'archivio vanno l'elenco e le foto. La password
-                // chiude l'archivio intero: lo zip da solo cifra male, e le
-                // foto resterebbero in chiaro.
-                val contenuto = if (esportaCsv) {
-                    Csv.scrivi(Core.getAll())
-                } else {
-                    Archivio.scrivi(
-                        this,
-                        Core.backupEsporta(Core.adesso()).toByteArray(),
-                        Core.getAll(),
-                    )
-                }
-                if (password.isEmpty()) contenuto else Core.backupCifra(contenuto, password)
+                // Archivio con le foto o CSV, e la password che chiude tutto:
+                // lo fa il core, uguale su iPhone.
+                Core.esporta(esportaCsv, Core.adesso(), password)
             },
             { byte ->
                 try {
@@ -573,7 +563,7 @@ class MainActivity : AppCompatActivity() {
         // app, oppure prendere il loro posto. Lo decide chi importa, con due
         // risposte che dicono quello che fanno: fino alla 1.0.3 la domanda
         // diceva «Sostituisci» e l'app aggiungeva.
-        if (Csv.eCsv(dati)) {
+        if (Core.fileTipo(dati) == Core.FILE_CSV) {
             if (vuoto) {
                 scriviLeCarte(dati, "", sostituisciCsv = false)
                 return
@@ -604,7 +594,7 @@ class MainActivity : AppCompatActivity() {
 
     /** La password si chiede solo se il file ce l'ha: chi non l'ha mai usata non vede niente di nuovo. */
     private fun chiediPasswordSeServe(dati: ByteArray) {
-        if (Core.backupCifrato(dati)) {
+        if (Core.fileTipo(dati) == Core.FILE_CIFRATO) {
             chiediPassword(
                 R.string.password_apri_titolo,
                 R.string.password_apri_spiega,
@@ -617,50 +607,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Le carte di un CSV entrano una per una, con i campi che portano. */
-    private fun aggiungiDaCsv(carte: List<Csv.Letta>): Int {
-        for (carta in carte) {
-            val id = Core.insert(
-                carta.label,
-                carta.code,
-                Simbologie.eQuadrato(carta.simbologia),
-                carta.colore,
-                false,
-            )
-            Core.setSimbologia(id, carta.simbologia)
-            Core.setDettagli(id, carta.note, carta.scadenza, carta.saldo)
-            if (carta.preferita) {
-                Core.setPreferita(id, true)
-            }
-        }
-        return carte.size
-    }
-
     private fun scriviLeCarte(dati: ByteArray, password: String, sostituisciCsv: Boolean = false) {
         Dati.chiedi(
-            {
-                // Tre forme, in ordine di quanto sono recenti: archivio chiuso
-                // con la password, archivio in chiaro, e il solo JSON dei
-                // backup fatti prima delle foto.
-                val aperto = if (password.isEmpty()) dati else Core.backupDecifra(dati, password)
-                when {
-                    Archivio.eArchivio(aperto) -> {
-                        val elenco = Archivio.leggi(this, aperto)
-                            ?: throw OpenCardException(getString(R.string.backup_non_letto))
-                        Core.backupRipristina(elenco)
-                    }
-                    // Il CSV si aggiunge in fondo, a meno che chi importa non
-                    // abbia scelto di sostituire: allora prima si fa pulizia,
-                    // foto comprese, come «Cancella tutti i tuoi dati».
-                    Csv.eCsv(aperto) -> {
-                        if (sostituisciCsv) {
-                            Core.azzeraTutto()
-                        }
-                        aggiungiDaCsv(Csv.leggi(aperto))
-                    }
-                    else -> Core.backupRipristinaFile(aperto, "")
-                }
-            },
+            // Archivio, CSV o JSON, con o senza password: il core riconosce il
+            // file, rimette a posto le foto e scrive le carte in una volta.
+            { Core.importa(dati, password, sostituisciCsv) },
             { quante ->
                 ricarica()
                 avvisa(resources.getQuantityString(R.plurals.carte_ripristinate, quante, quante))

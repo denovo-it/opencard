@@ -236,23 +236,25 @@ object Core {
     /** Legge un backup e lo applica. Restituisce quante carte sono entrate. */
     @JvmStatic external fun backupRipristina(dati: ByteArray): Int
 
-    /** Vero se il file letto è un backup cifrato: serve per sapere se chiedere la password. */
-    @JvmStatic external fun backupCifrato(dati: ByteArray): Boolean
+    /**
+     * Il file da salvare con tutte le carte: l'archivio con le foto, oppure il
+     * CSV di Catima. Con la password non vuota esce chiuso, foto comprese.
+     */
+    @JvmStatic external fun esporta(csv: Boolean, quando: String, password: String): ByteArray
+
+    /** Che file è, per scegliere la domanda da fare: vedi [FILE_CSV] e [FILE_CIFRATO]. */
+    @JvmStatic external fun fileTipo(dati: ByteArray): Int
 
     /**
-     * Ripristina da un file che può essere in chiaro o cifrato. Password vuota
-     * per i file in chiaro. Torna quante carte sono entrate.
+     * Importa un file salvato da OpenCard, un backup JSON o un CSV di Catima.
+     * Il CSV si aggiunge, oppure con [sostituisci] prende il posto delle carte;
+     * gli altri le sostituiscono sempre. Torna quante carte sono entrate.
      */
-    @JvmStatic external fun backupRipristinaFile(dati: ByteArray, password: String): Int
+    @JvmStatic external fun importa(dati: ByteArray, password: String, sostituisci: Boolean): Int
 
-    /**
-     * Cifra e decifra un pacchetto qualsiasi con la stessa cassaforte del
-     * backup. Servono allo ZIP: dentro ci sono le foto, quindi si chiude tutto
-     * l'archivio invece del solo elenco delle carte.
-     */
-    @JvmStatic external fun backupCifra(dati: ByteArray, password: String): ByteArray
-
-    @JvmStatic external fun backupDecifra(dati: ByteArray, password: String): ByteArray
+    /** I valori di [fileTipo] che cambiano la domanda, come in backup.h. */
+    const val FILE_CSV = 2
+    const val FILE_CIFRATO = 3
 
     /* Passaggio delle carte fra due telefoni con i QR. Il formato e il perché
      * delle scelte stanno in src/transfer.h. */

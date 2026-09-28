@@ -4,9 +4,7 @@
 
 #import "OCListaViewController.h"
 
-#import "OCArchivio.h"
 #import "OCCore.h"
-#import "OCCsv.h"
 #import "OCImpostazioniViewController.h"
 #import "OCDettaglioViewController.h"
 #import "OCFormViewController.h"
@@ -617,7 +615,7 @@ static const NSUInteger OCCartePerLaRicerca = 5;
                          vuotoAmmesso:YES
                               bottone:NSLocalizedString(@"salva", nil)
                                   poi:^(NSString *password) {
-            [self scriviBackupCsv:csv password:password carte:tutte];
+            [self scriviBackupCsv:csv password:password];
         }];
     }];
 }
@@ -681,35 +679,16 @@ static const NSUInteger OCCartePerLaRicerca = 5;
     [self presentViewController:domanda animated:YES completion:nil];
 }
 
-- (void)scriviBackupCsv:(BOOL)csv password:(NSString *)password carte:(NSArray<OCCarta *> *)carte
+- (void)scriviBackupCsv:(BOOL)csv password:(NSString *)password
 {
     NSError *errore = nil;
-    NSData *contenuto = nil;
 
-    if (csv) {
-        contenuto = [OCCsv scrivi:carte];
-    } else {
-        // Dentro l'archivio vanno l'elenco e le foto. La password chiude
-        // l'archivio intero: lo zip da solo cifra male, e le foto resterebbero
-        // in chiaro.
-        NSData *elenco = [OCCore esportaBackup:&errore];
-        if (elenco == nil) {
-            [self avvisa:errore.localizedDescription];
-            return;
-        }
-        contenuto = [OCArchivio scriviConElenco:elenco carte:carte];
-    }
+    // Archivio con le foto o CSV, e la password che chiude tutto: lo fa il
+    // core, uguale su Android.
+    NSData *contenuto = [OCCore esportaCsv:csv password:password errore:&errore];
     if (contenuto == nil) {
-        [self avvisa:NSLocalizedString(@"backup_non_scritto", nil)];
+        [self avvisa:errore.localizedDescription];
         return;
-    }
-
-    if (password.length > 0) {
-        contenuto = [OCCore cifra:contenuto password:password errore:&errore];
-        if (contenuto == nil) {
-            [self avvisa:errore.localizedDescription];
-            return;
-        }
     }
 
     // Un archivio si chiama .zip, e uno chiuso con la password .opencard:
@@ -794,7 +773,7 @@ static const NSUInteger OCCartePerLaRicerca = 5;
     // prendere il loro posto. Lo decide chi importa, con due risposte che
     // dicono quello che fanno: fino alla 1.0.3 la domanda diceva «Sostituisci»
     // e l'app aggiungeva.
-    if ([OCCsv eCsv:contenuto]) {
+    if ([OCCore tipoFile:contenuto] == OCTipoFileCsv) {
         if (vuoto) {
             [self scriviLeCarte:contenuto password:@"" sostituisciCsv:NO];
             return;
@@ -848,7 +827,7 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 /// vede niente di nuovo.
 - (void)chiediPasswordSeServe:(NSData *)contenuto
 {
-    if (![OCCore backupCifrato:contenuto]) {
+    if ([OCCore tipoFile:contenuto] != OCTipoFileCifrato) {
         [self scriviLeCarte:contenuto password:@""];
         return;
     }
@@ -862,31 +841,6 @@ static const NSUInteger OCCartePerLaRicerca = 5;
     }];
 }
 
-/// Le carte di un CSV entrano una per una, con i campi che portano.
-- (NSInteger)aggiungiDaCsv:(NSArray<OCCartaCsv *> *)carte errore:(NSError **)errore
-{
-    for (OCCartaCsv *carta in carte) {
-        NSInteger id = [OCCore inserisci:carta.etichetta
-                                  codice:carta.codice
-                                  qrcode:[OCCore simbologiaQuadrata:carta.simbologia]
-                                  colore:carta.colore
-                               usaEGetta:NO
-                                  errore:errore];
-        if (id < 0) {
-            return -1;
-        }
-        if (![OCCore impostaSimbologia:id simbologia:carta.simbologia errore:errore]
-            || ![OCCore impostaDettagli:id note:carta.note scadenza:carta.scadenza
-                                  saldo:carta.saldo errore:errore]) {
-            return -1;
-        }
-        if (carta.preferita && ![OCCore impostaPreferita:id accesa:YES errore:errore]) {
-            return -1;
-        }
-    }
-    return (NSInteger)carte.count;
-}
-
 - (void)scriviLeCarte:(NSData *)dati password:(NSString *)password
 {
     [self scriviLeCarte:dati password:password sostituisciCsv:NO];
@@ -895,42 +849,13 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 - (void)scriviLeCarte:(NSData *)dati password:(NSString *)password sostituisciCsv:(BOOL)sostituisciCsv
 {
     NSError *errore = nil;
-    NSData *aperto = dati;
 
-    if (password.length > 0) {
-        aperto = [OCCore decifra:dati password:password errore:&errore];
-        if (aperto == nil) {
-            [self avvisa:errore.localizedDescription];
-            return;
-        }
-    }
-
-    NSInteger quante;
-
-    // Tre forme, in ordine di quanto sono recenti: l'archivio con le foto, il
-    // CSV di un'altra app, e il solo JSON dei backup fatti prima delle foto.
-    if ([OCArchivio eArchivio:aperto]) {
-        NSData *elenco = [OCArchivio leggiElencoDa:aperto];
-        if (elenco == nil) {
-            [self avvisa:NSLocalizedString(@"backup_non_letto", nil)];
-            return;
-        }
-        quante = [OCCore ripristinaBackup:elenco errore:&errore];
-    } else if ([OCCsv eCsv:aperto]) {
-        // Il CSV si aggiunge in fondo, a meno che chi importa non abbia scelto
-        // di sostituire: allora prima si fa pulizia, foto comprese (le toglie
-        // il core).
-        if (sostituisciCsv) {
-            if (![OCCore azzeraTutto:&errore]) {
-                [self avvisa:errore.localizedDescription];
-                return;
-            }
-        }
-        quante = [self aggiungiDaCsv:[OCCsv leggi:aperto] errore:&errore];
-    } else {
-        quante = [OCCore ripristinaBackup:aperto errore:&errore];
-    }
-
+    // Archivio, CSV o JSON, con o senza password: il core riconosce il file,
+    // rimette a posto le foto e scrive le carte in una volta.
+    NSInteger quante = [OCCore importa:dati
+                              password:password
+                           sostituisci:sostituisciCsv
+                                errore:&errore];
     if (quante < 0) {
         [self avvisa:errore.localizedDescription];
         return;

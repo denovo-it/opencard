@@ -62,6 +62,60 @@ opencard_esito opencard_backup_leggi_file(const unsigned char *dati, size_t quan
                                           opencard_lista *out,
                                           opencard_errore *errore);
 
+/* ----------------------------------------------------- esportare e importare
+ *
+ * Tutto il giro del file che l'utente salva o apre, uguale sui due telefoni:
+ * le interfacce scelgono il formato e la password, e scrivono o leggono i
+ * byte con il selettore di sistema. Fino alla 1.0.6 lo facevano loro, ognuna
+ * con il suo ZIP e il suo CSV. */
+
+typedef enum {
+    /* ZIP con opencard.json e le foto: il formato consigliato. */
+    OPENCARD_FORMATO_ARCHIVIO = 0,
+    /* CSV di Catima: niente foto e niente usa e getta, ma lo leggono altre app. */
+    OPENCARD_FORMATO_CSV = 1
+} opencard_formato;
+
+/* Quello che un file sembra, per scegliere la domanda da fare prima di
+ * importarlo: un CSV chiede se aggiungere o sostituire, un file cifrato la
+ * password, gli altri la conferma della sostituzione. */
+typedef enum {
+    OPENCARD_FILE_JSON = 0,     /* il backup dei tempi prima delle foto, o altro */
+    OPENCARD_FILE_ARCHIVIO = 1,
+    OPENCARD_FILE_CSV = 2,
+    OPENCARD_FILE_CIFRATO = 3
+} opencard_tipo_file;
+
+opencard_tipo_file opencard_file_tipo(const unsigned char *dati, size_t quanti);
+
+/* Il file da salvare, con tutte le carte. Con `password` non vuota esce chiuso
+ * dalla cassaforte di cripto.h, archivio intero, foto comprese: lo ZIP da solo
+ * cifra male. Le foto nominate da una carta ma sparite dal disco si saltano,
+ * e una foto nominata da due carte entra una volta.
+ * `esportato_il` è l'istante ISO 8601, dato dalla piattaforma.
+ * Chi chiama libera con opencard_cripto_free().
+ */
+opencard_esito opencard_esporta(opencard_formato formato, const char *esportato_il,
+                                const char *password,
+                                unsigned char **byte, size_t *quanti,
+                                opencard_errore *errore);
+
+/* Legge un file salvato con opencard_esporta(), o un backup JSON, o un CSV di
+ * Catima, e lo scrive nel file dei dati in una scrittura sola.
+ *
+ * Archivio e JSON sostituiscono le carte che ci sono. Il CSV si aggiunge in
+ * fondo, oppure con `sostituisci` prende il loro posto. Le foto dell'archivio
+ * tornano nella cartella delle foto con il loro nome, e solo quelle che una
+ * carta nomina: il nome non può portare fuori dalla cartella.
+ *
+ * Un file cifrato senza password torna OPENCARD_ERR_PASSWORD. Un archivio
+ * senza opencard.json torna OPENCARD_ERR_FORMATO. In `quante`, se non è NULL,
+ * le carte entrate.
+ */
+opencard_esito opencard_importa(const unsigned char *dati, size_t quanti,
+                                const char *password, int sostituisci,
+                                int *quante, opencard_errore *errore);
+
 /* Le carte contenute in un backup. Non tocca il file dei dati: sta a chi chiama
  * decidere se confermare con opencard_replace_all().
  *

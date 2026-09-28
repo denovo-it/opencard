@@ -160,6 +160,10 @@ void opencard_store_chiave(const unsigned char *chiave);
 /* Il file dei dati, per chi deve mostrarlo o copiarlo. */
 const char *opencard_store_percorso(void);
 
+/* La cartella delle foto, <directory dei dati>/foto. La usano l'esportazione
+ * e l'importazione, che mettono le foto nell'archivio e le rimettono a posto. */
+const char *opencard_store_cartella_foto(void);
+
 /* Primo avvio: vero finché lo splash non è mai stato mostrato. */
 int opencard_is_first_run(void);
 void opencard_mark_first_run_done(void);

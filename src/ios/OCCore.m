@@ -430,51 +430,49 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     return [NSString stringWithUTF8String:nome];
 }
 
-+ (NSData *)esportaBackup:(NSError **)errore
++ (OCTipoFile)tipoFile:(NSData *)dati
+{
+    return (OCTipoFile)opencard_file_tipo((const unsigned char *)dati.bytes, dati.length);
+}
+
++ (NSData *)esportaCsv:(BOOL)csv password:(NSString *)password errore:(NSError **)errore
 {
     NSDateFormatter *formato = [NSDateFormatter new];
     formato.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssXXX";
     formato.locale = [NSLocale localeWithLocaleIdentifier:@"it_IT"];
 
-    char *testo = NULL;
+    unsigned char *byte = NULL;
+    size_t quanti = 0;
     opencard_errore guasto;
 
-    if (opencard_backup_esporta([formato stringFromDate:[NSDate date]].UTF8String,
-                                &testo, &guasto) != OPENCARD_OK || testo == NULL) {
+    if (opencard_esporta(csv ? OPENCARD_FORMATO_CSV : OPENCARD_FORMATO_ARCHIVIO,
+                         [formato stringFromDate:[NSDate date]].UTF8String,
+                         password.UTF8String ?: "", &byte, &quanti,
+                         &guasto) != OPENCARD_OK || byte == NULL) {
         [self riporta:errore da:&guasto];
         return nil;
     }
-
-    NSData *dati = [NSData dataWithBytes:testo length:strlen(testo)];
-    opencard_backup_free(testo);
-    return dati;
+    NSData *fuori = [NSData dataWithBytes:byte length:quanti];
+    opencard_cripto_free(byte);
+    return fuori;
 }
 
-+ (NSInteger)ripristinaBackup:(NSData *)dati errore:(NSError **)errore
++ (NSInteger)importa:(NSData *)dati
+            password:(NSString *)password
+         sostituisci:(BOOL)sostituisci
+              errore:(NSError **)errore
 {
-    opencard_lista lista;
     opencard_errore guasto;
+    int quante = 0;
 
-    /* Un file vuoto ha bytes a NULL e lunghezza zero: al core arriverebbe il
-     * segnale "conta col terminatore" su un buffer che non ce l'ha. Si ferma
-     * qui, con lo stesso messaggio di un file che non è un backup. */
-    if (dati.length == 0 || dati.bytes == NULL) {
-        opencard_errore vuoto = {OPENCARD_ERR_JSON, 0, {0}, 0};
-        [self riporta:errore da:&vuoto];
-        return -1;
-    }
-    if (opencard_backup_leggi((const char *)dati.bytes, dati.length, &lista, &guasto) != OPENCARD_OK) {
+    /* Un file vuoto ha bytes a NULL: lo ferma il core, con lo stesso
+     * messaggio di un file che non è un backup. */
+    if (opencard_importa((const unsigned char *)dati.bytes ?: (const unsigned char *)"",
+                         dati.length, password.UTF8String ?: "", sostituisci ? 1 : 0,
+                         &quante, &guasto) != OPENCARD_OK) {
         [self riporta:errore da:&guasto];
         return -1;
     }
-    if (opencard_replace_all(&lista, &guasto) != OPENCARD_OK) {
-        opencard_lista_free(&lista);
-        [self riporta:errore da:&guasto];
-        return -1;
-    }
-
-    NSInteger quante = (NSInteger)lista.n;
-    opencard_lista_free(&lista);
     return quante;
 }
 
@@ -638,48 +636,6 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         return NO;
     }
     return YES;
-}
-
-+ (BOOL)backupCifrato:(NSData *)dati
-{
-    if (dati.length == 0 || dati.bytes == NULL) {
-        return NO;
-    }
-    return opencard_cripto_e_cifrato((const unsigned char *)dati.bytes, dati.length) != 0;
-}
-
-+ (NSData *)cifra:(NSData *)dati password:(NSString *)password errore:(NSError **)errore
-{
-    unsigned char *byte = NULL;
-    size_t quanti = 0;
-    opencard_errore guasto;
-
-    if (opencard_cripto_cifra((const unsigned char *)dati.bytes, dati.length,
-                              password.UTF8String, &byte, &quanti,
-                              &guasto) != OPENCARD_OK || byte == NULL) {
-        [self riporta:errore da:&guasto];
-        return nil;
-    }
-    NSData *fuori = [NSData dataWithBytes:byte length:quanti];
-    opencard_cripto_free(byte);
-    return fuori;
-}
-
-+ (NSData *)decifra:(NSData *)dati password:(NSString *)password errore:(NSError **)errore
-{
-    unsigned char *byte = NULL;
-    size_t quanti = 0;
-    opencard_errore guasto;
-
-    if (opencard_cripto_decifra((const unsigned char *)dati.bytes, dati.length,
-                                password.UTF8String, &byte, &quanti,
-                                &guasto) != OPENCARD_OK || byte == NULL) {
-        [self riporta:errore da:&guasto];
-        return nil;
-    }
-    NSData *fuori = [NSData dataWithBytes:byte length:quanti];
-    opencard_cripto_free(byte);
-    return fuori;
 }
 
 #pragma mark - Passaggio delle carte con i QR

@@ -22,6 +22,8 @@ add_library(opencardcore SHARED
     "${CORE_DIR}/codegen.c"
     "${CORE_DIR}/store.c"
     "${CORE_DIR}/backup.c"
+    "${CORE_DIR}/archivio.c"
+    "${CORE_DIR}/csv.c"
     "${CORE_DIR}/transfer.c"
     "${CORE_DIR}/cripto.c"
     "${CORE_DIR}/third-party/cJSON.c"

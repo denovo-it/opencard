@@ -240,6 +240,11 @@ const char *opencard_store_percorso(void)
     return percorso_dati;
 }
 
+const char *opencard_store_cartella_foto(void)
+{
+    return percorso_foto;
+}
+
 int opencard_is_first_run(void)
 {
     return access(percorso_flag, F_OK) != 0;

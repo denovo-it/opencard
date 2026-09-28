@@ -919,142 +919,88 @@ Java_srl_denovo_opencard_Core_setFoto(JNIEnv *env, jclass classe, jint id,
     }
 }
 
-JNIEXPORT jboolean JNICALL
-Java_srl_denovo_opencard_Core_backupCifrato(JNIEnv *env, jclass classe, jbyteArray dati)
+JNIEXPORT jbyteArray JNICALL
+Java_srl_denovo_opencard_Core_esporta(JNIEnv *env, jclass classe, jboolean csv,
+                                      jstring quando, jstring password)
 {
-    jsize quanti;
-    jbyte *byte;
-    jboolean risposta;
+    char quando_c[64];
+    char password_c[256];
+    unsigned char *byte = NULL;
+    size_t quanti = 0;
+    opencard_errore errore;
+    jbyteArray fuori;
 
     (void)classe;
-    if (dati == NULL) {
-        return JNI_FALSE;
+    if (!stringa(env, quando, quando_c, sizeof(quando_c))
+        || !stringa(env, password, password_c, sizeof(password_c))) {
+        return NULL;
     }
-    quanti = (*env)->GetArrayLength(env, dati);
-    byte = (*env)->GetByteArrayElements(env, dati, NULL);
-    if (byte == NULL) {
-        return JNI_FALSE;
+    if (opencard_esporta(csv == JNI_TRUE ? OPENCARD_FORMATO_CSV : OPENCARD_FORMATO_ARCHIVIO,
+                         quando_c, password_c, &byte, &quanti, &errore) != OPENCARD_OK) {
+        lancia(env, &errore);
+        return NULL;
     }
-    risposta = opencard_cripto_e_cifrato((const unsigned char *)byte, (size_t)quanti)
-               ? JNI_TRUE : JNI_FALSE;
-    (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
-    return risposta;
+    fuori = (*env)->NewByteArray(env, (jsize)quanti);
+    if (fuori != NULL) {
+        (*env)->SetByteArrayRegion(env, fuori, 0, (jsize)quanti, (const jbyte *)byte);
+    } else {
+        lancia_memoria(env);
+    }
+    opencard_cripto_free(byte);
+    return fuori;
 }
 
 JNIEXPORT jint JNICALL
-Java_srl_denovo_opencard_Core_backupRipristinaFile(JNIEnv *env, jclass classe,
-                                                   jbyteArray dati, jstring password)
+Java_srl_denovo_opencard_Core_fileTipo(JNIEnv *env, jclass classe, jbyteArray dati)
 {
-    char password_c[256];
     jsize quanti;
     jbyte *byte;
-    opencard_lista lista;
-    opencard_errore errore;
-    jint quante = -1;
+    jint tipo;
 
     (void)classe;
-    if (dati == NULL || !stringa(env, password, password_c, sizeof(password_c))) {
-        return -1;
+    if (dati == NULL) {
+        return OPENCARD_FILE_JSON;
     }
     quanti = (*env)->GetArrayLength(env, dati);
     byte = (*env)->GetByteArrayElements(env, dati, NULL);
     if (byte == NULL) {
         lancia_memoria(env);
-        return -1;
+        return OPENCARD_FILE_JSON;
     }
-
-    if (opencard_backup_leggi_file((const unsigned char *)byte, (size_t)quanti,
-                                   password_c, &lista, &errore) != OPENCARD_OK) {
-        (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
-        lancia(env, &errore);
-        return -1;
-    }
+    tipo = (jint)opencard_file_tipo((const unsigned char *)byte, (size_t)quanti);
     (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
-
-    if (opencard_replace_all(&lista, &errore) != OPENCARD_OK) {
-        opencard_lista_free(&lista);
-        lancia(env, &errore);
-        return -1;
-    }
-    quante = (jint)lista.n;
-    opencard_lista_free(&lista);
-    return quante;
+    return tipo;
 }
 
-JNIEXPORT jbyteArray JNICALL
-Java_srl_denovo_opencard_Core_backupDecifra(JNIEnv *env, jclass classe,
-                                            jbyteArray dati, jstring password)
+JNIEXPORT jint JNICALL
+Java_srl_denovo_opencard_Core_importa(JNIEnv *env, jclass classe, jbyteArray dati,
+                                      jstring password, jboolean sostituisci)
 {
     char password_c[256];
     jsize quanti;
     jbyte *byte;
-    unsigned char *chiaro = NULL;
-    size_t chiaro_n = 0;
     opencard_errore errore;
-    jbyteArray fuori;
+    opencard_esito esito;
+    int quante = 0;
 
     (void)classe;
     if (dati == NULL || !stringa(env, password, password_c, sizeof(password_c))) {
-        return NULL;
+        return -1;
     }
     quanti = (*env)->GetArrayLength(env, dati);
     byte = (*env)->GetByteArrayElements(env, dati, NULL);
     if (byte == NULL) {
         lancia_memoria(env);
-        return NULL;
+        return -1;
     }
-    if (opencard_cripto_decifra((const unsigned char *)byte, (size_t)quanti, password_c,
-                                &chiaro, &chiaro_n, &errore) != OPENCARD_OK) {
-        (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
-        lancia(env, &errore);
-        return NULL;
-    }
+    esito = opencard_importa((const unsigned char *)byte, (size_t)quanti, password_c,
+                             sostituisci == JNI_TRUE, &quante, &errore);
     (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
-
-    fuori = (*env)->NewByteArray(env, (jsize)chiaro_n);
-    if (fuori != NULL) {
-        (*env)->SetByteArrayRegion(env, fuori, 0, (jsize)chiaro_n, (const jbyte *)chiaro);
-    }
-    opencard_cripto_free(chiaro);
-    return fuori;
-}
-
-JNIEXPORT jbyteArray JNICALL
-Java_srl_denovo_opencard_Core_backupCifra(JNIEnv *env, jclass classe,
-                                          jbyteArray dati, jstring password)
-{
-    char password_c[256];
-    jsize quanti;
-    jbyte *byte;
-    unsigned char *pacchetto = NULL;
-    size_t pacchetto_n = 0;
-    opencard_errore errore;
-    jbyteArray fuori;
-
-    (void)classe;
-    if (dati == NULL || !stringa(env, password, password_c, sizeof(password_c))) {
-        return NULL;
-    }
-    quanti = (*env)->GetArrayLength(env, dati);
-    byte = (*env)->GetByteArrayElements(env, dati, NULL);
-    if (byte == NULL) {
-        lancia_memoria(env);
-        return NULL;
-    }
-    if (opencard_cripto_cifra((const unsigned char *)byte, (size_t)quanti, password_c,
-                              &pacchetto, &pacchetto_n, &errore) != OPENCARD_OK) {
-        (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
+    if (esito != OPENCARD_OK) {
         lancia(env, &errore);
-        return NULL;
+        return -1;
     }
-    (*env)->ReleaseByteArrayElements(env, dati, byte, JNI_ABORT);
-
-    fuori = (*env)->NewByteArray(env, (jsize)pacchetto_n);
-    if (fuori != NULL) {
-        (*env)->SetByteArrayRegion(env, fuori, 0, (jsize)pacchetto_n, (const jbyte *)pacchetto);
-    }
-    opencard_cripto_free(pacchetto);
-    return fuori;
+    return (jint)quante;
 }
 
 JNIEXPORT void JNICALL

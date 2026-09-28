@@ -106,11 +106,28 @@ static const NSInteger OCSimbologiaAuto = -1;
 /// Nome proposto per il file di backup.
 + (NSString *)nomeBackup;
 
-/// Contenuto del backup, pronto da scrivere.
-+ (nullable NSData *)esportaBackup:(NSError **)errore;
+/// Che file è, per scegliere la domanda prima di importarlo: i valori sono
+/// quelli di `opencard_tipo_file` in backup.h.
+typedef NS_ENUM(NSInteger, OCTipoFile) {
+    OCTipoFileJson = 0,
+    OCTipoFileArchivio = 1,
+    OCTipoFileCsv = 2,
+    OCTipoFileCifrato = 3,
+};
 
-/// Legge un backup e lo applica. Restituisce quante carte sono entrate, -1 se fallisce.
-+ (NSInteger)ripristinaBackup:(NSData *)dati errore:(NSError **)errore;
++ (OCTipoFile)tipoFile:(NSData *)dati;
+
+/// Il file da salvare con tutte le carte: l'archivio con le foto, oppure il
+/// CSV di Catima. Con la password non vuota esce chiuso, foto comprese.
++ (nullable NSData *)esportaCsv:(BOOL)csv password:(NSString *)password errore:(NSError **)errore;
+
+/// Importa un file salvato da OpenCard, un backup JSON o un CSV di Catima. Il
+/// CSV si aggiunge, oppure con `sostituisci` prende il posto delle carte; gli
+/// altri le sostituiscono sempre. Torna quante carte sono entrate, -1 se fallisce.
++ (NSInteger)importa:(NSData *)dati
+            password:(NSString *)password
+         sostituisci:(BOOL)sostituisci
+              errore:(NSError **)errore;
 
 #pragma mark - Simbologia
 
@@ -171,14 +188,6 @@ static const NSInteger OCSimbologiaAuto = -1;
 
 /// Butta via tutte le carte in una scrittura sola.
 + (BOOL)azzeraTutto:(NSError **)errore;
-
-/// Vero se il file letto è un backup cifrato, cioè se va chiesta la password.
-+ (BOOL)backupCifrato:(NSData *)dati;
-
-/// Cifra e decifra un pacchetto qualsiasi con la stessa cassaforte del backup:
-/// servono allo ZIP, dove dentro ci sono anche le foto.
-+ (nullable NSData *)cifra:(NSData *)dati password:(NSString *)password errore:(NSError **)errore;
-+ (nullable NSData *)decifra:(NSData *)dati password:(NSString *)password errore:(NSError **)errore;
 
 #pragma mark - Passaggio delle carte con i QR
 
