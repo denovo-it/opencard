@@ -377,8 +377,8 @@ class FormActivity : AppCompatActivity() {
     }
 
     /**
-     * Scrive le foto e torna i due nomi da mettere nella carta. Si chiama a
-     * salvataggio fatto, quando l'id c'e' di sicuro.
+     * Scrive le foto e torna i due nomi da mettere nella carta. Si chiama
+     * prima di salvarla, con l'id che avrà.
      */
     private fun salvaLeFoto(id: Int): Array<String> {
         val nomi = fotoAttuali.copyOf()
@@ -447,8 +447,7 @@ class FormActivity : AppCompatActivity() {
         if (codice == codiceNoto && simbologiaNota != Simbologie.AUTO) {
             return simbologiaNota
         }
-        val proposta = Core.simbologiaIndovinata(codice, false)
-        return if (Core.codiceSta(codice, proposta)) proposta else Simbologie.QR
+        return Core.simbologiaAutomatica(codice)
     }
 
     /** Codice letto, da qualunque strada sia arrivato. */
@@ -706,15 +705,11 @@ class FormActivity : AppCompatActivity() {
             mostraErrore(getString(R.string.simbologia_non_ci_sta, Simbologie.nomi[scelta]))
             return
         }
-        val isQr = Simbologie.eQuadrato(scelta)
         val quandoScade = scadenza.text.toString().trim()
         // La data la controlla anche il core, che rifiuta la carta: qui si
-        // guarda prima, per dirlo con parole nostre invece che con
-        // un'eccezione, e per non salvare niente a meta'.
-        val dataScritta = quandoScade.length == 10 &&
-            quandoScade[4] == '-' && quandoScade[7] == '-' &&
-            quandoScade.filterIndexed { i, _ -> i != 4 && i != 7 }.all { it.isDigit() }
-        if (quandoScade.isNotEmpty() && !dataScritta) {
+        // chiede prima, per dirlo con parole nostre invece che con
+        // un'eccezione.
+        if (!Core.dataValida(quandoScade)) {
             mostraErrore(getString(R.string.scadenza_non_valida))
             return
         }
@@ -724,27 +719,17 @@ class FormActivity : AppCompatActivity() {
 
         Dati.fai(
             {
-                // La stella si scrive a parte, perché non passa da insert e
-                // update: quelle due lasciano stare il campo apposta, così
-                // modificare una carta non le toglie la preferenza.
-                val quale = if (id == 0) {
-                    Core.insert(etichetta, valore, isQr, colore, disposable)
-                } else {
-                    Core.update(id, etichetta, valore, isQr, colore, disposable)
-                    id
-                }
-                Core.setPreferita(quale, preferita)
-                // Anche la simbologia si scrive a parte: insert e update sanno
-                // dire solo QR o non QR, e una carta Aztec tornerebbe Code 128.
-                Core.setSimbologia(quale, scelta)
-                Core.setDettagli(
-                    quale,
-                    nota.text.toString().trim(),
-                    quandoScade,
-                    saldo.text.toString().trim(),
-                )
+                // Una carta nuova prende l'id prima di essere scritta: il nome
+                // dei file delle foto lo contiene. Poi tutta la carta va nel
+                // file in una scrittura sola.
+                val nuova = id == 0
+                val quale = if (nuova) Core.nextId() else id
                 val nomiFoto = salvaLeFoto(quale)
-                Core.setFoto(quale, nomiFoto[FRONTE], nomiFoto[RETRO])
+                Core.salva(
+                    quale, nuova, etichetta, valore, scelta, colore, disposable, preferita,
+                    nota.text.toString().trim(), quandoScade, saldo.text.toString().trim(),
+                    nomiFoto[FRONTE], nomiFoto[RETRO],
+                )
             },
             {
                 // Un nome o un colore cambiati si vedono anche sulla schermata

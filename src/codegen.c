@@ -322,6 +322,13 @@ static int lunghezza_adatta(opencard_simbologia simbologia, const char *code)
     }
 }
 
+opencard_simbologia opencard_simbologia_automatica(const char *code)
+{
+    opencard_simbologia proposta = opencard_simbologia_indovinata(code, 0);
+
+    return opencard_codice_sta(code, proposta) ? proposta : OPENCARD_SIM_QR;
+}
+
 int opencard_codice_sta(const char *code, opencard_simbologia simbologia)
 {
     struct zint_symbol *simbolo;

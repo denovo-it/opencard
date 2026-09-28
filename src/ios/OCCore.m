@@ -274,38 +274,44 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 
 #pragma mark - Scrittura
 
-+ (NSInteger)inserisci:(NSString *)etichetta
-                codice:(NSString *)codice
-                qrcode:(BOOL)qrcode
-                colore:(NSString *)colore
-             usaEGetta:(BOOL)usaEGetta
-                errore:(NSError **)errore
++ (BOOL)salva:(NSInteger)identificativo
+       nuova:(BOOL)nuova
+   etichetta:(NSString *)etichetta
+      codice:(NSString *)codice
+  simbologia:(NSInteger)simbologia
+      colore:(NSString *)colore
+   usaEGetta:(BOOL)usaEGetta
+   preferita:(BOOL)preferita
+        note:(NSString *)note
+    scadenza:(NSString *)scadenza
+       saldo:(NSString *)saldo
+  fotoFronte:(NSString *)fotoFronte
+   fotoRetro:(NSString *)fotoRetro
+      errore:(NSError **)errore
 {
-    opencard_errore guasto;
-    int nuovo = 0;
-
-    if (opencard_insert(etichetta.UTF8String, codice.UTF8String, qrcode ? 1 : 0,
-                        colore.length > 0 ? colore.UTF8String : "",
-                        usaEGetta ? 1 : 0, &nuovo, &guasto) != OPENCARD_OK) {
-        [self riporta:errore da:&guasto];
-        return -1;
-    }
-    return nuovo;
-}
-
-+ (BOOL)aggiorna:(NSInteger)identificativo
-       etichetta:(NSString *)etichetta
-          codice:(NSString *)codice
-          qrcode:(BOOL)qrcode
-          colore:(NSString *)colore
-       usaEGetta:(BOOL)usaEGetta
-          errore:(NSError **)errore
-{
+    opencard_card carta;
     opencard_errore guasto;
 
-    if (opencard_update((int)identificativo, etichetta.UTF8String, codice.UTF8String,
-                        qrcode ? 1 : 0, colore.length > 0 ? colore.UTF8String : "",
-                        usaEGetta ? 1 : 0, &guasto) != OPENCARD_OK) {
+    memset(&carta, 0, sizeof(carta));
+    carta.id = (int)identificativo;
+    snprintf(carta.label, sizeof(carta.label), "%s", etichetta.UTF8String ?: "");
+    snprintf(carta.code, sizeof(carta.code), "%s", codice.UTF8String ?: "");
+    snprintf(carta.color, sizeof(carta.color), "%s", colore.UTF8String ?: "");
+    snprintf(carta.note, sizeof(carta.note), "%s", note.UTF8String ?: "");
+    snprintf(carta.scadenza, sizeof(carta.scadenza), "%s", scadenza.UTF8String ?: "");
+    snprintf(carta.saldo, sizeof(carta.saldo), "%s", saldo.UTF8String ?: "");
+    snprintf(carta.foto_fronte, sizeof(carta.foto_fronte), "%s", fotoFronte.UTF8String ?: "");
+    snprintf(carta.foto_retro, sizeof(carta.foto_retro), "%s", fotoRetro.UTF8String ?: "");
+    /* Un taglio può cadere a metà di una lettera accentata. */
+    opencard_utf8_ripara(carta.label);
+    opencard_utf8_ripara(carta.code);
+    opencard_utf8_ripara(carta.note);
+    opencard_utf8_ripara(carta.saldo);
+    carta.simbologia = (opencard_simbologia)simbologia;
+    carta.disposable = usaEGetta ? 1 : 0;
+    carta.favorite = preferita ? 1 : 0;
+
+    if (opencard_salva(&carta, nuova ? 1 : 0, &guasto) != OPENCARD_OK) {
         [self riporta:errore da:&guasto];
         return NO;
     }
@@ -497,9 +503,9 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 }
 
 /// Vero per le due che si disegnano come quadrato e non come barre.
-+ (BOOL)simbologiaQuadrata:(NSInteger)simbologia
++ (NSInteger)simbologiaAutomatica:(NSString *)codice
 {
-    return simbologia == OPENCARD_SIM_QR || simbologia == OPENCARD_SIM_MICROQR;
+    return (NSInteger)opencard_simbologia_automatica(codice.UTF8String ?: "");
 }
 
 + (NSInteger)simbologiaIndovinata:(NSString *)codice qrcode:(BOOL)qrcode
@@ -511,56 +517,6 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 {
     return opencard_codice_sta(codice.UTF8String,
                                (opencard_simbologia)simbologia) != 0;
-}
-
-+ (BOOL)impostaSimbologia:(NSInteger)identificativo
-               simbologia:(NSInteger)simbologia
-                   errore:(NSError **)errore
-{
-    opencard_errore guasto;
-
-    if (opencard_set_simbologia((int)identificativo, (opencard_simbologia)simbologia,
-                                &guasto) != OPENCARD_OK) {
-        [self riporta:errore da:&guasto];
-        return NO;
-    }
-    return YES;
-}
-
-+ (BOOL)impostaDettagli:(NSInteger)identificativo
-                   note:(NSString *)note
-               scadenza:(NSString *)scadenza
-                  saldo:(NSString *)saldo
-                 errore:(NSError **)errore
-{
-    opencard_errore guasto;
-
-    if (opencard_set_dettagli((int)identificativo,
-                              note.length > 0 ? note.UTF8String : "",
-                              scadenza.length > 0 ? scadenza.UTF8String : "",
-                              saldo.length > 0 ? saldo.UTF8String : "",
-                              &guasto) != OPENCARD_OK) {
-        [self riporta:errore da:&guasto];
-        return NO;
-    }
-    return YES;
-}
-
-+ (BOOL)impostaFoto:(NSInteger)identificativo
-             fronte:(NSString *)fronte
-              retro:(NSString *)retro
-             errore:(NSError **)errore
-{
-    opencard_errore guasto;
-
-    if (opencard_set_foto((int)identificativo,
-                          fronte.length > 0 ? fronte.UTF8String : "",
-                          retro.length > 0 ? retro.UTF8String : "",
-                          &guasto) != OPENCARD_OK) {
-        [self riporta:errore da:&guasto];
-        return NO;
-    }
-    return YES;
 }
 
 /// I pixel del core diventano un'immagine. Uguale a immaginePerCodice:qrcode:,

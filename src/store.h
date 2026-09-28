@@ -247,6 +247,27 @@ opencard_esito opencard_set_dettagli(int id, const char *note,
 opencard_esito opencard_set_foto(int id, const char *fronte, const char *retro,
                                  opencard_errore *errore);
 
+/* Una carta dal modulo, tutta insieme, in una scrittura sola: etichetta,
+ * codice, simbologia, colore, gruppo, stella, note, scadenza, saldo e foto.
+ * Prima erano cinque chiamate, ognuna con la sua lettura e la sua scrittura
+ * del file: se una falliva a metà la carta restava salvata a pezzi.
+ *
+ * Con `nuova` la carta va in fondo con il suo id, che non deve esserci già:
+ * chi ha foto da salvare chiede prima opencard_next_id(), perché il nome dei
+ * file lo contiene. Senza, prende il posto della carta con lo stesso id, dove
+ * sta nell'ordine; OPENCARD_ERR_NON_TROVATA se non c'è.
+ *
+ * Il colore si tiene solo se è diverso da quello che l'id assegna da sé, come
+ * in opencard_insert(). Una simbologia fuori elenco o una scadenza che non è
+ * "AAAA-MM-GG" tornano OPENCARD_ERR_ARGOMENTI senza scrivere niente. */
+opencard_esito opencard_salva(const opencard_card *carta, int nuova,
+                              opencard_errore *errore);
+
+/* Vero se la scadenza si può salvare: vuota, oppure "AAAA-MM-GG" in cifre.
+ * Non controlla che il giorno esista. Le interfacce la chiedono prima di
+ * salvare, per dirlo con parole loro. */
+int opencard_data_valida(const char *testo);
+
 /* Riscrive l'ordine di un gruppo lasciando l'altro dov'è.
  * Se gli id non sono esattamente quelli del gruppo non tocca niente: meglio un
  * riordino perso che una carta persa. */

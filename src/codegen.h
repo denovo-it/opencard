@@ -49,6 +49,12 @@ int opencard_zint_da_simbologia(opencard_simbologia simbologia);
  */
 int opencard_codice_sta(const char *code, opencard_simbologia simbologia);
 
+/* La simbologia che sceglie l'app quando il modulo è su Automatico: quella che
+ * si ricava dal codice, e se il codice non ci sta il QR, che tiene tutto.
+ * Automatico non deve mai finire in un errore, perché è la voce di chi non
+ * vuole scegliere. */
+opencard_simbologia opencard_simbologia_automatica(const char *code);
+
 /* Come opencard_render_bitmap, ma con la simbologia decisa da chi chiama.
  * Un codice che non sta in quella simbologia (un EAN-13 di dodici cifre, un
  * Codabar senza le lettere agli estremi) torna un errore di zint con il testo

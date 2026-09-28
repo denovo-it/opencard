@@ -68,20 +68,24 @@ static const NSInteger OCSimbologiaAuto = -1;
                  errore:(NSError **)errore;
 + (NSInteger)prossimoId;
 
-+ (NSInteger)inserisci:(NSString *)etichetta
-                codice:(NSString *)codice
-                qrcode:(BOOL)qrcode
-                colore:(nullable NSString *)colore
-             usaEGetta:(BOOL)usaEGetta
-                errore:(NSError **)errore;
-
-+ (BOOL)aggiorna:(NSInteger)identificativo
-       etichetta:(NSString *)etichetta
-          codice:(NSString *)codice
-          qrcode:(BOOL)qrcode
-          colore:(nullable NSString *)colore
-       usaEGetta:(BOOL)usaEGetta
-          errore:(NSError **)errore;
+/// La carta del modulo, tutta insieme, in una scrittura sola. Con `nuova` va
+/// in fondo con il suo id, da chiedere prima a `prossimoId` perché il nome
+/// delle foto lo contiene; senza, prende il posto della carta con quell'id.
+/// Colore vuoto vuol dire il colore dell'id.
++ (BOOL)salva:(NSInteger)identificativo
+       nuova:(BOOL)nuova
+   etichetta:(NSString *)etichetta
+      codice:(NSString *)codice
+  simbologia:(NSInteger)simbologia
+      colore:(NSString *)colore
+   usaEGetta:(BOOL)usaEGetta
+   preferita:(BOOL)preferita
+        note:(NSString *)note
+    scadenza:(NSString *)scadenza
+       saldo:(NSString *)saldo
+  fotoFronte:(NSString *)fotoFronte
+   fotoRetro:(NSString *)fotoRetro
+      errore:(NSError **)errore;
 
 + (BOOL)elimina:(NSInteger)identificativo errore:(NSError **)errore;
 
@@ -135,12 +139,12 @@ typedef NS_ENUM(NSInteger, OCTipoFile) {
 /// `opencard_simbologia`: l'indice nell'array è il numero da salvare.
 + (NSArray<NSString *> *)nomiSimbologie;
 
-/// Vero per le due che si disegnano come quadrato e non come barre.
-+ (BOOL)simbologiaQuadrata:(NSInteger)simbologia;
-
 /// Quale codice sembra, guardando il testo. È quella che l'app propone quando
 /// si aggiunge una carta, e che il core usa per i file scritti prima della 1.0.3.
 + (NSInteger)simbologiaIndovinata:(NSString *)codice qrcode:(BOOL)qrcode;
+
+/// Il tipo di codice che sceglie Automatico: quello del codice, o il QR se non ci sta.
++ (NSInteger)simbologiaAutomatica:(NSString *)codice;
 
 /// Se un codice si può disegnare in una simbologia, senza disegnarlo.
 ///
@@ -148,22 +152,6 @@ typedef NS_ENUM(NSInteger, OCTipoFile) {
 /// parte va detta subito, non scoperta più tardi aprendo la carta e trovando il
 /// posto del codice vuoto.
 + (BOOL)codiceSta:(NSString *)codice simbologia:(NSInteger)simbologia;
-
-+ (BOOL)impostaSimbologia:(NSInteger)identificativo
-               simbologia:(NSInteger)simbologia
-                   errore:(NSError **)errore;
-
-+ (BOOL)impostaDettagli:(NSInteger)identificativo
-                   note:(NSString *)note
-               scadenza:(NSString *)scadenza
-                  saldo:(NSString *)saldo
-                 errore:(NSError **)errore;
-
-/// I nomi dei due file, stringa vuota per togliere una foto.
-+ (BOOL)impostaFoto:(NSInteger)identificativo
-             fronte:(NSString *)fronte
-              retro:(NSString *)retro
-             errore:(NSError **)errore;
 
 /// Immagine del codice disegnata con la simbologia scritta nella carta.
 + (nullable UIImage *)immaginePerCodice:(NSString *)codice

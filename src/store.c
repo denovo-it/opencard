@@ -1366,6 +1366,60 @@ opencard_esito opencard_pulisci_foto(opencard_errore *errore)
     return OPENCARD_OK;
 }
 
+int opencard_data_valida(const char *testo)
+{
+    return data_valida(testo);
+}
+
+opencard_esito opencard_salva(const opencard_card *carta, int nuova,
+                              opencard_errore *errore)
+{
+    opencard_lista tutte;
+    opencard_card pronta;
+    opencard_esito esito;
+    size_t i;
+    int dove = -1;
+
+    if (carta == NULL || carta->id < 1 || carta->simbologia < 0
+        || carta->simbologia >= OPENCARD_SIM_QUANTE || !data_valida(carta->scadenza)) {
+        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+    }
+    esito = carica(&tutte, errore);
+    if (esito != OPENCARD_OK) {
+        return esito;
+    }
+    for (i = 0; i < tutte.n; i++) {
+        if (tutte.carte[i].id == carta->id) {
+            dove = (int)i;
+            break;
+        }
+    }
+    if (nuova ? dove >= 0 : dove < 0) {
+        opencard_lista_free(&tutte);
+        return segnala(errore, nuova ? OPENCARD_ERR_ARGOMENTI : OPENCARD_ERR_NON_TROVATA);
+    }
+
+    componi(&pronta, carta->id, carta->label, carta->code, 0, carta->color,
+            carta->disposable, carta->favorite);
+    pronta.simbologia = carta->simbologia;
+    allinea_is_qrcode(&pronta);
+    copia(pronta.note, sizeof(pronta.note), carta->note);
+    copia(pronta.scadenza, sizeof(pronta.scadenza), carta->scadenza);
+    copia(pronta.saldo, sizeof(pronta.saldo), carta->saldo);
+    copia(pronta.foto_fronte, sizeof(pronta.foto_fronte), carta->foto_fronte);
+    copia(pronta.foto_retro, sizeof(pronta.foto_retro), carta->foto_retro);
+
+    if (dove >= 0) {
+        tutte.carte[dove] = pronta;
+    } else if (!lista_aggiungi(&tutte, &pronta)) {
+        opencard_lista_free(&tutte);
+        return segnala(errore, OPENCARD_ERR_MEMORIA);
+    }
+    esito = salva(&tutte, errore);
+    opencard_lista_free(&tutte);
+    return esito;
+}
+
 opencard_esito opencard_delete(int id, opencard_errore *errore)
 {
     opencard_lista tutte;

@@ -326,52 +326,59 @@ Java_srl_denovo_opencard_Core_nextId(JNIEnv *env, jclass classe)
     return (jint)opencard_next_id();
 }
 
-JNIEXPORT jint JNICALL
-Java_srl_denovo_opencard_Core_insert(JNIEnv *env, jclass classe, jstring label,
-                                     jstring code, jboolean isQrcode, jstring color,
-                                     jboolean disposable)
-{
-    char buffer_label[OPENCARD_LABEL_MAX];
-    char buffer_code[OPENCARD_CODE_MAX];
-    char buffer_color[OPENCARD_COLOR_MAX];
-    opencard_errore errore;
-    int nuovo_id = 0;
-
-    (void)classe;
-    if (!stringa(env, label, buffer_label, sizeof(buffer_label)) ||
-        !stringa(env, code, buffer_code, sizeof(buffer_code)) ||
-        !stringa(env, color, buffer_color, sizeof(buffer_color))) {
-        return 0;
-    }
-    if (opencard_insert(buffer_label, buffer_code, isQrcode == JNI_TRUE,
-                        buffer_color, disposable == JNI_TRUE, &nuovo_id, &errore)
-        != OPENCARD_OK) {
-        lancia(env, &errore);
-        return 0;
-    }
-    return (jint)nuovo_id;
-}
-
 JNIEXPORT void JNICALL
-Java_srl_denovo_opencard_Core_update(JNIEnv *env, jclass classe, jint id, jstring label,
-                                     jstring code, jboolean isQrcode, jstring color,
-                                     jboolean disposable)
+Java_srl_denovo_opencard_Core_salva(JNIEnv *env, jclass classe, jint id, jboolean nuova,
+                                    jstring label, jstring code, jint simbologia,
+                                    jstring color, jboolean disposable, jboolean preferita,
+                                    jstring note, jstring scadenza, jstring saldo,
+                                    jstring fronte, jstring retro)
 {
-    char buffer_label[OPENCARD_LABEL_MAX];
-    char buffer_code[OPENCARD_CODE_MAX];
-    char buffer_color[OPENCARD_COLOR_MAX];
+    opencard_card carta;
     opencard_errore errore;
 
     (void)classe;
-    if (!stringa(env, label, buffer_label, sizeof(buffer_label)) ||
-        !stringa(env, code, buffer_code, sizeof(buffer_code)) ||
-        !stringa(env, color, buffer_color, sizeof(buffer_color))) {
+    memset(&carta, 0, sizeof(carta));
+    if (!stringa(env, label, carta.label, sizeof(carta.label)) ||
+        !stringa(env, code, carta.code, sizeof(carta.code)) ||
+        !stringa(env, color, carta.color, sizeof(carta.color)) ||
+        !stringa(env, note, carta.note, sizeof(carta.note)) ||
+        !stringa(env, scadenza, carta.scadenza, sizeof(carta.scadenza)) ||
+        !stringa(env, saldo, carta.saldo, sizeof(carta.saldo)) ||
+        !stringa(env, fronte, carta.foto_fronte, sizeof(carta.foto_fronte)) ||
+        !stringa(env, retro, carta.foto_retro, sizeof(carta.foto_retro))) {
         return;
     }
-    if (opencard_update((int)id, buffer_label, buffer_code, isQrcode == JNI_TRUE,
-                        buffer_color, disposable == JNI_TRUE, &errore) != OPENCARD_OK) {
+    carta.id = (int)id;
+    carta.simbologia = (opencard_simbologia)simbologia;
+    carta.disposable = disposable == JNI_TRUE;
+    carta.favorite = preferita == JNI_TRUE;
+    if (opencard_salva(&carta, nuova == JNI_TRUE, &errore) != OPENCARD_OK) {
         lancia(env, &errore);
     }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_srl_denovo_opencard_Core_dataValida(JNIEnv *env, jclass classe, jstring testo)
+{
+    char buffer[32];
+
+    (void)classe;
+    if (!stringa(env, testo, buffer, sizeof(buffer))) {
+        return JNI_FALSE;
+    }
+    return opencard_data_valida(buffer) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL
+Java_srl_denovo_opencard_Core_simbologiaAutomatica(JNIEnv *env, jclass classe, jstring code)
+{
+    char buffer_code[OPENCARD_CODE_MAX];
+
+    (void)classe;
+    if (!stringa(env, code, buffer_code, sizeof(buffer_code))) {
+        return OPENCARD_SIM_QR;
+    }
+    return (jint)opencard_simbologia_automatica(buffer_code);
 }
 
 JNIEXPORT void JNICALL
@@ -866,57 +873,6 @@ Java_srl_denovo_opencard_Core_simbologiaIndovinata(JNIEnv *env, jclass classe,
     }
     return (jint)opencard_simbologia_indovinata(ingresso,
                                                 isQrcode == JNI_TRUE ? 1 : 0);
-}
-
-JNIEXPORT void JNICALL
-Java_srl_denovo_opencard_Core_setSimbologia(JNIEnv *env, jclass classe, jint id,
-                                            jint simbologia)
-{
-    opencard_errore errore;
-
-    (void)classe;
-    if (opencard_set_simbologia((int)id, (opencard_simbologia)simbologia,
-                                &errore) != OPENCARD_OK) {
-        lancia(env, &errore);
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_srl_denovo_opencard_Core_setDettagli(JNIEnv *env, jclass classe, jint id,
-                                          jstring note, jstring scadenza, jstring saldo)
-{
-    char note_c[OPENCARD_NOTE_MAX];
-    char scadenza_c[OPENCARD_DATA_MAX];
-    char saldo_c[OPENCARD_SALDO_MAX];
-    opencard_errore errore;
-
-    (void)classe;
-    if (!stringa(env, note, note_c, sizeof(note_c))
-        || !stringa(env, scadenza, scadenza_c, sizeof(scadenza_c))
-        || !stringa(env, saldo, saldo_c, sizeof(saldo_c))) {
-        return;
-    }
-    if (opencard_set_dettagli((int)id, note_c, scadenza_c, saldo_c, &errore) != OPENCARD_OK) {
-        lancia(env, &errore);
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_srl_denovo_opencard_Core_setFoto(JNIEnv *env, jclass classe, jint id,
-                                      jstring fronte, jstring retro)
-{
-    char fronte_c[OPENCARD_FOTO_MAX];
-    char retro_c[OPENCARD_FOTO_MAX];
-    opencard_errore errore;
-
-    (void)classe;
-    if (!stringa(env, fronte, fronte_c, sizeof(fronte_c))
-        || !stringa(env, retro, retro_c, sizeof(retro_c))) {
-        return;
-    }
-    if (opencard_set_foto((int)id, fronte_c, retro_c, &errore) != OPENCARD_OK) {
-        lancia(env, &errore);
-    }
 }
 
 JNIEXPORT jbyteArray JNICALL

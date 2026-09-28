@@ -176,28 +176,23 @@ object Core {
     @JvmStatic external fun get(id: Int): Carta
     @JvmStatic external fun nextId(): Int
 
-    @JvmStatic external fun insert(
-        label: String, code: String, isQrcode: Boolean,
-        colore: String, disposable: Boolean,
-    ): Int
-
-    @JvmStatic external fun update(
-        id: Int, label: String, code: String, isQrcode: Boolean,
-        colore: String, disposable: Boolean,
+    /**
+     * La carta del modulo, tutta insieme, in una scrittura sola. Con [nuova] va
+     * in fondo con il suo [id], da chiedere prima a [nextId] perché il nome
+     * delle foto lo contiene; senza, prende il posto della carta con quell'id.
+     * [colore] vuoto vuol dire il colore dell'id.
+     */
+    @JvmStatic external fun salva(
+        id: Int, nuova: Boolean, label: String, code: String, simbologia: Int,
+        colore: String, disposable: Boolean, preferita: Boolean,
+        note: String, scadenza: String, saldo: String, fotoFronte: String, fotoRetro: String,
     )
 
-    /** Cambia la simbologia e basta: la carta resta com'è. */
-    @JvmStatic external fun setSimbologia(id: Int, simbologia: Int)
+    /** Vero se la scadenza si può salvare: vuota, oppure "AAAA-MM-GG". */
+    @JvmStatic external fun dataValida(testo: String): Boolean
 
-    /**
-     * Note, scadenza e saldo. Stringa vuota svuota il campo; la scadenza vuole
-     * "AAAA-MM-GG" e qualsiasi altra cosa fa fallire la chiamata senza
-     * scrivere niente.
-     */
-    @JvmStatic external fun setDettagli(id: Int, note: String, scadenza: String, saldo: String)
-
-    /** I nomi dei file delle due foto. I file li scrive e li cancella la UI. */
-    @JvmStatic external fun setFoto(id: Int, fronte: String, retro: String)
+    /** Il tipo di codice che sceglie Automatico: quello del codice, o il QR se non ci sta. */
+    @JvmStatic external fun simbologiaAutomatica(code: String): Int
 
     /** Il codice disegnato con la simbologia scelta, non con quella indovinata. */
     @JvmStatic external fun renderCodeSimbologia(code: String, simbologia: Int): ImmagineCodice

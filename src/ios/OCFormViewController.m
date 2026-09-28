@@ -905,10 +905,7 @@ static const NSUInteger OCLimiteCodice = 500;
             self.simbologiaNota != OCSimbologiaAuto) {
             simbologia = self.simbologiaNota;
         } else {
-            simbologia = [OCCore simbologiaIndovinata:valore qrcode:NO];
-            if (![OCCore codiceSta:valore simbologia:simbologia]) {
-                simbologia = OPENCARD_SIM_QR;
-            }
+            simbologia = [OCCore simbologiaAutomatica:valore];
         }
     }
     // Una simbologia scelta a mano invece può non contenere il codice, e finora
@@ -922,51 +919,31 @@ static const NSUInteger OCLimiteCodice = 500;
         return;
     }
 
-    BOOL qrcode = [OCCore simbologiaQuadrata:simbologia];
     NSString *colore = self.coloreScelto ?: @"";
     NSError *errore = nil;
-    BOOL esito;
 
-    NSInteger quale = self.identificativo;
+    // Una carta nuova prende l'id prima di essere scritta: il nome dei file
+    // delle foto lo contiene. Poi tutta la carta va nel file in una volta.
+    BOOL nuova = self.identificativo == 0;
+    NSInteger quale = nuova ? [OCCore prossimoId] : self.identificativo;
+    NSString *fronte = @"";
+    NSString *retro = @"";
 
-    if (self.identificativo == 0) {
-        quale = [OCCore inserisci:etichetta codice:valore qrcode:qrcode colore:colore
-                        usaEGetta:self.interruttore.isOn errore:&errore];
-        esito = quale >= 0;
-    } else {
-        esito = [OCCore aggiorna:self.identificativo etichetta:etichetta codice:valore
-                          qrcode:qrcode colore:colore usaEGetta:self.interruttore.isOn
-                          errore:&errore];
-    }
-
-    if (!esito) {
-        [self mostraErrore:errore.localizedDescription];
-        return;
-    }
-
-    // La stella si scrive a parte, perché non passa da inserisci e aggiorna:
-    // quelle due lasciano stare il campo apposta, così modificare una carta
-    // non le toglie la preferenza.
-    if (![OCCore impostaPreferita:quale accesa:self.stella.isOn errore:&errore]) {
-        [self mostraErrore:errore.localizedDescription];
-        return;
-    }
-
-    // Come la stella: inserisci e aggiorna lasciano stare questi campi, così
-    // modificare l'etichetta di una carta non le cancella la nota.
-    if (![OCCore impostaSimbologia:quale simbologia:simbologia errore:&errore]) {
-        [self mostraErrore:errore.localizedDescription];
-        return;
-    }
-    if (![OCCore impostaDettagli:quale
-                            note:self.note.text ?: @""
-                        scadenza:[self scadenzaScritta]
-                           saldo:self.saldo.text ?: @""
-                          errore:&errore]) {
-        [self mostraErrore:errore.localizedDescription];
-        return;
-    }
-    if (![self salvaLeFotoDi:quale errore:&errore]) {
+    if (![self salvaLeFotoDi:quale fronte:&fronte retro:&retro errore:&errore]
+        || ![OCCore salva:quale
+                    nuova:nuova
+                etichetta:etichetta
+                   codice:valore
+               simbologia:simbologia
+                   colore:colore
+                usaEGetta:self.interruttore.isOn
+                preferita:self.stella.isOn
+                     note:self.note.text ?: @""
+                 scadenza:[self scadenzaScritta]
+                    saldo:self.saldo.text ?: @""
+               fotoFronte:fronte
+                fotoRetro:retro
+                   errore:&errore]) {
         [self mostraErrore:errore.localizedDescription];
         return;
     }
@@ -979,11 +956,12 @@ static const NSUInteger OCLimiteCodice = 500;
     }];
 }
 
-/// Scrive i file delle due foto e mette i nomi nella carta.
-///
-/// Si fa dopo l'inserimento e non prima: il nome del file contiene l'id, e una
-/// carta nuova l'id ce l'ha solo dopo che il core gliel'ha dato.
-- (BOOL)salvaLeFotoDi:(NSInteger)quale errore:(NSError **)errore
+/// Scrive i file delle due foto e torna i nomi da mettere nella carta. Si fa
+/// prima di salvarla, con l'id che avrà: il nome del file lo contiene.
+- (BOOL)salvaLeFotoDi:(NSInteger)quale
+               fronte:(NSString **)nomeFronte
+                retro:(NSString **)nomeRetro
+               errore:(NSError **)errore
 {
     NSString *fronte = @"";
     NSString *retro = @"";
@@ -1014,7 +992,9 @@ static const NSUInteger OCLimiteCodice = 500;
         [OCFoto cancella:self.nomeFotoRetro];
     }
 
-    return [OCCore impostaFoto:quale fronte:fronte retro:retro errore:errore];
+    *nomeFronte = fronte;
+    *nomeRetro = retro;
+    return YES;
 }
 
 /// La domanda è la stessa del cestino nell'elenco, con lo stesso titolo e lo
