@@ -4,6 +4,7 @@
 
 #import "OCFormViewController.h"
 
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import <Vision/Vision.h>
 
 #import "OCCore.h"
@@ -1099,8 +1100,7 @@ static const NSUInteger OCLimiteCodice = 500;
     // Anche i PDF: le tessere arrivano spesso per email come allegato, e
     // stamparle per poi fotografarle è un giro assurdo.
     UIDocumentPickerViewController *selettore = [[UIDocumentPickerViewController alloc]
-        initWithDocumentTypes:@[@"public.image", @"com.adobe.pdf"]
-                       inMode:UIDocumentPickerModeImport];
+        initForOpeningContentTypes:@[UTTypeImage, UTTypePDF] asCopy:YES];
     selettore.delegate = self;
     [self presentViewController:selettore animated:YES completion:nil];
 }

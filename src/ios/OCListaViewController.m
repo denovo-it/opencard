@@ -4,6 +4,8 @@
 
 #import "OCListaViewController.h"
 
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+
 #import "OCCore.h"
 #import "OCImpostazioniViewController.h"
 #import "OCDettaglioViewController.h"
@@ -41,6 +43,8 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 @interface OCListaViewController () <UIPageViewControllerDataSource, UIPageViewControllerDelegate,
                                      UIDocumentPickerDelegate, UISearchBarDelegate>
 @property (nonatomic, strong) UISegmentedControl *schede;
+/// Il selettore aperto per importare: il delegato è lo stesso dell'esportazione.
+@property (nonatomic, weak) UIDocumentPickerViewController *selettoreImporta;
 @property (nonatomic, strong) UIPageViewController *pagine;
 @property (nonatomic, strong) NSArray<OCGruppoViewController *> *gruppi;
 @property (nonatomic, strong) UIButton *aggiungi;
@@ -707,7 +711,7 @@ static const NSUInteger OCCartePerLaRicerca = 5;
     }
 
     UIDocumentPickerViewController *selettore = [[UIDocumentPickerViewController alloc]
-        initWithURL:[NSURL fileURLWithPath:percorso] inMode:UIDocumentPickerModeExportToService];
+        initForExportingURLs:@[[NSURL fileURLWithPath:percorso]] asCopy:YES];
     selettore.delegate = self;
     [self presentViewController:selettore animated:YES completion:nil];
 }
@@ -717,15 +721,16 @@ static const NSUInteger OCCartePerLaRicerca = 5;
     // Nessun filtro sull'estensione: i servizi di archiviazione espongono i
     // file senza un tipo affidabile, e un filtro li nasconderebbe.
     UIDocumentPickerViewController *selettore = [[UIDocumentPickerViewController alloc]
-        initWithDocumentTypes:@[@"public.item"] inMode:UIDocumentPickerModeImport];
+        initForOpeningContentTypes:@[UTTypeItem] asCopy:YES];
     selettore.delegate = self;
+    self.selettoreImporta = selettore;
     [self presentViewController:selettore animated:YES completion:nil];
 }
 
 - (void)documentPicker:(UIDocumentPickerViewController *)selettore
     didPickDocumentsAtURLs:(NSArray<NSURL *> *)indirizzi
 {
-    if (selettore.documentPickerMode != UIDocumentPickerModeImport) {
+    if (selettore != self.selettoreImporta) {
         [self avvisa:NSLocalizedString(@"backup_salvato", nil)];
         return;
     }

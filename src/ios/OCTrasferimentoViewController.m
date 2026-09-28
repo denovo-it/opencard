@@ -4,6 +4,8 @@
 
 #import "OCTrasferimentoViewController.h"
 
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+
 #import "OCCore.h"
 #import "OCScannerViewController.h"
 #import "OCTema.h"
@@ -274,7 +276,7 @@
     // selettore di sistema, così l'utente sceglie dove metterlo e l'app non
     // chiede nessun permesso sui documenti.
     UIDocumentPickerViewController *selettore = [[UIDocumentPickerViewController alloc]
-        initWithURL:[NSURL fileURLWithPath:percorso] inMode:UIDocumentPickerModeExportToService];
+        initForExportingURLs:@[[NSURL fileURLWithPath:percorso]] asCopy:YES];
     selettore.delegate = self;
     [self presentViewController:selettore animated:YES completion:nil];
 }
