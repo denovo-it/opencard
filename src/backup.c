@@ -234,18 +234,13 @@ static const opencard_zip_voce *voce(const opencard_zip_lettura *lettura, const 
     return NULL;
 }
 
-/* Vero se è lo ZIP di Catima: dentro c'è catima.csv e non il nostro elenco. */
+/* Vero se è lo ZIP di Catima: dentro c'è catima.csv e non il nostro elenco.
+ * Guarda solo l'indice: fino alla 1.0.7-dev decomprimeva tutto l'archivio,
+ * foto comprese, e Android lo chiedeva due volte prima di importarlo. */
 static int zip_di_catima(const unsigned char *dati, size_t quanti)
 {
-    opencard_zip_lettura lettura;
-    int si;
-
-    if (opencard_zip_leggi(dati, quanti, &lettura, NULL) != OPENCARD_OK) {
-        return 0;
-    }
-    si = voce(&lettura, NOME_CATIMA) != NULL && voce(&lettura, NOME_ELENCO) == NULL;
-    opencard_zip_libera(&lettura);
-    return si;
+    return opencard_zip_ha_voce(dati, quanti, NOME_CATIMA)
+           && !opencard_zip_ha_voce(dati, quanti, NOME_ELENCO);
 }
 
 opencard_tipo_file opencard_file_tipo(const unsigned char *dati, size_t quanti)

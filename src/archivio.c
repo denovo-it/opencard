@@ -399,7 +399,11 @@ opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
         commento = leggi16(voce + 32);
         dove = (size_t)leggi32(voce + 42);
 
+        /* Il nome segue l'intestazione e deve stare anche lui nel file: fino
+         * alla 1.0.7-dev si controllava solo l'intestazione, e un indice in
+         * fondo al file con un nome lungo faceva leggere oltre la fine. */
         if (lunghezza_nome == 0 || lunghezza_nome >= sizeof(out->voci[i].nome)
+            || (size_t)(voce - dati) + TESTA_INDICE + lunghezza_nome > quanti
             || distesa > ARCHIVIO_MAX || dove + TESTA_LOCALE > quanti) {
             opencard_zip_libera(out);
             return fallisci(errore, OPENCARD_ERR_JSON);
@@ -459,6 +463,46 @@ opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
         voce += TESTA_INDICE + lunghezza_nome + extra + commento;
     }
     return OPENCARD_OK;
+}
+
+int opencard_zip_ha_voce(const unsigned char *dati, size_t quanti, const char *nome)
+{
+    const unsigned char *fine, *voce;
+    size_t inizio_indice, quante, i, cercato;
+
+    if (dati == NULL || nome == NULL || (fine = trova_fine(dati, quanti)) == NULL) {
+        return 0;
+    }
+    quante = leggi16(fine + 10);
+    inizio_indice = (size_t)leggi32(fine + 16);
+    if (quante == 0 || quante > 4096 || inizio_indice >= quanti) {
+        return 0;
+    }
+    cercato = strlen(nome);
+    voce = dati + inizio_indice;
+    for (i = 0; i < quante; i++) {
+        size_t lunghezza_nome, k, base = 0;
+
+        if ((size_t)(voce - dati) + TESTA_INDICE > quanti || leggi32(voce) != FIRMA_INDICE) {
+            return 0;
+        }
+        lunghezza_nome = leggi16(voce + 28);
+        if ((size_t)(voce - dati) + TESTA_INDICE + lunghezza_nome > quanti) {
+            return 0;
+        }
+        /* Il nome senza le cartelle davanti, come lo cerca backup.c. */
+        for (k = 0; k < lunghezza_nome; k++) {
+            if (voce[TESTA_INDICE + k] == '/') {
+                base = k + 1;
+            }
+        }
+        if (lunghezza_nome - base == cercato
+            && memcmp(voce + TESTA_INDICE + base, nome, cercato) == 0) {
+            return 1;
+        }
+        voce += TESTA_INDICE + lunghezza_nome + leggi16(voce + 30) + leggi16(voce + 32);
+    }
+    return 0;
 }
 
 void opencard_zip_libera(opencard_zip_lettura *lettura)

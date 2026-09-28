@@ -54,6 +54,11 @@ opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
                                   opencard_zip_lettura *out,
                                   opencard_errore *errore);
 
+/* Vero se nell'indice c'è una voce con quel nome, senza le cartelle davanti.
+ * Legge solo l'indice e non estrae niente: serve a riconoscere un archivio
+ * prima di importarlo, che prima voleva dire decomprimerlo tutto. */
+int opencard_zip_ha_voce(const unsigned char *dati, size_t quanti, const char *nome);
+
 void opencard_zip_libera(opencard_zip_lettura *lettura);
 void opencard_zip_free(unsigned char *dati);
 
