@@ -1,5 +1,6 @@
 ## 1.0.7-dev (in lavorazione)
 
+- Su Android la scadenza si sceglie con il calendario del telefono.
 - Lo ZIP che esporta Catima si importa così com'è, senza doverne tirare fuori il CSV: prima OpenCard diceva che non era un backup. Come per il CSV, le carte si aggiungono a quelle che hai oppure prendono il loro posto.
 - Nel CSV per le altre app il saldo esce diviso in numero e valuta, come lo vuole Catima: «12,50 €» arriva a Catima come 12,50 euro, mentre prima Catima lo scartava. Un saldo in punti arriva come numero.
 - Eliminando una carta ne sparivano i dati ma non le foto: su iPhone restavano sempre, anche dopo «Cancella tutti i tuoi dati». Su Android restavano quando la carta si eliminava dall'elenco. Ora le foto se ne vanno con la carta. Al primo avvio l'app toglie quelle rimaste dalle versioni precedenti, che finivano anche nel backup del telefono.

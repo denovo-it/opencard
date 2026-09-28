@@ -5,6 +5,7 @@
 package srl.denovo.opencard
 
 import android.app.Activity
+import android.app.DatePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -34,16 +35,12 @@ import androidx.exifinterface.media.ExifInterface
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
-import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.textfield.TextInputLayout
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import java.io.File
-import java.text.ParseException
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.Calendar
 import java.util.Locale
-import java.util.TimeZone
 
 /**
  * Aggiunta e modifica di una carta.
@@ -303,25 +300,25 @@ class FormActivity : AppCompatActivity() {
      * sempre "AAAA-MM-GG".
      */
     private fun chiediLaData() {
-        val formato = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
         val scritta = scadenza.text.toString().trim()
-        val partenza = try {
-            if (scritta.isEmpty()) MaterialDatePicker.todayInUtcMilliseconds()
-            else formato.parse(scritta)?.time ?: MaterialDatePicker.todayInUtcMilliseconds()
-        } catch (guasto: ParseException) {
-            MaterialDatePicker.todayInUtcMilliseconds()
+        val oggi = Calendar.getInstance()
+        var anno = oggi.get(Calendar.YEAR)
+        var mese = oggi.get(Calendar.MONTH)
+        var giorno = oggi.get(Calendar.DAY_OF_MONTH)
+        if (scritta.isNotEmpty() && Core.dataValida(scritta)) {
+            anno = scritta.substring(0, 4).toInt()
+            mese = scritta.substring(5, 7).toInt() - 1
+            giorno = scritta.substring(8, 10).toInt()
         }
 
-        val calendario = MaterialDatePicker.Builder.datePicker()
-            .setTitleText(getString(R.string.scadenza))
-            .setSelection(partenza)
-            .build()
-        calendario.addOnPositiveButtonClickListener { quando ->
-            scadenza.setText(formato.format(Date(quando)))
-        }
-        calendario.show(supportFragmentManager, "scadenza")
+        // Il calendario di sistema e non quello di Material: quello di Material
+        // chiama le API della barra di stato deprecate da Android 15, ed era
+        // lui a far segnalare a Play l'edge-to-edge.
+        DatePickerDialog(this, { _, a, m, g ->
+            scadenza.setText(String.format(Locale.US, "%04d-%02d-%02d", a, m + 1, g))
+        }, anno, mese, giorno).apply {
+            setTitle(R.string.scadenza)
+        }.show()
     }
 
     /**
