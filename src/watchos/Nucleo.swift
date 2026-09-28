@@ -18,11 +18,9 @@ struct Carta: Identifiable, Equatable {
 
     /// Vero per i codici che si disegnano su più righe o come quadrato. Una
     /// fascia orizzontale di un codice a barre è il codice intero, di questi no.
+    /// L'elenco lo tiene il core, lo stesso del telefono.
     var aPiuRighe: Bool {
-        [OPENCARD_SIM_QR, OPENCARD_SIM_AZTEC, OPENCARD_SIM_DATAMATRIX,
-         OPENCARD_SIM_PDF417, OPENCARD_SIM_MICROQR]
-            .map { Int($0.rawValue) }
-            .contains(simbologia)
+        opencard_simbologia_una_riga(opencard_simbologia(rawValue: UInt32(simbologia))) == 0
     }
 }
 
