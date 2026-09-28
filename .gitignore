@@ -9,3 +9,6 @@ src/android/app/.cxx/
 test/prova_store
 test/prova_codegen
 test/*.png
+
+# Python: la cache che lascia genera.py quando lo si importa
+__pycache__/
