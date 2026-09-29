@@ -703,18 +703,15 @@ static jobject disegna_codice(JNIEnv *env, jstring code, jboolean isQrcode,
 }
 
 JNIEXPORT jstring JNICALL
-Java_srl_denovo_opencard_Core_backupEsporta(JNIEnv *env, jclass classe, jstring quando)
+Java_srl_denovo_opencard_Core_backupEsporta(JNIEnv *env, jclass classe)
 {
-    char istante[64];
     char *testo = NULL;
     opencard_errore errore;
     jstring risultato;
 
     (void)classe;
-    if (!stringa(env, quando, istante, sizeof(istante))) {
-        return NULL;
-    }
-    if (opencard_backup_esporta(istante, &testo, &errore) != OPENCARD_OK || testo == NULL) {
+    /* L'istante lo scrive il core. */
+    if (opencard_backup_esporta(NULL, &testo, &errore) != OPENCARD_OK || testo == NULL) {
         lancia(env, &errore);
         return NULL;
     }
@@ -724,17 +721,31 @@ Java_srl_denovo_opencard_Core_backupEsporta(JNIEnv *env, jclass classe, jstring 
     return risultato;
 }
 
+/* Il nome del file da salvare, con la data di oggi e l'estensione giusta. */
 JNIEXPORT jstring JNICALL
-Java_srl_denovo_opencard_Core_backupNome(JNIEnv *env, jclass classe, jstring oggi)
+Java_srl_denovo_opencard_Core_esportaNome(JNIEnv *env, jclass classe, jboolean csv,
+                                          jstring password)
 {
-    char data[16];
+    char password_c[256];
     char nome[64];
 
     (void)classe;
-    if (!stringa(env, oggi, data, sizeof(data))) {
+    if (!stringa(env, password, password_c, sizeof(password_c))) {
         return NULL;
     }
-    opencard_backup_nome(data, nome, sizeof(nome));
+    opencard_esporta_nome(csv == JNI_TRUE ? OPENCARD_FORMATO_CSV : OPENCARD_FORMATO_ARCHIVIO,
+                          password_c, nome, sizeof(nome));
+    return (*env)->NewStringUTF(env, nome);
+}
+
+/* Il nome del PDF con i QR del passaggio. */
+JNIEXPORT jstring JNICALL
+Java_srl_denovo_opencard_Core_codiciNome(JNIEnv *env, jclass classe)
+{
+    char nome[64];
+
+    (void)classe;
+    opencard_codici_nome(nome, sizeof(nome));
     return (*env)->NewStringUTF(env, nome);
 }
 
@@ -1013,9 +1024,8 @@ Java_srl_denovo_opencard_Core_simbologiaIndovinata(JNIEnv *env, jclass classe,
 
 JNIEXPORT jbyteArray JNICALL
 Java_srl_denovo_opencard_Core_esporta(JNIEnv *env, jclass classe, jboolean csv,
-                                      jstring quando, jstring password)
+                                      jstring password)
 {
-    char quando_c[64];
     char password_c[256];
     unsigned char *byte = NULL;
     size_t quanti = 0;
@@ -1023,12 +1033,12 @@ Java_srl_denovo_opencard_Core_esporta(JNIEnv *env, jclass classe, jboolean csv,
     jbyteArray fuori;
 
     (void)classe;
-    if (!stringa(env, quando, quando_c, sizeof(quando_c))
-        || !stringa(env, password, password_c, sizeof(password_c))) {
+    if (!stringa(env, password, password_c, sizeof(password_c))) {
         return NULL;
     }
+    /* L'istante lo scrive il core. */
     if (opencard_esporta(csv == JNI_TRUE ? OPENCARD_FORMATO_CSV : OPENCARD_FORMATO_ARCHIVIO,
-                         quando_c, password_c, &byte, &quanti, &errore) != OPENCARD_OK) {
+                         NULL, password_c, &byte, &quanti, &errore) != OPENCARD_OK) {
         lancia(env, &errore);
         return NULL;
     }

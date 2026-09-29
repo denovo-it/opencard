@@ -741,12 +741,9 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 /// dove vuole.
 - (void)offriBackup:(NSData *)contenuto csv:(BOOL)csv password:(NSString *)password
 {
-    // Un archivio si chiama .zip, e uno chiuso con la password .opencard:
-    // l'estensione deve dire cosa trova chi apre il file, non cosa c'è dentro.
-    NSString *nudo = [[OCCore nomeBackup] stringByDeletingPathExtension];
-    NSString *estensione = password.length > 0 ? @"opencard" : (csv ? @"csv" : @"zip");
+    // Nome, data ed estensione li sceglie il core, uguali su Android.
     NSString *percorso = [NSTemporaryDirectory() stringByAppendingPathComponent:
-                          [nudo stringByAppendingPathExtension:estensione]];
+                          [OCCore nomeEsportazioneCsv:csv password:password]];
 
     // Il file si scrive in una cartella temporanea e poi lo prende il selettore
     // di sistema: l'utente sceglie dove metterlo, e l'app non chiede nessun

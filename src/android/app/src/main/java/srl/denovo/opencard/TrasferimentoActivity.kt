@@ -192,8 +192,7 @@ class TrasferimentoActivity : AppCompatActivity() {
                 findViewById<View>(R.id.scelta).visibility = View.GONE
                 findViewById<View>(R.id.vetrina).visibility = View.VISIBLE
                 findViewById<View>(R.id.salva_qr).setOnClickListener {
-                    salvaCodici.launch(Core.backupNome(Core.oggi())
-                        .removeSuffix(".json") + "-codici.pdf")
+                    salvaCodici.launch(Core.codiciNome())
                 }
                 alMassimoLaLuminosita()
                 disegnaCodice()

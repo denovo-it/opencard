@@ -11,9 +11,6 @@ package srl.denovo.opencard
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /** Una carta come la tiene il core. */
 data class Carta(
@@ -241,8 +238,14 @@ object Core {
     /** Il codice spezzato in blocchi di tre, per leggerlo e confrontarlo. */
     @JvmStatic external fun groupedCode(code: String): String
 
-    @JvmStatic external fun backupNome(oggi: String): String
-    @JvmStatic external fun backupEsporta(quando: String): String
+    /** Il nome del file da salvare, con la data di oggi: .zip, .csv, o .opencard con la password. */
+    @JvmStatic external fun esportaNome(csv: Boolean, password: String): String
+
+    /** Il nome del PDF con i QR del passaggio fra due telefoni. */
+    @JvmStatic external fun codiciNome(): String
+
+    /** Il JSON delle carte, per l'orologio e per il backup del telefono. */
+    @JvmStatic external fun backupEsporta(): String
 
     /** Legge un backup e lo applica. Restituisce quante carte sono entrate. */
     @JvmStatic external fun backupRipristina(dati: ByteArray): Int
@@ -251,7 +254,7 @@ object Core {
      * Il file da salvare con tutte le carte: l'archivio con le foto, oppure il
      * CSV di Catima. Con la password non vuota esce chiuso, foto comprese.
      */
-    @JvmStatic external fun esporta(csv: Boolean, quando: String, password: String): ByteArray
+    @JvmStatic external fun esporta(csv: Boolean, password: String): ByteArray
 
     /** Che file è, per scegliere la domanda da fare: vedi [FILE_CSV] e [FILE_CIFRATO]. */
     @JvmStatic external fun fileTipo(dati: ByteArray): Int
@@ -293,16 +296,4 @@ object Core {
     /** Scrive le carte ricevute e dice quante ne ha scritte.
      *  `azzera` acceso butta via quelle che c'erano. */
     @JvmStatic external fun trasfApplica(letti: Array<String>, azzera: Boolean): Int
-
-    /** Data di oggi come la vuole il nome del file di backup. */
-    fun oggi(): String = SimpleDateFormat("yyyyMMdd", Locale.ITALY).format(Date())
-
-    /** Istante attuale in ISO 8601, per l'intestazione del backup. In UTC con
-     *  la Z scritta: il fuso con `XXX`
-     *  Android lo conosce solo dall'API 24, e su Android 6 l'esportazione
-     *  chiudeva l'app. Il campo, `exported_at`, non lo rilegge nessuno. */
-    fun adesso(): String =
-        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ITALY)
-            .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
-            .format(Date())
 }

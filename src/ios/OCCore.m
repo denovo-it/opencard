@@ -383,15 +383,20 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 
 #pragma mark - Backup
 
-+ (NSString *)nomeBackup
++ (NSString *)nomeEsportazioneCsv:(BOOL)csv password:(NSString *)password
 {
-    NSDateFormatter *formato = [NSDateFormatter new];
-    formato.dateFormat = @"yyyyMMdd";
-    formato.locale = [NSLocale localeWithLocaleIdentifier:@"it_IT"];
-
     char nome[64];
-    opencard_backup_nome([formato stringFromDate:[NSDate date]].UTF8String,
-                         nome, sizeof(nome));
+
+    opencard_esporta_nome(csv ? OPENCARD_FORMATO_CSV : OPENCARD_FORMATO_ARCHIVIO,
+                          password.UTF8String ?: "", nome, sizeof(nome));
+    return [NSString stringWithUTF8String:nome];
+}
+
++ (NSString *)nomeCodici
+{
+    char nome[64];
+
+    opencard_codici_nome(nome, sizeof(nome));
     return [NSString stringWithUTF8String:nome];
 }
 
@@ -413,17 +418,13 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 
 + (NSData *)esportaCsv:(BOOL)csv password:(NSString *)password errore:(NSError **)errore
 {
-    NSDateFormatter *formato = [NSDateFormatter new];
-    formato.dateFormat = @"yyyy-MM-dd'T'HH:mm:ssXXX";
-    formato.locale = [NSLocale localeWithLocaleIdentifier:@"it_IT"];
-
     unsigned char *byte = NULL;
     size_t quanti = 0;
     opencard_errore guasto;
 
+    /* L'istante lo scrive il core, in UTC come su Android. */
     if (opencard_esporta(csv ? OPENCARD_FORMATO_CSV : OPENCARD_FORMATO_ARCHIVIO,
-                         [formato stringFromDate:[NSDate date]].UTF8String,
-                         password.UTF8String ?: "", &byte, &quanti,
+                         NULL, password.UTF8String ?: "", &byte, &quanti,
                          &guasto) != OPENCARD_OK || byte == NULL) {
         [self riporta:errore da:&guasto];
         return nil;

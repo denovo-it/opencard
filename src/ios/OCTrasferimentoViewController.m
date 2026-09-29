@@ -266,9 +266,8 @@
         }
     }];
 
-    NSString *nudo = [[OCCore nomeBackup] stringByDeletingPathExtension];
     NSString *percorso = [NSTemporaryDirectory() stringByAppendingPathComponent:
-                          [nudo stringByAppendingString:@"-codici.pdf"]];
+                          [OCCore nomeCodici]];
     if (![pdf writeToFile:percorso atomically:YES]) {
         [self avvisa:NSLocalizedString(@"backup_non_scritto", nil)];
         return;

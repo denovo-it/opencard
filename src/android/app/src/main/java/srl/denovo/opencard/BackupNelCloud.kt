@@ -50,7 +50,7 @@ class BackupNelCloud : BackupAgent() {
         try {
             Core.storeInit(filesDir.absolutePath)
             Core.storeChiave(ChiaveDati.dammi(this))
-            esportato.writeText(Core.backupEsporta(Core.adesso()))
+            esportato.writeText(Core.backupEsporta())
             fullBackupFile(esportato, dati)
 
             // Le foto sono file JPEG a parte e nella carta viaggia solo il

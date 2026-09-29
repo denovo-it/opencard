@@ -31,7 +31,7 @@ object Orologio {
      */
     fun manda(contesto: Context) {
         val carte = try {
-            Core.backupEsporta(Core.adesso()).toByteArray()
+            Core.backupEsporta().toByteArray()
         } catch (guasto: OpenCardException) {
             return
         }

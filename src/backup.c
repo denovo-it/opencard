@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "third-party/cJSON.h"
 
@@ -30,16 +31,53 @@ static opencard_esito segnala(opencard_errore *errore, opencard_esito codice)
     return codice;
 }
 
-void opencard_backup_nome(const char *oggi, char *out, size_t out_size)
+/* Adesso in UTC, "AAAA-MM-GGTHH:MM:SSZ", per il campo exported_at. Fino alla
+ * 1.0.7-dev lo scrivevano le app: Android in UTC, iPhone con il suo fuso. */
+static const char *adesso(char *out, size_t out_size)
 {
+    time_t ora = time(NULL);
+    struct tm scomposto;
+
+    if (gmtime_r(&ora, &scomposto) == NULL
+        || strftime(out, out_size, "%Y-%m-%dT%H:%M:%SZ", &scomposto) == 0) {
+        out[0] = '\0';
+    }
+    return out;
+}
+
+/* Il nome con la data di oggi nel fuso del telefono, "opencard-AAAAMMGG",
+ * più quello che segue. */
+static void nome_di_oggi(const char *coda, char *out, size_t out_size)
+{
+    time_t ora = time(NULL);
+    struct tm scomposto;
+    char data[16];
+
     if (out == NULL || out_size == 0) {
         return;
     }
-    if (oggi == NULL || oggi[0] == '\0') {
-        snprintf(out, out_size, "opencard.json");
+    if (localtime_r(&ora, &scomposto) == NULL
+        || strftime(data, sizeof(data), "%Y%m%d", &scomposto) == 0) {
+        snprintf(out, out_size, "opencard%s", coda);
         return;
     }
-    snprintf(out, out_size, "opencard-%s.json", oggi);
+    snprintf(out, out_size, "opencard-%s%s", data, coda);
+}
+
+void opencard_esporta_nome(opencard_formato formato, const char *password,
+                           char *out, size_t out_size)
+{
+    const char *estensione = formato == OPENCARD_FORMATO_CSV ? ".csv" : ".zip";
+
+    if (password != NULL && password[0] != '\0') {
+        estensione = ".opencard";
+    }
+    nome_di_oggi(estensione, out, out_size);
+}
+
+void opencard_codici_nome(char *out, size_t out_size)
+{
+    nome_di_oggi("-codici.pdf", out, out_size);
 }
 
 opencard_esito opencard_backup_esporta(const char *esportato_il, char **testo,
@@ -49,6 +87,7 @@ opencard_esito opencard_backup_esporta(const char *esportato_il, char **testo,
     opencard_esito esito;
     cJSON *radice;
     char *stampato;
+    char istante[32];
 
     if (testo == NULL) {
         return segnala(errore, OPENCARD_ERR_ARGOMENTI);
@@ -60,8 +99,9 @@ opencard_esito opencard_backup_esporta(const char *esportato_il, char **testo,
         return esito;
     }
 
-    radice = (cJSON *)opencard_carte_a_json(&tutte,
-                                            esportato_il != NULL ? esportato_il : "");
+    radice = (cJSON *)opencard_carte_a_json(&tutte, esportato_il != NULL
+                                                        ? esportato_il
+                                                        : adesso(istante, sizeof(istante)));
     opencard_lista_free(&tutte);
     if (radice == NULL) {
         return segnala(errore, OPENCARD_ERR_MEMORIA);
@@ -301,13 +341,16 @@ static opencard_esito scrivi_archivio(const opencard_lista *tutte,
                                       unsigned char **fuori, size_t *fuori_n,
                                       opencard_errore *errore)
 {
+    char istante[32];
     opencard_zip_voce *voci;
     size_t n = 0, i, j, k;
     cJSON *radice;
     char *elenco;
     opencard_esito esito;
 
-    radice = (cJSON *)opencard_carte_a_json(tutte, esportato_il != NULL ? esportato_il : "");
+    radice = (cJSON *)opencard_carte_a_json(tutte, esportato_il != NULL
+                                                       ? esportato_il
+                                                       : adesso(istante, sizeof(istante)));
     elenco = radice != NULL ? cJSON_Print(radice) : NULL;
     cJSON_Delete(radice);
     voci = calloc(1 + 2 * tutte->n, sizeof(*voci));

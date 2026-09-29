@@ -113,8 +113,12 @@ static const NSInteger OCSimbologiaAuto = -1;
 /// rischiare di portarsi via i dati, nel caso limite in cui finiscano li'.
 + (NSString *)directoryDati;
 
-/// Nome proposto per il file di backup.
-+ (NSString *)nomeBackup;
+/// Il nome del file da salvare, con la data di oggi: .zip, .csv, o .opencard
+/// quando c'è la password. Lo sceglie il core, uguale su Android.
++ (NSString *)nomeEsportazioneCsv:(BOOL)csv password:(NSString *)password;
+
+/// Il nome del PDF con i QR del passaggio fra due telefoni.
++ (NSString *)nomeCodici;
 
 /// Che file è, per scegliere la domanda prima di importarlo: i valori sono
 /// quelli di `opencard_tipo_file` in backup.h.

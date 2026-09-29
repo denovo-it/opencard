@@ -497,15 +497,9 @@ class MainActivity : AppCompatActivity() {
                         bottone = R.string.salva,
                     ) { password ->
                         passwordBackup = password
-                        val nome = Core.backupNome(Core.oggi()).removeSuffix(".json")
-                        // Un archivio si chiama .zip, e uno chiuso con la
-                        // password .opencard: l'estensione deve dire cosa
-                        // trova chi apre il file, non cosa c'e' dentro.
-                        if (password.isEmpty()) {
-                            salvaBackupCifrato.launch(nome + if (csv) ".csv" else ".zip")
-                        } else {
-                            salvaBackupCifrato.launch("$nome.opencard")
-                        }
+                        // Nome, data ed estensione li sceglie il core,
+                        // uguali su iPhone.
+                        salvaBackupCifrato.launch(Core.esportaNome(csv, password))
                     }
                     }
                 }
@@ -520,7 +514,7 @@ class MainActivity : AppCompatActivity() {
             {
                 // Archivio con le foto o CSV, e la password che chiude tutto:
                 // lo fa il core, uguale su iPhone.
-                Core.esporta(esportaCsv, Core.adesso(), password)
+                Core.esporta(esportaCsv, password)
             },
             { byte ->
                 try {

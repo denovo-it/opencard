@@ -22,13 +22,9 @@
 extern "C" {
 #endif
 
-/* Nome proposto per il file, tipo "opencard-20260811.json".
- * `oggi` è la data in formato YYYYMMDD: la sa la piattaforma, che conosce il
- * fuso orario dell'utente. */
-void opencard_backup_nome(const char *oggi, char *out, size_t out_size);
-
 /* Contenuto del file di backup, come testo UTF-8 terminato da NUL.
- * `esportato_il` è l'istante in formato ISO 8601, dato dalla piattaforma.
+ * `esportato_il` è l'istante in formato ISO 8601; NULL vuol dire adesso, e lo
+ * scrive il core in UTC. Le app passano NULL, i banchi un istante fisso.
  *
  * Gli id restano quelli che hanno: il colore di una carta che non ne ha uno
  * scelto a mano si calcola dall'id, e rinumerare cambierebbe quei colori.
@@ -88,11 +84,22 @@ typedef enum {
 
 opencard_tipo_file opencard_file_tipo(const unsigned char *dati, size_t quanti);
 
+/* Il nome proposto per il file da salvare, con la data di oggi nel fuso del
+ * telefono: "opencard-20260929.zip", ".csv", oppure ".opencard" quando c'è una
+ * password, perché l'estensione deve dire cosa trova chi apre il file e non
+ * cosa c'è dentro. Fino alla 1.0.7-dev lo componevano le due app. */
+void opencard_esporta_nome(opencard_formato formato, const char *password,
+                           char *out, size_t out_size);
+
+/* Il nome del PDF con i QR del passaggio fra due telefoni:
+ * "opencard-20260929-codici.pdf". */
+void opencard_codici_nome(char *out, size_t out_size);
+
 /* Il file da salvare, con tutte le carte. Con `password` non vuota esce chiuso
  * dalla cassaforte di cripto.h, archivio intero, foto comprese: lo ZIP da solo
  * cifra male. Le foto nominate da una carta ma sparite dal disco si saltano,
  * e una foto nominata da due carte entra una volta.
- * `esportato_il` è l'istante ISO 8601, dato dalla piattaforma.
+ * `esportato_il` è l'istante ISO 8601; NULL vuol dire adesso, in UTC.
  * Un file che supererebbe OPENCARD_FILE_MAX torna OPENCARD_ERR_TROPPO_GRANDE.
  * Chi chiama libera con opencard_cripto_free().
  */
