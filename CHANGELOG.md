@@ -1,6 +1,6 @@
 ## 1.0.7-dev (in lavorazione)
 
-- Su Android il campo di ricerca ha lo stesso aspetto delle carte: fondo pieno e angoli arrotondati, senza il bordo sottile.
+- Il campo di ricerca ha lo stesso aspetto delle carte, su Android e su iPhone: fondo pieno e angoli arrotondati come loro. Su Android non ha più il bordo sottile, su iPhone non è più la capsula con l'ombra.
 - Su Android il pulsante «Togli la foto» toglie la foto. Prima apriva la galleria: la foto si toglieva solo toccandola.
 - Le foto delle carte si scrivono intere: se l'app si chiude mentre salva una foto, resta quella di prima. Una foto tolta dal modulo se ne va solo quando la carta è salvata.
 - La scadenza si legge come 30/09/2026, sulla carta aperta e nel modulo, su Android e su iPhone. Prima sulla carta compariva 2026-09-30.

@@ -41,7 +41,7 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 @end
 
 @interface OCListaViewController () <UIPageViewControllerDataSource, UIPageViewControllerDelegate,
-                                     UIDocumentPickerDelegate, UISearchBarDelegate>
+                                     UIDocumentPickerDelegate>
 @property (nonatomic, strong) UISegmentedControl *schede;
 /// Il selettore aperto per importare: il delegato è lo stesso dell'esportazione.
 @property (nonatomic, weak) UIDocumentPickerViewController *selettoreImporta;
@@ -54,8 +54,10 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 @property (nonatomic, strong) UIButton *aggiungi;
 @property (nonatomic, strong) UIView *schedeSfondo;
 /// La ricerca per etichetta, sopra le carte: vale per tutte le schede insieme.
-@property (nonatomic, strong) UISearchBar *ricerca;
-/// L'altezza del campo di ricerca: va a zero quando non c'è nessuna carta.
+@property (nonatomic, strong) UITextField *ricerca;
+/// La fascia che contiene il campo: si mostra e si nasconde lei.
+@property (nonatomic, strong) UIView *ricercaRiquadro;
+/// L'altezza della fascia della ricerca: va a zero quando non c'è nessuna carta.
 @property (nonatomic, strong) NSLayoutConstraint *altezzaRicerca;
 /// Vero quando la scheda con la stella è in mezzo alle altre.
 @property (nonatomic, assign) BOOL conPreferite;
@@ -236,43 +238,72 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 
 /// Il campo di ricerca sta fra le schede e le carte, fuori dalle pagine, così
 /// non si perde cambiando scheda. Filtra a ogni tasto, e la X del campo lo
-/// svuota: la mostra la barra di sistema quando c'è del testo, anche a
-/// tastiera chiusa.
+/// svuota: resta anche a tastiera chiusa, finché c'è del testo.
+/// È un campo semplice e non una UISearchBar: da iOS 27 la barra di sistema
+/// disegna una capsula col suo vetro, e con un fondo proprio allunga il campo
+/// sotto le schede. Così ha la forma delle carte sotto: fondo pieno, angoli a
+/// 16, alto 44, allineato ai loro bordi.
 - (void)preparaRicerca
 {
-    self.ricerca = [UISearchBar new];
-    self.ricerca.searchBarStyle = UISearchBarStyleMinimal;
-    self.ricerca.placeholder = NSLocalizedString(@"cerca_etichetta", nil);
-    self.ricerca.delegate = self;
-    self.ricerca.searchTextField.clearButtonMode = UITextFieldViewModeAlways;
-    self.ricerca.hidden = YES;
-    self.ricerca.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.view addSubview:self.ricerca];
+    self.ricercaRiquadro = [UIView new];
+    self.ricercaRiquadro.clipsToBounds = YES;
+    self.ricercaRiquadro.hidden = YES;
+    self.ricercaRiquadro.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:self.ricercaRiquadro];
 
-    self.altezzaRicerca = [self.ricerca.heightAnchor constraintEqualToConstant:0];
+    self.ricerca = [UITextField new];
+    self.ricerca.placeholder = NSLocalizedString(@"cerca_etichetta", nil);
+    self.ricerca.backgroundColor = [UIColor secondarySystemFillColor];
+    self.ricerca.layer.cornerRadius = 16;
+    self.ricerca.clearButtonMode = UITextFieldViewModeAlways;
+    self.ricerca.returnKeyType = UIReturnKeySearch;
+    self.ricerca.autocorrectionType = UITextAutocorrectionTypeNo;
+    UIImageView *lente = [[UIImageView alloc] initWithImage:
+                              [UIImage systemImageNamed:@"magnifyingglass"]];
+    lente.tintColor = [UIColor secondaryLabelColor];
+    lente.contentMode = UIViewContentModeCenter;
+    // Il campo misura la vista a sinistra dalla sua misura naturale: l'icona
+    // da sola starebbe attaccata al bordo e al testo, il contenitore no.
+    UIView *spazioLente = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 40, 44)];
+    lente.frame = spazioLente.bounds;
+    [spazioLente addSubview:lente];
+    self.ricerca.leftView = spazioLente;
+    self.ricerca.leftViewMode = UITextFieldViewModeAlways;
+    [self.ricerca addTarget:self action:@selector(ricercaCambiata:)
+           forControlEvents:UIControlEventEditingChanged];
+    // Con un bersaglio su questo evento il tasto «Cerca» chiude la tastiera:
+    // le carte trovate sono già lì, e la tastiera ne coprirebbe metà.
+    [self.ricerca addTarget:self action:@selector(ricercaConfermata:)
+           forControlEvents:UIControlEventEditingDidEndOnExit];
+    self.ricerca.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.ricercaRiquadro addSubview:self.ricerca];
+
+    self.altezzaRicerca = [self.ricercaRiquadro.heightAnchor constraintEqualToConstant:0];
 
     [NSLayoutConstraint activateConstraints:@[
-        [self.ricerca.topAnchor constraintEqualToAnchor:self.schedeSfondo.bottomAnchor],
-        [self.ricerca.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:4],
-        [self.ricerca.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-4],
+        [self.ricercaRiquadro.topAnchor constraintEqualToAnchor:self.schedeSfondo.bottomAnchor],
+        [self.ricercaRiquadro.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [self.ricercaRiquadro.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
         self.altezzaRicerca,
+        [self.ricerca.topAnchor constraintEqualToAnchor:self.ricercaRiquadro.topAnchor constant:8],
+        [self.ricerca.leadingAnchor constraintEqualToAnchor:self.ricercaRiquadro.leadingAnchor constant:12],
+        [self.ricerca.trailingAnchor constraintEqualToAnchor:self.ricercaRiquadro.trailingAnchor constant:-12],
+        [self.ricerca.heightAnchor constraintEqualToConstant:44],
     ]];
 }
 
-- (void)searchBar:(UISearchBar *)campo textDidChange:(NSString *)testo
+- (void)ricercaCambiata:(UITextField *)campo
 {
-    NSString *filtro = [testo stringByTrimmingCharactersInSet:
-                                  [NSCharacterSet whitespaceCharacterSet]];
+    NSString *filtro = [campo.text ?: @"" stringByTrimmingCharactersInSet:
+                                            [NSCharacterSet whitespaceCharacterSet]];
     for (OCGruppoViewController *gruppo in self.gruppi) {
         gruppo.filtro = filtro;
     }
 }
 
-/// Il tasto di ricerca chiude la tastiera: le carte trovate sono già lì, e la
-/// tastiera ne coprirebbe metà.
-- (void)searchBarSearchButtonClicked:(UISearchBar *)campo
+- (void)ricercaConfermata:(UITextField *)campo
 {
-    [campo resignFirstResponder];
+    // Niente da fare: basta che l'evento abbia un bersaglio.
 }
 
 /// Il campo c'è solo se la scheda aperta ha abbastanza carte, contate prima
@@ -285,10 +316,10 @@ static const NSUInteger OCCartePerLaRicerca = 5;
     BOOL conRicerca = aperta.totale > OCCartePerLaRicerca;
     if (!conRicerca && self.ricerca.text.length > 0) {
         self.ricerca.text = @"";
-        [self searchBar:self.ricerca textDidChange:@""];
+        [self ricercaCambiata:self.ricerca];
     }
-    self.ricerca.hidden = !conRicerca;
-    self.altezzaRicerca.constant = conRicerca ? 56 : 0;
+    self.ricercaRiquadro.hidden = !conRicerca;
+    self.altezzaRicerca.constant = conRicerca ? 60 : 0;
 }
 
 - (void)preparaPagine
@@ -327,7 +358,7 @@ static const NSUInteger OCCartePerLaRicerca = 5;
     [self.pagine didMoveToParentViewController:self];
 
     [NSLayoutConstraint activateConstraints:@[
-        [self.pagine.view.topAnchor constraintEqualToAnchor:self.ricerca.bottomAnchor],
+        [self.pagine.view.topAnchor constraintEqualToAnchor:self.ricercaRiquadro.bottomAnchor],
         [self.pagine.view.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
         [self.pagine.view.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.pagine.view.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
