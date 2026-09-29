@@ -591,6 +591,75 @@ int opencard_foto_nome_sicuro(const char *nome)
            && strchr(nome, '\\') == NULL && strstr(nome, "..") == NULL;
 }
 
+/* Quello che vale per ogni carta, da qualunque parte arrivi (file, backup,
+ * CSV, QR, modulo): testi in UTF-8 valido, colore "#RRGGBB" o niente, nomi di
+ * foto che restano nella loro cartella, simbologia nell'elenco e is_qrcode
+ * allineato, gruppo e stella a 0 o 1. Fino alla 1.0.7-dev questi controlli
+ * stavano sparsi fra la lettura, il modulo e il passaggio con i QR, e ognuno
+ * ne faceva una parte. */
+static void normalizza(opencard_card *carta)
+{
+    /* Il file arriva anche da fuori (backup, vecchie versioni Android che
+     * scrivevano il modified UTF-8 di Java): quello che non è UTF-8 valido
+     * si ripara qui, prima che arrivi ai ponti verso Java e NSString. */
+    opencard_utf8_ripara(carta->label);
+    opencard_utf8_ripara(carta->code);
+    opencard_utf8_ripara(carta->color);
+    opencard_utf8_ripara(carta->note);
+    opencard_utf8_ripara(carta->saldo);
+    opencard_utf8_ripara(carta->foto_fronte);
+    opencard_utf8_ripara(carta->foto_retro);
+    /* Un colore che non si legge non ferma la carta: torna quello dell'id. */
+    if (!colore_valido(carta->color)) {
+        carta->color[0] = '\0';
+    }
+    /* Le interfacce aprono le foto per nome, dentro la loro cartella: un nome
+     * come "../opencard.json" punterebbe al file delle carte. Si toglie il
+     * nome, la carta resta. */
+    if (!opencard_foto_nome_sicuro(carta->foto_fronte)) {
+        carta->foto_fronte[0] = '\0';
+    }
+    if (!opencard_foto_nome_sicuro(carta->foto_retro)) {
+        carta->foto_retro[0] = '\0';
+    }
+    if (carta->simbologia < 0 || carta->simbologia >= OPENCARD_SIM_QUANTE) {
+        carta->simbologia = opencard_simbologia_indovinata(carta->code, carta->is_qrcode);
+    }
+    allinea_is_qrcode(carta);
+    carta->disposable = carta->disposable ? 1 : 0;
+    carta->favorite = carta->favorite ? 1 : 0;
+}
+
+/* Una carta pronta da scrivere con l'id `id`: i testi copiati con i tagli
+ * giusti, normalizza(), e il colore tenuto solo se dice qualcosa, cioè se è
+ * diverso da quello che l'id assegna da sé. La usano tutte le scritture:
+ * opencard_salva(), opencard_append_all() e opencard_replace_all(). */
+static void prepara(opencard_card *dest, const opencard_card *sorgente, int id)
+{
+    char colore_id[OPENCARD_COLOR_MAX];
+
+    memset(dest, 0, sizeof(*dest));
+    dest->id = id;
+    copia(dest->label, sizeof(dest->label), sorgente->label);
+    copia(dest->code, sizeof(dest->code), sorgente->code);
+    copia(dest->color, sizeof(dest->color), sorgente->color);
+    copia(dest->note, sizeof(dest->note), sorgente->note);
+    copia(dest->scadenza, sizeof(dest->scadenza), sorgente->scadenza);
+    copia(dest->saldo, sizeof(dest->saldo), sorgente->saldo);
+    copia(dest->foto_fronte, sizeof(dest->foto_fronte), sorgente->foto_fronte);
+    copia(dest->foto_retro, sizeof(dest->foto_retro), sorgente->foto_retro);
+    dest->simbologia = sorgente->simbologia;
+    dest->is_qrcode = sorgente->is_qrcode;
+    dest->disposable = sorgente->disposable;
+    dest->favorite = sorgente->favorite;
+    normalizza(dest);
+
+    opencard_color_for_id(id, colore_id, sizeof(colore_id));
+    if (strcmp(dest->color, colore_id) == 0) {
+        dest->color[0] = '\0';
+    }
+}
+
 static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema_del_file,
                                     opencard_card *out, opencard_errore *errore)
 {
@@ -677,33 +746,20 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
     if (cJSON_IsString(color) && color->valuestring != NULL) {
         copia(out->color, sizeof(out->color), color->valuestring);
     }
-    /* Il file arriva anche da fuori (backup, vecchie versioni Android che
-     * scrivevano il modified UTF-8 di Java): quello che non è UTF-8 valido
-     * si ripara qui, prima che arrivi ai ponti verso Java e NSString. */
-    opencard_utf8_ripara(out->label);
-    opencard_utf8_ripara(out->code);
-    opencard_utf8_ripara(out->color);
-    /* Un colore che non si legge non ferma la carta: torna quello dell'id. */
-    if (!colore_valido(out->color)) {
-        out->color[0] = '\0';
-    }
     out->disposable = cJSON_IsTrue(disposable) ? 1 : 0;
     /* Campo assente vuol dire "non preferita": è così che i file scritti
      * dalle versioni precedenti restano validi senza convertire niente. */
     out->favorite = cJSON_IsTrue(favorite) ? 1 : 0;
-    allinea_is_qrcode(out);
 
     /* I campi in più: assenti vuol dire vuoti, e un file di schema 1 non ne
      * ha nemmeno uno. Quello che c'è ma non è testo è un file malformato. */
     if (cJSON_IsString(note) && note->valuestring != NULL) {
         copia(out->note, sizeof(out->note), note->valuestring);
-        opencard_utf8_ripara(out->note);
     } else if (note != NULL && !cJSON_IsNull(note)) {
         return segnala(errore, OPENCARD_ERR_CARTA);
     }
     if (cJSON_IsString(saldo) && saldo->valuestring != NULL) {
         copia(out->saldo, sizeof(out->saldo), saldo->valuestring);
-        opencard_utf8_ripara(out->saldo);
     } else if (saldo != NULL && !cJSON_IsNull(saldo)) {
         return segnala(errore, OPENCARD_ERR_CARTA);
     }
@@ -722,25 +778,17 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
     }
     if (cJSON_IsString(foto_fronte) && foto_fronte->valuestring != NULL) {
         copia(out->foto_fronte, sizeof(out->foto_fronte), foto_fronte->valuestring);
-        opencard_utf8_ripara(out->foto_fronte);
     } else if (foto_fronte != NULL && !cJSON_IsNull(foto_fronte)) {
         return segnala(errore, OPENCARD_ERR_CARTA);
     }
     if (cJSON_IsString(foto_retro) && foto_retro->valuestring != NULL) {
         copia(out->foto_retro, sizeof(out->foto_retro), foto_retro->valuestring);
-        opencard_utf8_ripara(out->foto_retro);
     } else if (foto_retro != NULL && !cJSON_IsNull(foto_retro)) {
         return segnala(errore, OPENCARD_ERR_CARTA);
     }
-    /* Le interfacce aprono e cancellano le foto per nome, dentro la loro
-     * cartella: un nome come "../opencard.json" farebbe cancellare il file
-     * delle carte. Si toglie il nome, la carta resta. */
-    if (!opencard_foto_nome_sicuro(out->foto_fronte)) {
-        out->foto_fronte[0] = '\0';
-    }
-    if (!opencard_foto_nome_sicuro(out->foto_retro)) {
-        out->foto_retro[0] = '\0';
-    }
+    /* Il colore resta anche se è quello dell'id: leggere non cambia la carta,
+     * e dopo una rinumerazione l'id sarebbe un altro. */
+    normalizza(out);
 
     if (errore != NULL) {
         errore->posizione = 0;
@@ -1354,31 +1402,18 @@ int opencard_next_id(void)
 static void componi(opencard_card *card, int id, const char *label, const char *code,
                     int is_qrcode, const char *color, int disposable, int favorite)
 {
-    char colore_id[OPENCARD_COLOR_MAX];
+    opencard_card valori;
 
-    card->id = id;
-    card->favorite = favorite ? 1 : 0;
-    copia(card->label, sizeof(card->label), label);
-    copia(card->code, sizeof(card->code), code);
-    card->is_qrcode = is_qrcode ? 1 : 0;
-    card->simbologia = is_qrcode ? OPENCARD_SIM_QR : OPENCARD_SIM_CODE128;
-    card->disposable = disposable ? 1 : 0;
-    card->color[0] = '\0';
-    /* La carta arriva dallo stack e non è azzerata: i campi in più vanno
-     * messi a vuoto qui, altrimenti si porta dietro quello che c'era prima
-     * in memoria e finisce nel file. */
-    card->note[0] = '\0';
-    card->scadenza[0] = '\0';
-    card->saldo[0] = '\0';
-    card->foto_fronte[0] = '\0';
-    card->foto_retro[0] = '\0';
-
-    if (color != NULL && color[0] != '\0') {
-        opencard_color_for_id(id, colore_id, sizeof(colore_id));
-        if (strcmp(color, colore_id) != 0) {
-            copia(card->color, sizeof(card->color), color);
-        }
-    }
+    /* I campi in più restano vuoti: queste scritture non li conoscono. */
+    memset(&valori, 0, sizeof(valori));
+    copia(valori.label, sizeof(valori.label), label);
+    copia(valori.code, sizeof(valori.code), code);
+    copia(valori.color, sizeof(valori.color), color);
+    valori.is_qrcode = is_qrcode;
+    valori.simbologia = is_qrcode ? OPENCARD_SIM_QR : OPENCARD_SIM_CODE128;
+    valori.disposable = disposable;
+    valori.favorite = favorite;
+    prepara(card, &valori, id);
 }
 
 opencard_esito opencard_insert(const char *label, const char *code, int is_qrcode,
@@ -1579,15 +1614,7 @@ opencard_esito opencard_salva(const opencard_card *carta, int nuova,
         return segnala(errore, nuova ? OPENCARD_ERR_ARGOMENTI : OPENCARD_ERR_NON_TROVATA);
     }
 
-    componi(&pronta, carta->id, carta->label, carta->code, 0, carta->color,
-            carta->disposable, carta->favorite);
-    pronta.simbologia = carta->simbologia;
-    allinea_is_qrcode(&pronta);
-    copia(pronta.note, sizeof(pronta.note), carta->note);
-    copia(pronta.scadenza, sizeof(pronta.scadenza), carta->scadenza);
-    copia(pronta.saldo, sizeof(pronta.saldo), carta->saldo);
-    copia(pronta.foto_fronte, sizeof(pronta.foto_fronte), carta->foto_fronte);
-    copia(pronta.foto_retro, sizeof(pronta.foto_retro), carta->foto_retro);
+    prepara(&pronta, carta, carta->id);
 
     if (dove >= 0) {
         tutte.carte[dove] = pronta;
@@ -1704,16 +1731,28 @@ opencard_esito opencard_reorder(int disposable, const int *ids, size_t n,
 opencard_esito opencard_replace_all(const opencard_lista *lista,
                                     opencard_errore *errore)
 {
+    opencard_lista pronte = {NULL, 0, 0};
     opencard_esito esito;
+    size_t i;
 
     if (lista == NULL) {
         return segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     azzera_errore(errore);
-    esito = salva(lista, errore);
-    if (esito == OPENCARD_OK) {
-        pulisci_foto(lista);
+    /* Anche qui ogni carta passa da prepara(), con il suo id: il passaggio con
+     * i QR e il CSV sostituito arrivano da questa strada. */
+    if (!lista_spazio(&pronte, lista->n > 0 ? lista->n : 1)) {
+        return segnala(errore, OPENCARD_ERR_MEMORIA);
     }
+    for (i = 0; i < lista->n; i++) {
+        prepara(&pronte.carte[i], &lista->carte[i], lista->carte[i].id);
+    }
+    pronte.n = lista->n;
+    esito = salva(&pronte, errore);
+    if (esito == OPENCARD_OK) {
+        pulisci_foto(&pronte);
+    }
+    opencard_lista_free(&pronte);
     return esito;
 }
 
@@ -1746,18 +1785,7 @@ opencard_esito opencard_append_all(const opencard_lista *lista,
 
         /* Id nuovo: quello di chi cede non vuol dire niente qui, e due carte
          * con lo stesso id si perderebbero a vicenda. */
-        componi(&card, ++massimo,
-                lista->carte[i].label, lista->carte[i].code,
-                lista->carte[i].is_qrcode, lista->carte[i].color,
-                lista->carte[i].disposable, lista->carte[i].favorite);
-        /* Quello che componi() non sa: cambia l'id, non la carta. */
-        card.simbologia = lista->carte[i].simbologia;
-        allinea_is_qrcode(&card);
-        copia(card.note, sizeof(card.note), lista->carte[i].note);
-        copia(card.scadenza, sizeof(card.scadenza), lista->carte[i].scadenza);
-        copia(card.saldo, sizeof(card.saldo), lista->carte[i].saldo);
-        copia(card.foto_fronte, sizeof(card.foto_fronte), lista->carte[i].foto_fronte);
-        copia(card.foto_retro, sizeof(card.foto_retro), lista->carte[i].foto_retro);
+        prepara(&card, &lista->carte[i], ++massimo);
         if (!lista_aggiungi(&tutte, &card)) {
             opencard_lista_free(&tutte);
             return segnala(errore, OPENCARD_ERR_MEMORIA);
