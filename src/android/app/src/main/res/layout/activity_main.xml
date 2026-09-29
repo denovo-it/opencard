@@ -68,13 +68,21 @@
 
             <!-- La X è messa a mano e non con endIconMode="clear_text", che la
                  mostra solo col fuoco nel campo: chiusa la tastiera sparirebbe
-                 mentre il filtro è ancora acceso. -->
+                 mentre il filtro è ancora acceso.
+                 Fondo pieno, angoli a 16dp e niente bordo come le carte sotto;
+                 il suggerimento sta nel campo e non sale sul bordo. -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/ricerca_contenitore"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                style="@style/Widget.Material3.TextInputLayout.FilledBox.Dense"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/cerca_etichetta"
+                app:boxCornerRadiusBottomEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxStrokeWidth="0dp"
+                app:boxStrokeWidthFocused="0dp"
+                app:hintEnabled="false"
                 app:endIconContentDescription="@string/cancella_ricerca"
                 app:endIconDrawable="@drawable/ic_chiudi"
                 app:endIconMode="custom"
@@ -84,6 +92,9 @@
                     android:id="@+id/ricerca"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:hint="@string/cerca_etichetta"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
                     android:imeOptions="actionSearch"
                     android:inputType="text"
                     android:maxLines="1" />
