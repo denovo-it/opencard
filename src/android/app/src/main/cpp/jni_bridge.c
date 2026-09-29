@@ -608,10 +608,8 @@ Java_srl_denovo_opencard_Core_groupedCode(JNIEnv *env, jclass classe, jstring co
     return stringa_verso_java(env, uscita);
 }
 
-/* Il disegno vero. `simbologia` a -1 vuol dire "decidila dal tipo", che e' il
- * comportamento di sempre; da zero in su e' la simbologia scelta a mano. */
-static jobject disegna_codice(JNIEnv *env, jstring code, jboolean isQrcode,
-                              jint simbologia)
+/* Il disegno vero, nella simbologia della carta. */
+static jobject disegna_codice(JNIEnv *env, jstring code, jint simbologia)
 {
     const char *ingresso;
     char *testo;
@@ -646,15 +644,9 @@ static jobject disegna_codice(JNIEnv *env, jstring code, jboolean isQrcode,
         return NULL;
     }
     opencard_utf8_ripara(testo);
-    if (simbologia >= 0) {
-        esito = opencard_render_bitmap_simbologia(testo, (opencard_simbologia)simbologia,
-                                                  &pixel, &larghezza, &altezza,
-                                                  messaggio, sizeof(messaggio));
-    } else {
-        esito = opencard_render_bitmap(testo,
-                                       isQrcode == JNI_TRUE ? OPENCARD_QRCODE : OPENCARD_BARCODE,
-                                       &pixel, &larghezza, &altezza, messaggio, sizeof(messaggio));
-    }
+    esito = opencard_render_bitmap_simbologia(testo, (opencard_simbologia)simbologia,
+                                              &pixel, &larghezza, &altezza,
+                                              messaggio, sizeof(messaggio));
     free(testo);
     if (esito != 0) {
         jclass eccezione = (*env)->FindClass(env, CLASSE_ECCEZIONE);
@@ -991,7 +983,7 @@ Java_srl_denovo_opencard_Core_renderCodeSimbologia(JNIEnv *env, jclass classe,
                                                    jstring code, jint simbologia)
 {
     (void)classe;
-    return disegna_codice(env, code, JNI_FALSE, simbologia);
+    return disegna_codice(env, code, simbologia);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -1006,20 +998,6 @@ Java_srl_denovo_opencard_Core_codiceSta(JNIEnv *env, jclass classe,
     }
     return opencard_codice_sta(ingresso, (opencard_simbologia)simbologia)
         ? JNI_TRUE : JNI_FALSE;
-}
-
-JNIEXPORT jint JNICALL
-Java_srl_denovo_opencard_Core_simbologiaIndovinata(JNIEnv *env, jclass classe,
-                                                   jstring code, jboolean isQrcode)
-{
-    char ingresso[OPENCARD_CODE_MAX];
-
-    (void)classe;
-    if (!stringa(env, code, ingresso, sizeof(ingresso))) {
-        return 0;
-    }
-    return (jint)opencard_simbologia_indovinata(ingresso,
-                                                isQrcode == JNI_TRUE ? 1 : 0);
 }
 
 JNIEXPORT jbyteArray JNICALL

@@ -17,20 +17,6 @@
 
 #include "third-party/cJSON.h"
 
-/* Come in store.c: chi chiama legge il messaggio da `errore`, quindi ogni
- * uscita con un codice diverso da OPENCARD_OK deve valorizzarlo. Lasciarlo
- * com'era fa leggere ai ponti una struttura mai scritta. */
-static opencard_esito segnala(opencard_errore *errore, opencard_esito codice)
-{
-    if (errore != NULL) {
-        errore->codice = codice;
-        errore->posizione = 0;
-        errore->dettaglio[0] = '\0';
-        errore->schema_trovato = 0;
-    }
-    return codice;
-}
-
 /* Adesso in UTC, "AAAA-MM-GGTHH:MM:SSZ", per il campo exported_at. Fino alla
  * 1.0.7-dev lo scrivevano le app: Android in UTC, iPhone con il suo fuso. */
 static const char *adesso(char *out, size_t out_size)
@@ -90,7 +76,7 @@ opencard_esito opencard_backup_esporta(const char *esportato_il, char **testo,
     char istante[32];
 
     if (testo == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     *testo = NULL;
 
@@ -104,79 +90,16 @@ opencard_esito opencard_backup_esporta(const char *esportato_il, char **testo,
                                                         : adesso(istante, sizeof(istante)));
     opencard_lista_free(&tutte);
     if (radice == NULL) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     stampato = cJSON_Print(radice);
     cJSON_Delete(radice);
     if (stampato == NULL) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     *testo = stampato;
     return OPENCARD_OK;
-}
-
-opencard_esito opencard_backup_esporta_cifrato(const char *esportato_il,
-                                               const char *password,
-                                               unsigned char **byte, size_t *quanti,
-                                               opencard_errore *errore)
-{
-    char *testo = NULL;
-    opencard_esito esito;
-
-    if (byte == NULL || quanti == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
-    }
-    *byte = NULL;
-    *quanti = 0;
-    if (password == NULL || password[0] == '\0') {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
-    }
-
-    esito = opencard_backup_esporta(esportato_il, &testo, errore);
-    if (esito != OPENCARD_OK) {
-        return esito;
-    }
-
-    esito = opencard_cripto_cifra((const unsigned char *)testo, strlen(testo),
-                                  password, byte, quanti, errore);
-    /* Il JSON in chiaro non deve restare in memoria dopo: qui dentro ci sono
-     * i numeri delle tessere. */
-    crypto_wipe(testo, strlen(testo));
-    opencard_backup_free(testo);
-    return esito;
-}
-
-opencard_esito opencard_backup_leggi_file(const unsigned char *dati, size_t quanti,
-                                          const char *password,
-                                          opencard_lista *out,
-                                          opencard_errore *errore)
-{
-    unsigned char *chiaro = NULL;
-    size_t chiaro_n = 0;
-    opencard_esito esito;
-
-    if (out == NULL || dati == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
-    }
-    if (!opencard_cripto_e_cifrato(dati, quanti)) {
-        return opencard_backup_leggi((const char *)dati, quanti, out, errore);
-    }
-    if (password == NULL || password[0] == '\0') {
-        memset(out, 0, sizeof(*out));
-        return segnala(errore, OPENCARD_ERR_PASSWORD);
-    }
-
-    esito = opencard_cripto_decifra(dati, quanti, password, &chiaro, &chiaro_n, errore);
-    if (esito != OPENCARD_OK) {
-        memset(out, 0, sizeof(*out));
-        return esito;
-    }
-
-    esito = opencard_backup_leggi((const char *)chiaro, chiaro_n, out, errore);
-    crypto_wipe(chiaro, chiaro_n);
-    opencard_cripto_free(chiaro);
-    return esito;
 }
 
 void opencard_backup_free(char *testo)
@@ -190,11 +113,9 @@ opencard_esito opencard_backup_leggi(const char *testo, size_t lunghezza,
 {
     cJSON *radice;
     opencard_esito esito;
-    size_t i, j;
-    int rinumera = 0;
 
     if (testo == NULL || out == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     out->carte = NULL;
     out->n = 0;
@@ -207,12 +128,12 @@ opencard_esito opencard_backup_leggi(const char *testo, size_t lunghezza,
         lunghezza = strlen(testo);
     }
     if (lunghezza == 0) {
-        return segnala(errore, OPENCARD_ERR_JSON);      /* file vuoto */
+        return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);      /* file vuoto */
     }
 
     radice = cJSON_ParseWithLength(testo, lunghezza);
     if (radice == NULL) {
-        return segnala(errore, OPENCARD_ERR_JSON);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);
     }
 
     /* Un backup arriva da fuori, quindi lo schema si controlla. */
@@ -224,25 +145,8 @@ opencard_esito opencard_backup_leggi(const char *testo, size_t lunghezza,
 
     /* Id assenti, non validi o ripetuti: si rinumera tutto, altrimenti due
      * carte diverse finirebbero sullo stesso id e modificarne una toccherebbe
-     * l'altra. */
-    for (i = 0; i < out->n && !rinumera; i++) {
-        if (out->carte[i].id < 1) {
-            rinumera = 1;
-            break;
-        }
-        for (j = 0; j < i; j++) {
-            if (out->carte[j].id == out->carte[i].id) {
-                rinumera = 1;
-                break;
-            }
-        }
-    }
-    if (rinumera) {
-        for (i = 0; i < out->n; i++) {
-            out->carte[i].id = (int)i + 1;
-        }
-    }
-
+     * l'altra. È la stessa regola della lettura del file delle carte. */
+    opencard_rinumera_se_serve(out);
     return OPENCARD_OK;
 }
 
@@ -357,7 +261,7 @@ static opencard_esito scrivi_archivio(const opencard_lista *tutte,
     if (elenco == NULL || voci == NULL) {
         cJSON_free(elenco);
         free(voci);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     snprintf(voci[n].nome, sizeof(voci[n].nome), "%s", NOME_ELENCO);
@@ -411,7 +315,7 @@ opencard_esito opencard_esporta(opencard_formato formato, const char *esportato_
     opencard_esito esito;
 
     if (byte == NULL || quanti == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     *byte = NULL;
     *quanti = 0;
@@ -449,7 +353,7 @@ opencard_esito opencard_esporta(opencard_formato formato, const char *esportato_
         free(*byte);
         *byte = NULL;
         *quanti = 0;
-        return segnala(errore, OPENCARD_ERR_TROPPO_GRANDE);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_TROPPO_GRANDE);
     }
     return OPENCARD_OK;
 }
@@ -482,7 +386,7 @@ static opencard_esito leggi_archivio(const unsigned char *dati, size_t quanti,
     }
     if (elenco == NULL) {
         opencard_zip_libera(&lettura);
-        return segnala(errore, OPENCARD_ERR_FORMATO);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_FORMATO);
     }
     esito = opencard_backup_leggi((const char *)elenco->dati, elenco->quanti, out, errore);
     if (esito != OPENCARD_OK) {
@@ -532,19 +436,19 @@ opencard_esito opencard_importa(const unsigned char *dati, size_t quanti,
         *quante = 0;
     }
     if (dati == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     /* Un file vuoto non è un backup. Va fermato qui: più sotto una lunghezza
      * a zero vorrebbe dire "misura la stringa", su un buffer senza NUL. */
     if (quanti == 0) {
-        return segnala(errore, OPENCARD_ERR_JSON);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);
     }
     if (quanti > OPENCARD_FILE_MAX) {
-        return segnala(errore, OPENCARD_ERR_TROPPO_GRANDE);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_TROPPO_GRANDE);
     }
     if (opencard_cripto_e_cifrato(dati, quanti)) {
         if (password == NULL || password[0] == '\0') {
-            return segnala(errore, OPENCARD_ERR_PASSWORD);
+            return opencard_errore_segnala(errore, OPENCARD_ERR_PASSWORD);
         }
         esito = opencard_cripto_decifra(dati, quanti, password, &chiaro, &chiaro_n, errore);
         if (esito != OPENCARD_OK) {

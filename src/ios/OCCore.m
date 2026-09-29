@@ -480,11 +480,6 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     return (NSInteger)opencard_simbologia_automatica(codice.UTF8String ?: "");
 }
 
-+ (NSInteger)simbologiaIndovinata:(NSString *)codice qrcode:(BOOL)qrcode
-{
-    return (NSInteger)opencard_simbologia_indovinata(codice.UTF8String, qrcode ? 1 : 0);
-}
-
 + (BOOL)codiceSta:(NSString *)codice simbologia:(NSInteger)simbologia
 {
     return opencard_codice_sta(codice.UTF8String,
@@ -521,6 +516,10 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 
 #pragma mark - Cifratura
 
+/// La chiave con cui il file delle carte sta cifrato sul telefono, 32 byte.
+/// La dà apriConErrore:, prima di leggere qualsiasi cosa; `nil` la toglie e il
+/// file torna a scriversi in chiaro. Non sta in OCCore.h: fuori da qui non la
+/// chiama nessuno.
 + (void)impostaChiaveDati:(NSData *)chiave
 {
     if (chiave.length == OPENCARD_CRIPTO_CHIAVE_N) {

@@ -39,17 +39,6 @@
 #define KDF_ARGON2ID 1
 #define KDF_CHIAVE   2   /* chiave gia' pronta, nessun passaggio */
 
-static opencard_esito segnala(opencard_errore *errore, opencard_esito codice)
-{
-    if (errore != NULL) {
-        errore->codice = codice;
-        errore->posizione = 0;
-        errore->dettaglio[0] = '\0';
-        errore->schema_trovato = 0;
-    }
-    return codice;
-}
-
 static void scrivi32(unsigned char *out, unsigned int valore)
 {
     out[0] = (unsigned char)(valore & 0xFF);
@@ -134,18 +123,18 @@ opencard_esito opencard_cripto_cifra(const unsigned char *dati, size_t n,
     size_t totale;
 
     if (fuori == NULL || fuori_n == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     *fuori = NULL;
     *fuori_n = 0;
     if (dati == NULL || password == NULL || password[0] == '\0') {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
 
     totale = TESTA_N + n;
     pacchetto = (unsigned char *)malloc(totale);
     if (pacchetto == NULL) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     memcpy(pacchetto, OPENCARD_CRIPTO_MAGIA, OPENCARD_CRIPTO_MAGIA_N);
@@ -157,13 +146,13 @@ opencard_esito opencard_cripto_cifra(const unsigned char *dati, size_t n,
     if (!byte_a_caso(pacchetto + 16, SALE_N)
         || !byte_a_caso(pacchetto + 32, NONCE_N)) {
         free(pacchetto);
-        return segnala(errore, OPENCARD_ERR_IO);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_IO);
     }
 
     if (!chiave_da_password(password, pacchetto + 16, OPENCARD_CRIPTO_PASSATE,
                             OPENCARD_CRIPTO_BLOCCHI, chiave)) {
         free(pacchetto);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     crypto_aead_lock(pacchetto + TESTA_N, pacchetto + INTESTAZIONE_N, chiave,
@@ -189,22 +178,22 @@ opencard_esito opencard_cripto_decifra(const unsigned char *dati, size_t n,
     size_t quanti;
 
     if (fuori == NULL || fuori_n == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     *fuori = NULL;
     *fuori_n = 0;
     if (dati == NULL || password == NULL || password[0] == '\0') {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     if (!opencard_cripto_e_cifrato(dati, n)) {
-        return segnala(errore, OPENCARD_ERR_FORMATO);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_FORMATO);
     }
     if (dati[6] != 1 || dati[7] != KDF_ARGON2ID) {
         /* Pacchetto di una versione più nuova: chi apre non sa come è fatto. */
         if (errore != NULL) {
             errore->schema_trovato = dati[6];
         }
-        return segnala(errore, OPENCARD_ERR_SCHEMA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_SCHEMA);
     }
 
     passate = leggi32(dati + 8);
@@ -213,7 +202,7 @@ opencard_esito opencard_cripto_decifra(const unsigned char *dati, size_t n,
      * apre: sarebbe un modo per bloccare il telefono di chi lo riceve. */
     if (passate == 0 || passate > 16
         || blocchi < 8 || blocchi > OPENCARD_CRIPTO_BLOCCHI_MAX) {
-        return segnala(errore, OPENCARD_ERR_FORMATO);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_FORMATO);
     }
 
     quanti = n - TESTA_N;
@@ -221,12 +210,12 @@ opencard_esito opencard_cripto_decifra(const unsigned char *dati, size_t n,
      * passare il risultato a chi si aspetta una stringa. */
     chiaro = (unsigned char *)malloc(quanti + 1);
     if (chiaro == NULL) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     if (!chiave_da_password(password, dati + 16, passate, blocchi, chiave)) {
         free(chiaro);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     if (crypto_aead_unlock(chiaro, dati + INTESTAZIONE_N, chiave, dati + 32,
@@ -234,7 +223,7 @@ opencard_esito opencard_cripto_decifra(const unsigned char *dati, size_t n,
         crypto_wipe(chiave, sizeof(chiave));
         crypto_wipe(chiaro, quanti);
         free(chiaro);
-        return segnala(errore, OPENCARD_ERR_PASSWORD);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_PASSWORD);
     }
     crypto_wipe(chiave, sizeof(chiave));
 
@@ -256,18 +245,18 @@ opencard_esito opencard_cripto_cifra_chiave(const unsigned char *dati, size_t n,
     size_t totale;
 
     if (fuori == NULL || fuori_n == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     *fuori = NULL;
     *fuori_n = 0;
     if (dati == NULL || chiave == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
 
     totale = TESTA_N + n;
     pacchetto = (unsigned char *)malloc(totale);
     if (pacchetto == NULL) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     memcpy(pacchetto, OPENCARD_CRIPTO_MAGIA, OPENCARD_CRIPTO_MAGIA_N);
@@ -279,7 +268,7 @@ opencard_esito opencard_cripto_cifra_chiave(const unsigned char *dati, size_t n,
 
     if (!byte_a_caso(pacchetto + 32, NONCE_N)) {
         free(pacchetto);
-        return segnala(errore, OPENCARD_ERR_IO);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_IO);
     }
 
     crypto_aead_lock(pacchetto + TESTA_N, pacchetto + INTESTAZIONE_N, chiave,
@@ -302,30 +291,30 @@ opencard_esito opencard_cripto_decifra_chiave(const unsigned char *dati, size_t 
     size_t quanti;
 
     if (fuori == NULL || fuori_n == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     *fuori = NULL;
     *fuori_n = 0;
     if (dati == NULL || chiave == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     if (!opencard_cripto_e_cifrato(dati, n)) {
-        return segnala(errore, OPENCARD_ERR_FORMATO);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_FORMATO);
     }
     if (dati[6] != 1 || dati[7] != KDF_CHIAVE) {
-        return segnala(errore, OPENCARD_ERR_SCHEMA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_SCHEMA);
     }
 
     quanti = n - TESTA_N;
     chiaro = (unsigned char *)malloc(quanti + 1);
     if (chiaro == NULL) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     if (crypto_aead_unlock(chiaro, dati + INTESTAZIONE_N, chiave, dati + 32,
                            dati, INTESTAZIONE_N, dati + TESTA_N, quanti) != 0) {
         crypto_wipe(chiaro, quanti);
         free(chiaro);
-        return segnala(errore, OPENCARD_ERR_PASSWORD);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_PASSWORD);
     }
 
     chiaro[quanti] = '\0';

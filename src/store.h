@@ -198,7 +198,7 @@ opencard_esito opencard_get_gruppo(int disposable, opencard_lista *out,
 opencard_esito opencard_get_preferite(opencard_lista *out, opencard_errore *errore);
 
 /* Accende o spegne la stella di una carta, lasciando tutto il resto com'è.
- * Sta a sé e non dentro opencard_update() perché la stella si tocca da un
+ * Sta a sé e non dentro opencard_salva() perché la stella si tocca da un
  * punto solo, la carta aperta, dove non c'è niente altro da riscrivere. */
 opencard_esito opencard_set_favorite(int id, int preferita, opencard_errore *errore);
 
@@ -208,16 +208,6 @@ opencard_esito opencard_get(int id, opencard_card *out, opencard_errore *errore)
 /* Id che avrà la prossima carta inserita: serve al form di aggiunta, che
  * mostra in anticipo il colore che la carta prenderebbe da sola. */
 int opencard_next_id(void);
-
-/* Inserisce e restituisce il nuovo id in *nuovo_id.
- * `color` può essere NULL o "": si scrive solo se diverso da quello dell'id. */
-opencard_esito opencard_insert(const char *label, const char *code, int is_qrcode,
-                               const char *color, int disposable,
-                               int *nuovo_id, opencard_errore *errore);
-
-opencard_esito opencard_update(int id, const char *label, const char *code,
-                               int is_qrcode, const char *color, int disposable,
-                               opencard_errore *errore);
 
 opencard_esito opencard_delete(int id, opencard_errore *errore);
 
@@ -261,36 +251,22 @@ int opencard_simbologia_quiete_propria(opencard_simbologia simbologia);
 size_t opencard_colori_n(void);
 const char *opencard_colore(size_t i);
 
-/* Cambia la simbologia di una carta e basta. Aggiorna anche is_qrcode. */
-opencard_esito opencard_set_simbologia(int id, opencard_simbologia simbologia,
-                                       opencard_errore *errore);
-
-/* Note, scadenza e saldo di una carta. NULL vuol dire "lascia com'è", ""
- * vuol dire "svuota". La scadenza vuole "AAAA-MM-GG": qualsiasi altra cosa
- * torna OPENCARD_ERR_ARGOMENTI e non scrive niente. */
-opencard_esito opencard_set_dettagli(int id, const char *note,
-                                     const char *scadenza, const char *saldo,
-                                     opencard_errore *errore);
-
-/* I nomi dei file delle due foto, con le stesse regole di NULL e "".
- * I file li scrive opencard_foto_salva(), in <directory dei dati>/foto. Il
- * core li cancella quando nessuna carta li nomina più: dopo opencard_salva(),
- * opencard_delete(), opencard_replace_all() e opencard_pulisci_foto(). */
-opencard_esito opencard_set_foto(int id, const char *fronte, const char *retro,
-                                 opencard_errore *errore);
-
 /* Una carta dal modulo, tutta insieme, in una scrittura sola: etichetta,
  * codice, simbologia, colore, gruppo, stella, note, scadenza, saldo e foto.
- * Prima erano cinque chiamate, ognuna con la sua lettura e la sua scrittura
- * del file: se una falliva a metà la carta restava salvata a pezzi.
+ * Fino alla 1.0.6 erano cinque chiamate, ognuna con la sua lettura e la sua
+ * scrittura del file: se una falliva a metà la carta restava salvata a pezzi.
+ * Dalla 1.0.7 quelle cinque non ci sono più.
+ *
+ * I file delle foto li scrive opencard_foto_salva(), in <directory dei
+ * dati>/foto; nella carta ci sono solo i nomi.
  *
  * Con `nuova` la carta va in fondo con il suo id, che non deve esserci già:
  * chi ha foto da salvare chiede prima opencard_next_id(), perché il nome dei
  * file lo contiene. Senza, prende il posto della carta con lo stesso id, dove
  * sta nell'ordine; OPENCARD_ERR_NON_TROVATA se non c'è.
  *
- * Il colore si tiene solo se è diverso da quello che l'id assegna da sé, come
- * in opencard_insert(). Una simbologia fuori elenco o una scadenza che non è
+ * Il colore si tiene solo se è diverso da quello che l'id assegna da sé. Una
+ * simbologia fuori elenco o una scadenza che non è
  * "AAAA-MM-GG" tornano OPENCARD_ERR_ARGOMENTI senza scrivere niente.
  *
  * Dopo la scrittura riuscita toglie le foto che nessuna carta nomina più:
@@ -384,6 +360,18 @@ void opencard_utf8_ripara(char *s);
  * niente barre, niente "..", niente file nascosti. La lettura delle carte
  * toglie i nomi che non lo sono, e l'archivio non scrive altro. */
 int opencard_foto_nome_sicuro(const char *nome);
+
+/* Servizi interni, per gli altri file del core.
+ *
+ * opencard_errore_segnala() scrive il codice in `errore` e azzera il resto;
+ * torna il codice, per scrivere `return opencard_errore_segnala(...)`.
+ * opencard_lista_aggiungi() mette una carta in fondo alla lista, 0 se manca la
+ * memoria. opencard_rinumera_se_serve() dà id da 1 in su quando ce n'è uno
+ * assente, non valido o ripetuto: due carte sullo stesso id si perdono a
+ * vicenda, perché aprire, modificare o cancellare passa da lì. */
+opencard_esito opencard_errore_segnala(opencard_errore *errore, opencard_esito codice);
+int opencard_lista_aggiungi(opencard_lista *lista, const opencard_card *card);
+void opencard_rinumera_se_serve(opencard_lista *lista);
 
 /* Servizio interno, per l'importazione dei backup: scrive una foto con il suo
  * nome nella cartella delle foto, in modo atomico. Un nome che non passa

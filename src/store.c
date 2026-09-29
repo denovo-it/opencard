@@ -64,10 +64,25 @@ static void azzera_errore(opencard_errore *errore)
     }
 }
 
-static opencard_esito segnala(opencard_errore *errore, opencard_esito codice)
+/* Scrive solo il codice: in questo file posizione e nome della carta si
+ * mettono prima, dove si sa di quale carta si parla, e qui non si toccano.
+ * Gli altri file del core usano opencard_errore_segnala(), che azzera anche
+ * il resto. */
+static opencard_esito imposta_codice(opencard_errore *errore, opencard_esito codice)
 {
     if (errore != NULL) {
         errore->codice = codice;
+    }
+    return codice;
+}
+
+opencard_esito opencard_errore_segnala(opencard_errore *errore, opencard_esito codice)
+{
+    if (errore != NULL) {
+        errore->codice = codice;
+        errore->posizione = 0;
+        errore->dettaglio[0] = '\0';
+        errore->schema_trovato = 0;
     }
     return codice;
 }
@@ -293,7 +308,7 @@ static int lista_spazio(opencard_lista *lista, size_t servono)
     return 1;
 }
 
-static int lista_aggiungi(opencard_lista *lista, const opencard_card *card)
+int opencard_lista_aggiungi(opencard_lista *lista, const opencard_card *card)
 {
     if (!lista_spazio(lista, lista->n + 1)) {
         return 0;
@@ -322,13 +337,13 @@ static cJSON *leggi_file(int *mancante, opencard_errore *errore)
     }
     if (fseek(f, 0, SEEK_END) != 0) {
         fclose(f);
-        segnala(errore, OPENCARD_ERR_IO);
+        imposta_codice(errore, OPENCARD_ERR_IO);
         return NULL;
     }
     dimensione = ftell(f);
     if (dimensione < 0) {
         fclose(f);
-        segnala(errore, OPENCARD_ERR_IO);
+        imposta_codice(errore, OPENCARD_ERR_IO);
         return NULL;
     }
     rewind(f);
@@ -336,7 +351,7 @@ static cJSON *leggi_file(int *mancante, opencard_errore *errore)
     testo = (char *)malloc((size_t)dimensione + 1);
     if (testo == NULL) {
         fclose(f);
-        segnala(errore, OPENCARD_ERR_MEMORIA);
+        imposta_codice(errore, OPENCARD_ERR_MEMORIA);
         return NULL;
     }
     letti = fread(testo, 1, (size_t)dimensione, f);
@@ -353,7 +368,7 @@ static cJSON *leggi_file(int *mancante, opencard_errore *errore)
 
         if (!con_chiave) {
             free(testo);
-            segnala(errore, OPENCARD_ERR_PASSWORD);
+            imposta_codice(errore, OPENCARD_ERR_PASSWORD);
             return NULL;
         }
         if (opencard_cripto_decifra_chiave((const unsigned char *)testo, letti,
@@ -370,7 +385,7 @@ static cJSON *leggi_file(int *mancante, opencard_errore *errore)
     crypto_wipe(testo, strlen(testo));
     free(testo);
     if (radice == NULL) {
-        segnala(errore, OPENCARD_ERR_JSON);
+        imposta_codice(errore, OPENCARD_ERR_JSON);
         return NULL;
     }
     return radice;
@@ -685,11 +700,11 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
     }
 
     if (!cJSON_IsObject(nodo)) {
-        return segnala(errore, OPENCARD_ERR_CARTA);
+        return imposta_codice(errore, OPENCARD_ERR_CARTA);
     }
     if (!cJSON_IsString(label) || label->valuestring == NULL ||
         label->valuestring[0] == '\0') {
-        return segnala(errore, OPENCARD_ERR_CARTA);
+        return imposta_codice(errore, OPENCARD_ERR_CARTA);
     }
     /* Da qui in poi il nome c'è: finisce nei messaggi per far capire di quale
      * carta si parla. */
@@ -699,10 +714,10 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
     }
     if (!cJSON_IsString(code) || code->valuestring == NULL ||
         code->valuestring[0] == '\0') {
-        return segnala(errore, OPENCARD_ERR_CARTA);
+        return imposta_codice(errore, OPENCARD_ERR_CARTA);
     }
     if (!cJSON_IsString(tipo) || tipo->valuestring == NULL) {
-        return segnala(errore, OPENCARD_ERR_CARTA);
+        return imposta_codice(errore, OPENCARD_ERR_CARTA);
     }
     if (strcmp(tipo->valuestring, "qrcode") == 0) {
         out->simbologia = OPENCARD_SIM_QR;
@@ -714,7 +729,7 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
         out->simbologia = opencard_simbologia_indovinata(
             cJSON_IsString(code) ? code->valuestring : NULL, 0);
     } else {
-        return segnala(errore, OPENCARD_ERR_CARTA);
+        return imposta_codice(errore, OPENCARD_ERR_CARTA);
     }
     /* Dallo schema 2 la simbologia sta per esteso e vince su "type", che
      * resta scritto per non rompere gli strumenti che leggono i backup.
@@ -737,7 +752,7 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
         }
     }
     if (color != NULL && !cJSON_IsNull(color) && !cJSON_IsString(color)) {
-        return segnala(errore, OPENCARD_ERR_CARTA);
+        return imposta_codice(errore, OPENCARD_ERR_CARTA);
     }
 
     out->id = cJSON_IsNumber(id) ? intero_da(id->valuedouble) : 0;
@@ -756,16 +771,16 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
     if (cJSON_IsString(note) && note->valuestring != NULL) {
         copia(out->note, sizeof(out->note), note->valuestring);
     } else if (note != NULL && !cJSON_IsNull(note)) {
-        return segnala(errore, OPENCARD_ERR_CARTA);
+        return imposta_codice(errore, OPENCARD_ERR_CARTA);
     }
     if (cJSON_IsString(saldo) && saldo->valuestring != NULL) {
         copia(out->saldo, sizeof(out->saldo), saldo->valuestring);
     } else if (saldo != NULL && !cJSON_IsNull(saldo)) {
-        return segnala(errore, OPENCARD_ERR_CARTA);
+        return imposta_codice(errore, OPENCARD_ERR_CARTA);
     }
     if (cJSON_IsString(scadenza) && scadenza->valuestring != NULL) {
         if (!forma_di_data(scadenza->valuestring)) {
-            return segnala(errore, OPENCARD_ERR_CARTA);
+            return imposta_codice(errore, OPENCARD_ERR_CARTA);
         }
         /* Una data con la forma giusta ma che non esiste, scritta dalle
          * versioni che non lo controllavano, si toglie e la carta resta:
@@ -774,17 +789,17 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
             copia(out->scadenza, sizeof(out->scadenza), scadenza->valuestring);
         }
     } else if (scadenza != NULL && !cJSON_IsNull(scadenza)) {
-        return segnala(errore, OPENCARD_ERR_CARTA);
+        return imposta_codice(errore, OPENCARD_ERR_CARTA);
     }
     if (cJSON_IsString(foto_fronte) && foto_fronte->valuestring != NULL) {
         copia(out->foto_fronte, sizeof(out->foto_fronte), foto_fronte->valuestring);
     } else if (foto_fronte != NULL && !cJSON_IsNull(foto_fronte)) {
-        return segnala(errore, OPENCARD_ERR_CARTA);
+        return imposta_codice(errore, OPENCARD_ERR_CARTA);
     }
     if (cJSON_IsString(foto_retro) && foto_retro->valuestring != NULL) {
         copia(out->foto_retro, sizeof(out->foto_retro), foto_retro->valuestring);
     } else if (foto_retro != NULL && !cJSON_IsNull(foto_retro)) {
-        return segnala(errore, OPENCARD_ERR_CARTA);
+        return imposta_codice(errore, OPENCARD_ERR_CARTA);
     }
     /* Il colore resta anche se è quello dell'id: leggere non cambia la carta,
      * e dopo una rinumerazione l'id sarebbe un altro. */
@@ -809,18 +824,18 @@ opencard_esito opencard_carte_da_json(const void *radice_json, int controlla_sch
     int posizione = 0;
 
     if (out == NULL || radice == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     out->carte = NULL;
     out->n = 0;
     out->capacita = 0;
 
     if (!cJSON_IsObject(radice)) {
-        return segnala(errore, OPENCARD_ERR_FORMATO);
+        return imposta_codice(errore, OPENCARD_ERR_FORMATO);
     }
     cards = cJSON_GetObjectItemCaseSensitive(radice, "cards");
     if (!cJSON_IsArray(cards)) {
-        return segnala(errore, OPENCARD_ERR_FORMATO);
+        return imposta_codice(errore, OPENCARD_ERR_FORMATO);
     }
     schema = cJSON_GetObjectItemCaseSensitive(radice, "schema");
     /* Serve anche quando non si controlla: il file dei dati si legge senza
@@ -838,7 +853,7 @@ opencard_esito opencard_carte_da_json(const void *radice_json, int controlla_sch
             if (errore != NULL) {
                 errore->schema_trovato = cJSON_IsNumber(schema) ? intero_da(schema->valuedouble) : 0;
             }
-            return segnala(errore, OPENCARD_ERR_SCHEMA);
+            return imposta_codice(errore, OPENCARD_ERR_SCHEMA);
         }
     }
 
@@ -852,9 +867,9 @@ opencard_esito opencard_carte_da_json(const void *radice_json, int controlla_sch
             opencard_lista_free(out);
             return esito;
         }
-        if (!lista_aggiungi(out, &card)) {
+        if (!opencard_lista_aggiungi(out, &card)) {
             opencard_lista_free(out);
-            return segnala(errore, OPENCARD_ERR_MEMORIA);
+            return imposta_codice(errore, OPENCARD_ERR_MEMORIA);
         }
     }
     return OPENCARD_OK;
@@ -976,7 +991,7 @@ fallito:
  * perdono a vicenda, perché aprire, modificare o cancellare passa da lì.
  * Serve ai file già scritti dalla 1.0.2, che dopo un "azzera e sostituisci"
  * dai QR aveva lasciato tutte le carte con l'id a zero. */
-static void rinumera_se_serve(opencard_lista *lista)
+void opencard_rinumera_se_serve(opencard_lista *lista)
 {
     size_t i, j;
 
@@ -1020,7 +1035,7 @@ static opencard_esito carica(opencard_lista *out, opencard_errore *errore)
     esito = opencard_carte_da_json(radice, 0, out, errore);
     cJSON_Delete(radice);
     if (esito == OPENCARD_OK) {
-        rinumera_se_serve(out);
+        opencard_rinumera_se_serve(out);
     }
     return esito;
 }
@@ -1038,11 +1053,11 @@ static opencard_esito scrivi_atomico(const char *percorso, const void *dati, siz
 
     if (snprintf(temporaneo, sizeof(temporaneo), "%s.tmp", percorso)
         >= (int)sizeof(temporaneo)) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     f = fopen(temporaneo, "wb");
     if (f == NULL) {
-        return segnala(errore, OPENCARD_ERR_IO);
+        return imposta_codice(errore, OPENCARD_ERR_IO);
     }
     buono = fwrite(dati, 1, n, f) == n && fflush(f) == 0 && fsync(fileno(f)) == 0;
     if (fclose(f) != 0) {
@@ -1050,7 +1065,7 @@ static opencard_esito scrivi_atomico(const char *percorso, const void *dati, siz
     }
     if (!buono || rename(temporaneo, percorso) != 0) {
         remove(temporaneo);
-        return segnala(errore, OPENCARD_ERR_IO);
+        return imposta_codice(errore, OPENCARD_ERR_IO);
     }
     return OPENCARD_OK;
 }
@@ -1064,7 +1079,7 @@ static opencard_esito salva(const opencard_lista *lista, opencard_errore *errore
     opencard_esito esito;
 
     if (percorso_dati[0] == '\0') {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     /* Non si scrive un file che poi non si rilegge: carta_da_json() rifiuta
      * nome e codice vuoti, e una carta così rende illeggibili tutte le altre.
@@ -1078,17 +1093,17 @@ static opencard_esito salva(const opencard_lista *lista, opencard_errore *errore
                 errore->posizione = (int)i + 1;
                 copia(errore->dettaglio, sizeof(errore->dettaglio), carta->label);
             }
-            return segnala(errore, OPENCARD_ERR_CARTA);
+            return imposta_codice(errore, OPENCARD_ERR_CARTA);
         }
     }
     radice = (cJSON *)opencard_carte_a_json(lista, NULL);
     if (radice == NULL) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return imposta_codice(errore, OPENCARD_ERR_MEMORIA);
     }
     testo = cJSON_Print(radice);
     cJSON_Delete(radice);
     if (testo == NULL) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return imposta_codice(errore, OPENCARD_ERR_MEMORIA);
     }
     lunghezza = strlen(testo);
 
@@ -1130,7 +1145,7 @@ opencard_esito opencard_init_db(void)
 opencard_esito opencard_get_all(opencard_lista *out, opencard_errore *errore)
 {
     if (out == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     return carica(out, errore);
 }
@@ -1145,7 +1160,7 @@ opencard_esito opencard_get_preferite(opencard_lista *out, opencard_errore *erro
     size_t i;
 
     if (out == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     out->carte = NULL;
     out->n = 0;
@@ -1157,10 +1172,10 @@ opencard_esito opencard_get_preferite(opencard_lista *out, opencard_errore *erro
     }
     for (i = 0; i < tutte.n; i++) {
         if (tutte.carte[i].favorite) {
-            if (!lista_aggiungi(out, &tutte.carte[i])) {
+            if (!opencard_lista_aggiungi(out, &tutte.carte[i])) {
                 opencard_lista_free(&tutte);
                 opencard_lista_free(out);
-                return segnala(errore, OPENCARD_ERR_MEMORIA);
+                return imposta_codice(errore, OPENCARD_ERR_MEMORIA);
             }
         }
     }
@@ -1194,134 +1209,11 @@ opencard_esito opencard_set_favorite(int id, int preferita, opencard_errore *err
     }
     if (!trovata) {
         opencard_lista_free(&tutte);
-        return segnala(errore, OPENCARD_ERR_NON_TROVATA);
+        return imposta_codice(errore, OPENCARD_ERR_NON_TROVATA);
     }
     esito = salva(&tutte, errore);
     opencard_lista_free(&tutte);
     return esito;
-}
-
-/* Cerca una carta e la passa a chi la deve cambiare. Il salvataggio avviene
- * una volta sola, e se la modifica non cambia niente il file non si tocca. */
-static opencard_esito cambia_carta(int id, opencard_errore *errore,
-                                   int (*modifica)(opencard_card *, const void *),
-                                   const void *dati)
-{
-    opencard_lista tutte;
-    opencard_esito esito;
-    size_t i;
-
-    azzera_errore(errore);
-    esito = carica(&tutte, errore);
-    if (esito != OPENCARD_OK) {
-        return esito;
-    }
-    for (i = 0; i < tutte.n; i++) {
-        if (tutte.carte[i].id != id) {
-            continue;
-        }
-        switch (modifica(&tutte.carte[i], dati)) {
-        case 0:                                 /* già così: niente da scrivere */
-            opencard_lista_free(&tutte);
-            return OPENCARD_OK;
-        case -1:                                /* valori non validi */
-            opencard_lista_free(&tutte);
-            return segnala(errore, OPENCARD_ERR_ARGOMENTI);
-        default:
-            esito = salva(&tutte, errore);
-            opencard_lista_free(&tutte);
-            return esito;
-        }
-    }
-    opencard_lista_free(&tutte);
-    return segnala(errore, OPENCARD_ERR_NON_TROVATA);
-}
-
-static int scrivi_simbologia(opencard_card *card, const void *dati)
-{
-    opencard_simbologia voluta = *(const opencard_simbologia *)dati;
-
-    if (voluta < 0 || voluta >= OPENCARD_SIM_QUANTE) {
-        return -1;
-    }
-    if (card->simbologia == voluta) {
-        return 0;
-    }
-    card->simbologia = voluta;
-    allinea_is_qrcode(card);
-    return 1;
-}
-
-opencard_esito opencard_set_simbologia(int id, opencard_simbologia simbologia,
-                                       opencard_errore *errore)
-{
-    return cambia_carta(id, errore, scrivi_simbologia, &simbologia);
-}
-
-/* NULL vuol dire "lascia com'è": è quello che permette alle interfacce di
- * toccare un campo solo senza rileggere e riscrivere gli altri due. */
-struct dettagli { const char *note; const char *scadenza; const char *saldo; };
-
-static int scrivi_dettagli(opencard_card *card, const void *dati)
-{
-    const struct dettagli *d = dati;
-    int cambiato = 0;
-
-    if (d->scadenza != NULL && !data_valida(d->scadenza)) {
-        return -1;
-    }
-    if (d->note != NULL && strcmp(card->note, d->note) != 0) {
-        copia(card->note, sizeof(card->note), d->note);
-        cambiato = 1;
-    }
-    if (d->scadenza != NULL && strcmp(card->scadenza, d->scadenza) != 0) {
-        copia(card->scadenza, sizeof(card->scadenza), d->scadenza);
-        cambiato = 1;
-    }
-    if (d->saldo != NULL && strcmp(card->saldo, d->saldo) != 0) {
-        copia(card->saldo, sizeof(card->saldo), d->saldo);
-        cambiato = 1;
-    }
-    return cambiato;
-}
-
-opencard_esito opencard_set_dettagli(int id, const char *note, const char *scadenza,
-                                     const char *saldo, opencard_errore *errore)
-{
-    struct dettagli d;
-
-    d.note = note;
-    d.scadenza = scadenza;
-    d.saldo = saldo;
-    return cambia_carta(id, errore, scrivi_dettagli, &d);
-}
-
-struct foto { const char *fronte; const char *retro; };
-
-static int scrivi_foto(opencard_card *card, const void *dati)
-{
-    const struct foto *f = dati;
-    int cambiato = 0;
-
-    if (f->fronte != NULL && strcmp(card->foto_fronte, f->fronte) != 0) {
-        copia(card->foto_fronte, sizeof(card->foto_fronte), f->fronte);
-        cambiato = 1;
-    }
-    if (f->retro != NULL && strcmp(card->foto_retro, f->retro) != 0) {
-        copia(card->foto_retro, sizeof(card->foto_retro), f->retro);
-        cambiato = 1;
-    }
-    return cambiato;
-}
-
-opencard_esito opencard_set_foto(int id, const char *fronte, const char *retro,
-                                 opencard_errore *errore)
-{
-    struct foto f;
-
-    f.fronte = fronte;
-    f.retro = retro;
-    return cambia_carta(id, errore, scrivi_foto, &f);
 }
 
 opencard_esito opencard_get_gruppo(int disposable, opencard_lista *out,
@@ -1332,7 +1224,7 @@ opencard_esito opencard_get_gruppo(int disposable, opencard_lista *out,
     size_t i;
 
     if (out == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     out->carte = NULL;
     out->n = 0;
@@ -1344,10 +1236,10 @@ opencard_esito opencard_get_gruppo(int disposable, opencard_lista *out,
     }
     for (i = 0; i < tutte.n; i++) {
         if (tutte.carte[i].disposable == (disposable ? 1 : 0)) {
-            if (!lista_aggiungi(out, &tutte.carte[i])) {
+            if (!opencard_lista_aggiungi(out, &tutte.carte[i])) {
                 opencard_lista_free(&tutte);
                 opencard_lista_free(out);
-                return segnala(errore, OPENCARD_ERR_MEMORIA);
+                return imposta_codice(errore, OPENCARD_ERR_MEMORIA);
             }
         }
     }
@@ -1362,7 +1254,7 @@ opencard_esito opencard_get(int id, opencard_card *out, opencard_errore *errore)
     size_t i;
 
     if (out == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     esito = carica(&tutte, errore);
     if (esito != OPENCARD_OK) {
@@ -1376,7 +1268,7 @@ opencard_esito opencard_get(int id, opencard_card *out, opencard_errore *errore)
         }
     }
     opencard_lista_free(&tutte);
-    return segnala(errore, OPENCARD_ERR_NON_TROVATA);
+    return imposta_codice(errore, OPENCARD_ERR_NON_TROVATA);
 }
 
 int opencard_next_id(void)
@@ -1395,96 +1287,6 @@ int opencard_next_id(void)
     }
     opencard_lista_free(&tutte);
     return massimo + 1;
-}
-
-/* Riempie una carta dai valori del form. Il colore si tiene solo se dice
- * qualcosa, cioè se è diverso da quello che l'id assegna da sé. */
-static void componi(opencard_card *card, int id, const char *label, const char *code,
-                    int is_qrcode, const char *color, int disposable, int favorite)
-{
-    opencard_card valori;
-
-    /* I campi in più restano vuoti: queste scritture non li conoscono. */
-    memset(&valori, 0, sizeof(valori));
-    copia(valori.label, sizeof(valori.label), label);
-    copia(valori.code, sizeof(valori.code), code);
-    copia(valori.color, sizeof(valori.color), color);
-    valori.is_qrcode = is_qrcode;
-    valori.simbologia = is_qrcode ? OPENCARD_SIM_QR : OPENCARD_SIM_CODE128;
-    valori.disposable = disposable;
-    valori.favorite = favorite;
-    prepara(card, &valori, id);
-}
-
-opencard_esito opencard_insert(const char *label, const char *code, int is_qrcode,
-                               const char *color, int disposable,
-                               int *nuovo_id, opencard_errore *errore)
-{
-    opencard_lista tutte;
-    opencard_card card;
-    opencard_esito esito;
-    int massimo = 0;
-    size_t i;
-
-    if (label == NULL || code == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
-    }
-    esito = carica(&tutte, errore);
-    if (esito != OPENCARD_OK) {
-        return esito;
-    }
-    for (i = 0; i < tutte.n; i++) {
-        if (tutte.carte[i].id > massimo) {
-            massimo = tutte.carte[i].id;
-        }
-    }
-    componi(&card, massimo + 1, label, code, is_qrcode, color, disposable, 0);
-
-    if (!lista_aggiungi(&tutte, &card)) {
-        opencard_lista_free(&tutte);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
-    }
-    esito = salva(&tutte, errore);
-    opencard_lista_free(&tutte);
-    if (esito == OPENCARD_OK && nuovo_id != NULL) {
-        *nuovo_id = card.id;
-    }
-    return esito;
-}
-
-opencard_esito opencard_update(int id, const char *label, const char *code,
-                               int is_qrcode, const char *color, int disposable,
-                               opencard_errore *errore)
-{
-    opencard_lista tutte;
-    opencard_esito esito;
-    size_t i;
-    int trovata = 0;
-
-    if (label == NULL || code == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
-    }
-    esito = carica(&tutte, errore);
-    if (esito != OPENCARD_OK) {
-        return esito;
-    }
-    for (i = 0; i < tutte.n; i++) {
-        if (tutte.carte[i].id == id) {
-            /* La stella resta com'era: si accende e si spegne da sola, e una
-             * modifica al nome non deve toglierla. */
-            componi(&tutte.carte[i], id, label, code, is_qrcode, color, disposable,
-                    tutte.carte[i].favorite);
-            trovata = 1;
-            break;
-        }
-    }
-    if (!trovata) {
-        opencard_lista_free(&tutte);
-        return segnala(errore, OPENCARD_ERR_NON_TROVATA);
-    }
-    esito = salva(&tutte, errore);
-    opencard_lista_free(&tutte);
-    return esito;
 }
 
 /* Toglie dalla cartella delle foto i file che nessuna carta della lista
@@ -1528,7 +1330,7 @@ opencard_esito opencard_foto_scrivi(const char *nome, const unsigned char *dati,
     if (!opencard_foto_nome_sicuro(nome) || (dati == NULL && n > 0) || percorso_foto[0] == '\0'
         || snprintf(percorso, sizeof(percorso), "%s/%s", percorso_foto, nome)
            >= (int)sizeof(percorso)) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     /* Su un telefono appena installato la cartella può non esserci ancora. */
     mkdir(percorso_foto, 0700);
@@ -1542,7 +1344,7 @@ opencard_esito opencard_foto_salva(int id, int fronte, const unsigned char *jpeg
     opencard_esito esito;
 
     if (nome == NULL || nome_size == 0 || id < 1 || jpeg == NULL || n == 0) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     nome[0] = '\0';
     /* Lo schema dei nomi di Catima, card_<id>_<lato>, con l'estensione del
@@ -1597,7 +1399,7 @@ opencard_esito opencard_salva(const opencard_card *carta, int nuova,
 
     if (carta == NULL || carta->id < 1 || carta->simbologia < 0
         || carta->simbologia >= OPENCARD_SIM_QUANTE || !data_valida(carta->scadenza)) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     esito = carica(&tutte, errore);
     if (esito != OPENCARD_OK) {
@@ -1611,16 +1413,16 @@ opencard_esito opencard_salva(const opencard_card *carta, int nuova,
     }
     if (nuova ? dove >= 0 : dove < 0) {
         opencard_lista_free(&tutte);
-        return segnala(errore, nuova ? OPENCARD_ERR_ARGOMENTI : OPENCARD_ERR_NON_TROVATA);
+        return imposta_codice(errore, nuova ? OPENCARD_ERR_ARGOMENTI : OPENCARD_ERR_NON_TROVATA);
     }
 
     prepara(&pronta, carta, carta->id);
 
     if (dove >= 0) {
         tutte.carte[dove] = pronta;
-    } else if (!lista_aggiungi(&tutte, &pronta)) {
+    } else if (!opencard_lista_aggiungi(&tutte, &pronta)) {
         opencard_lista_free(&tutte);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return imposta_codice(errore, OPENCARD_ERR_MEMORIA);
     }
     esito = salva(&tutte, errore);
     /* Una foto tolta o sostituita col nome cambiato se ne va qui, dopo la
@@ -1666,7 +1468,7 @@ opencard_esito opencard_reorder(int disposable, const int *ids, size_t n,
     int gruppo = disposable ? 1 : 0;
 
     if (ids == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     esito = carica(&tutte, errore);
     if (esito != OPENCARD_OK) {
@@ -1736,13 +1538,13 @@ opencard_esito opencard_replace_all(const opencard_lista *lista,
     size_t i;
 
     if (lista == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     azzera_errore(errore);
     /* Anche qui ogni carta passa da prepara(), con il suo id: il passaggio con
      * i QR e il CSV sostituito arrivano da questa strada. */
     if (!lista_spazio(&pronte, lista->n > 0 ? lista->n : 1)) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return imposta_codice(errore, OPENCARD_ERR_MEMORIA);
     }
     for (i = 0; i < lista->n; i++) {
         prepara(&pronte.carte[i], &lista->carte[i], lista->carte[i].id);
@@ -1765,7 +1567,7 @@ opencard_esito opencard_append_all(const opencard_lista *lista,
     size_t i;
 
     if (lista == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return imposta_codice(errore, OPENCARD_ERR_ARGOMENTI);
     }
     azzera_errore(errore);
     if (lista->n == 0) {
@@ -1786,9 +1588,9 @@ opencard_esito opencard_append_all(const opencard_lista *lista,
         /* Id nuovo: quello di chi cede non vuol dire niente qui, e due carte
          * con lo stesso id si perderebbero a vicenda. */
         prepara(&card, &lista->carte[i], ++massimo);
-        if (!lista_aggiungi(&tutte, &card)) {
+        if (!opencard_lista_aggiungi(&tutte, &card)) {
             opencard_lista_free(&tutte);
-            return segnala(errore, OPENCARD_ERR_MEMORIA);
+            return imposta_codice(errore, OPENCARD_ERR_MEMORIA);
         }
     }
     esito = salva(&tutte, errore);

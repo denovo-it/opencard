@@ -41,17 +41,6 @@
 static const char ALFABETO[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ$%*+-./:";
 #define BASE 44
 
-static opencard_esito segnala(opencard_errore *errore, opencard_esito codice)
-{
-    if (errore != NULL) {
-        errore->codice = codice;
-        errore->posizione = 0;
-        errore->dettaglio[0] = '\0';
-        errore->schema_trovato = 0;
-    }
-    return codice;
-}
-
 static void pulisci_errore(opencard_errore *errore)
 {
     if (errore != NULL) {
@@ -368,10 +357,10 @@ static opencard_esito leggi_carte(const unsigned char *dati, size_t n,
     memset(out, 0, sizeof(*out));
 
     if (n < 4 || dati[0] != 'O' || dati[1] != 'C') {
-        return segnala(errore, OPENCARD_ERR_TRASF_ROTTO);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_TRASF_ROTTO);
     }
     if (dati[2] > OPENCARD_TRASF_FORMATO) {
-        segnala(errore, OPENCARD_ERR_TRASF_VERSIONE);
+        opencard_errore_segnala(errore, OPENCARD_ERR_TRASF_VERSIONE);
         if (errore != NULL) {
             errore->schema_trovato = dati[2];
         }
@@ -383,7 +372,7 @@ static opencard_esito leggi_carte(const unsigned char *dati, size_t n,
     out->carte = (opencard_card *)calloc(quante > 0 ? quante : 1,
                                          sizeof(opencard_card));
     if (out->carte == NULL) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     out->capacita = quante > 0 ? quante : 1;
 
@@ -498,7 +487,7 @@ static opencard_esito leggi_carte(const unsigned char *dati, size_t n,
 rotto:
     opencard_lista_free(out);
     memset(out, 0, sizeof(*out));
-    return segnala(errore, OPENCARD_ERR_TRASF_ROTTO);
+    return opencard_errore_segnala(errore, OPENCARD_ERR_TRASF_ROTTO);
 }
 
 /* --------------------------------------------------------- i pezzi -------- */
@@ -530,11 +519,11 @@ opencard_esito opencard_trasf_prepara_lista(const opencard_lista *lista,
     opencard_esito esito = OPENCARD_OK;
 
     if (lista == NULL || out == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     memset(out, 0, sizeof(*out));
     if (lista->n > OPENCARD_TRASF_CARTE_MAX) {
-        return segnala(errore, OPENCARD_ERR_TRASF_TROPPE);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_TRASF_TROPPE);
     }
 
     for (i = 0; i < lista->n; i++) {
@@ -542,12 +531,12 @@ opencard_esito opencard_trasf_prepara_lista(const opencard_lista *lista,
     }
     piano = (unsigned char *)malloc(piano_max);
     if (piano == NULL) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     scritti = scrivi_carte(lista, piano, piano_max);
     if (scritti < 0) {
         free(piano);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     /* Quattro byte di lunghezza scompressa davanti al compresso: chi riceve
@@ -556,13 +545,13 @@ opencard_esito opencard_trasf_prepara_lista(const opencard_lista *lista,
     blocco = (unsigned char *)malloc(4 + compresso_max);
     if (blocco == NULL) {
         free(piano);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     compresso = blocco + 4;
     if (compress2(compresso, &compresso_max, piano, (uLong)scritti, 9) != Z_OK) {
         free(piano);
         free(blocco);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     free(piano);
 
@@ -581,13 +570,13 @@ opencard_esito opencard_trasf_prepara_lista(const opencard_lista *lista,
     }
     if (quanti > OPENCARD_TRASF_PEZZI_MAX) {
         free(blocco);
-        return segnala(errore, OPENCARD_ERR_TRASF_TROPPE);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_TRASF_TROPPE);
     }
 
     out->pezzi = (char **)calloc(quanti, sizeof(char *));
     if (out->pezzi == NULL) {
         free(blocco);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     for (i = 0; i < quanti; i++) {
@@ -609,13 +598,13 @@ opencard_esito opencard_trasf_prepara_lista(const opencard_lista *lista,
 
         testo = (char *)malloc((INTESTAZIONE + quanti_byte + 1) / 2 * 3 + 1);
         if (testo == NULL) {
-            esito = segnala(errore, OPENCARD_ERR_MEMORIA);
+            esito = opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
             break;
         }
         if (opencard_base44_codifica(fetta, INTESTAZIONE + quanti_byte, testo,
                                      (INTESTAZIONE + quanti_byte + 1) / 2 * 3 + 1) < 0) {
             free(testo);
-            esito = segnala(errore, OPENCARD_ERR_MEMORIA);
+            esito = opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
             break;
         }
         out->pezzi[i] = testo;
@@ -694,7 +683,7 @@ static opencard_esito raccogli(const char *const *letti, size_t n,
         }
         if (fetta[2] > OPENCARD_TRASF_FORMATO) {
             raccolta_free(r);
-            segnala(errore, OPENCARD_ERR_TRASF_VERSIONE);
+            opencard_errore_segnala(errore, OPENCARD_ERR_TRASF_VERSIONE);
             if (errore != NULL) {
                 errore->schema_trovato = fetta[2];
             }
@@ -718,13 +707,13 @@ static opencard_esito raccogli(const char *const *letti, size_t n,
             r->presenti = (unsigned char *)calloc((size_t)totale, 1);
             if (r->dati == NULL || r->lunghezze == NULL || r->presenti == NULL) {
                 raccolta_free(r);
-                return segnala(errore, OPENCARD_ERR_MEMORIA);
+                return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
             }
         } else if (r->crc != crc || r->totale != totale) {
             /* Pezzo di un altro passaggio: dirlo, altrimenti chi riceve
              * aspetta all'infinito un codice che non arriverà mai. */
             raccolta_free(r);
-            return segnala(errore, OPENCARD_ERR_ALTRO_TRASF);
+            return opencard_errore_segnala(errore, OPENCARD_ERR_ALTRO_TRASF);
         }
 
         if (!r->presenti[indice]) {
@@ -755,7 +744,7 @@ static opencard_esito componi_blocco(const raccolta *r, unsigned char **out,
     }
     blocco = (unsigned char *)malloc(totale_byte > 0 ? totale_byte : 1);
     if (blocco == NULL) {
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     for (i = 0; i < r->totale; i++) {
         memcpy(blocco + posizione, r->dati + (size_t)i * fetta_dati, r->lunghezze[i]);
@@ -764,7 +753,7 @@ static opencard_esito componi_blocco(const raccolta *r, unsigned char **out,
 
     if (crc32(0L, blocco, (uInt)totale_byte) != r->crc || totale_byte < 5) {
         free(blocco);
-        return segnala(errore, OPENCARD_ERR_TRASF_ROTTO);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_TRASF_ROTTO);
     }
 
     lunghezza_piana = (unsigned long)blocco[0] | ((unsigned long)blocco[1] << 8)
@@ -772,18 +761,18 @@ static opencard_esito componi_blocco(const raccolta *r, unsigned char **out,
                       | ((unsigned long)blocco[3] << 24);
     if (lunghezza_piana == 0 || lunghezza_piana > 1024u * 1024u) {
         free(blocco);
-        return segnala(errore, OPENCARD_ERR_TRASF_ROTTO);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_TRASF_ROTTO);
     }
     piano = (unsigned char *)malloc(lunghezza_piana);
     if (piano == NULL) {
         free(blocco);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     piano_n = (uLongf)lunghezza_piana;
     if (uncompress(piano, &piano_n, blocco + 4, (uLong)(totale_byte - 4)) != Z_OK) {
         free(blocco);
         free(piano);
-        return segnala(errore, OPENCARD_ERR_TRASF_ROTTO);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_TRASF_ROTTO);
     }
     free(blocco);
 
@@ -806,7 +795,7 @@ opencard_esito opencard_trasf_stato(const char *const *letti, size_t n,
         *totale = 0;
     }
     if (letti == NULL && n > 0) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     esito = raccogli(letti, n, &r, errore);
     if (esito != OPENCARD_OK) {
@@ -831,7 +820,7 @@ opencard_esito opencard_trasf_leggi(const char *const *letti, size_t n,
     opencard_esito esito;
 
     if (out == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     memset(out, 0, sizeof(*out));
 
@@ -841,7 +830,7 @@ opencard_esito opencard_trasf_leggi(const char *const *letti, size_t n,
     }
     if (r.dati == NULL || r.ricevuti < r.totale) {
         raccolta_free(&r);
-        return segnala(errore, OPENCARD_ERR_TRASF_INCOMPLETO);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_TRASF_INCOMPLETO);
     }
     esito = componi_blocco(&r, &piano, &piano_n, errore);
     raccolta_free(&r);

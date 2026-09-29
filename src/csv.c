@@ -26,17 +26,6 @@ static const char *const NOMI_CATIMA[] = {
 };
 #define N_NOMI ((int)(sizeof(NOMI_CATIMA) / sizeof(NOMI_CATIMA[0])))
 
-static opencard_esito segnala(opencard_errore *errore, opencard_esito codice)
-{
-    if (errore != NULL) {
-        errore->codice = codice;
-        errore->posizione = 0;
-        errore->dettaglio[0] = '\0';
-        errore->schema_trovato = 0;
-    }
-    return codice;
-}
-
 static int spazio(char c)
 {
     return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f';
@@ -395,7 +384,7 @@ opencard_esito opencard_csv_scrivi(const opencard_lista *lista, char **uscita,
     int ok;
 
     if (lista == NULL || uscita == NULL || quanti == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     *uscita = NULL;
     *quanti = 0;
@@ -439,7 +428,7 @@ opencard_esito opencard_csv_scrivi(const opencard_lista *lista, char **uscita,
 
     if (!ok) {
         free(b.p);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     *uscita = b.p;
     *quanti = b.n;
@@ -645,22 +634,6 @@ static const char *const NOMI_COLONNE[C_QUANTE] = {
     "barcodeid", "barcodetype", "headercolor", "starstatus"
 };
 
-static int metti_in_lista(opencard_lista *lista, const opencard_card *carta)
-{
-    if (lista->n == lista->capacita) {
-        size_t nuova = lista->capacita ? lista->capacita * 2 : 16;
-        opencard_card *altro = realloc(lista->carte, nuova * sizeof(*altro));
-
-        if (altro == NULL) {
-            return 0;
-        }
-        lista->carte = altro;
-        lista->capacita = nuova;
-    }
-    lista->carte[lista->n++] = *carta;
-    return 1;
-}
-
 opencard_esito opencard_csv_leggi(const unsigned char *dati, size_t quanti,
                                   opencard_lista *out, opencard_errore *errore)
 {
@@ -671,7 +644,7 @@ opencard_esito opencard_csv_leggi(const unsigned char *dati, size_t quanti,
     int letta, k;
 
     if (dati == NULL || out == NULL) {
-        return segnala(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     memset(out, 0, sizeof(*out));
 
@@ -684,7 +657,7 @@ opencard_esito opencard_csv_leggi(const unsigned char *dati, size_t quanti,
     }
     if (letta != 1) {
         libera_riga(&testa);
-        return letta < 0 ? segnala(errore, OPENCARD_ERR_MEMORIA) : OPENCARD_OK;
+        return letta < 0 ? opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA) : OPENCARD_OK;
     }
     colonne = testa.n;
     for (k = 0; k < C_QUANTE; k++) {
@@ -740,7 +713,7 @@ opencard_esito opencard_csv_leggi(const unsigned char *dati, size_t quanti,
                         campo_saldo, sizeof(campo_saldo));
         metti(carta.saldo, sizeof(carta.saldo), campo_saldo);
 
-        if (!metti_in_lista(out, &carta)) {
+        if (!opencard_lista_aggiungi(out, &carta)) {
             letta = -1;
             break;
         }
@@ -749,7 +722,7 @@ opencard_esito opencard_csv_leggi(const unsigned char *dati, size_t quanti,
     libera_riga(&testa);
     if (letta < 0) {
         opencard_lista_free(out);
-        return segnala(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
     return OPENCARD_OK;
 }

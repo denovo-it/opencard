@@ -201,17 +201,6 @@ int opencard_zip_e_archivio(const unsigned char *dati, size_t quanti)
         && dati[2] == 0x03 && dati[3] == 0x04;
 }
 
-static opencard_esito fallisci(opencard_errore *errore, opencard_esito codice)
-{
-    if (errore != NULL) {
-        errore->codice = codice;
-        errore->posizione = 0;
-        errore->dettaglio[0] = '\0';
-        errore->schema_trovato = 0;
-    }
-    return codice;
-}
-
 opencard_esito opencard_zip_scrivi(const opencard_zip_voce *voci, size_t n,
                                    unsigned char **fuori, size_t *fuori_n,
                                    opencard_errore *errore)
@@ -224,7 +213,7 @@ opencard_esito opencard_zip_scrivi(const opencard_zip_voce *voci, size_t n,
     size_t i, inizio_indice, fine_indice;
 
     if (voci == NULL || fuori == NULL || fuori_n == NULL || n == 0) {
-        return fallisci(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     *fuori = NULL;
     *fuori_n = 0;
@@ -235,7 +224,7 @@ opencard_esito opencard_zip_scrivi(const opencard_zip_voce *voci, size_t n,
     somme = calloc(n, sizeof(unsigned long));
     if (inizi == NULL || metodi == NULL || compressi == NULL || somme == NULL) {
         free(inizi); free(metodi); free(compressi); free(somme);
-        return fallisci(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     /* Prima i file, uno dietro l'altro, ognuno con la sua intestazione. */
@@ -249,7 +238,7 @@ opencard_esito opencard_zip_scrivi(const opencard_zip_voce *voci, size_t n,
         if (lunghezza_nome == 0 || lunghezza_nome > 200) {
             free(inizi); free(metodi); free(compressi); free(somme);
             free(archivio.dati);
-            return fallisci(errore, OPENCARD_ERR_ARGOMENTI);
+            return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
         }
 
         somme[i] = crc32(0L, voci[i].dati, (uInt)voci[i].quanti);
@@ -279,7 +268,7 @@ opencard_esito opencard_zip_scrivi(const opencard_zip_voce *voci, size_t n,
             free(pacchetto);
             free(inizi); free(metodi); free(compressi); free(somme);
             free(archivio.dati);
-            return fallisci(errore, OPENCARD_ERR_MEMORIA);
+            return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
         }
         free(pacchetto);
     }
@@ -304,7 +293,7 @@ opencard_esito opencard_zip_scrivi(const opencard_zip_voce *voci, size_t n,
             || !scrivi_byte(&archivio, voci[i].nome, lunghezza_nome)) {
             free(inizi); free(metodi); free(compressi); free(somme);
             free(archivio.dati);
-            return fallisci(errore, OPENCARD_ERR_MEMORIA);
+            return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
         }
     }
     fine_indice = archivio.n;
@@ -318,7 +307,7 @@ opencard_esito opencard_zip_scrivi(const opencard_zip_voce *voci, size_t n,
         || !scrivi16(&archivio, 0)) {
         free(inizi); free(metodi); free(compressi); free(somme);
         free(archivio.dati);
-        return fallisci(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     free(inizi); free(metodi); free(compressi); free(somme);
@@ -358,25 +347,25 @@ opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
     const unsigned char *voce;
 
     if (dati == NULL || out == NULL || quanti == 0) {
-        return fallisci(errore, OPENCARD_ERR_ARGOMENTI);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
     }
     out->voci = NULL;
     out->n = 0;
 
     fine = trova_fine(dati, quanti);
     if (fine == NULL) {
-        return fallisci(errore, OPENCARD_ERR_JSON);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);
     }
     quante = leggi16(fine + 10);
     inizio_indice = (size_t)leggi32(fine + 16);
 
     if (quante == 0 || quante > 4096 || inizio_indice >= quanti) {
-        return fallisci(errore, OPENCARD_ERR_JSON);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);
     }
 
     out->voci = calloc(quante, sizeof(opencard_zip_voce));
     if (out->voci == NULL) {
-        return fallisci(errore, OPENCARD_ERR_MEMORIA);
+        return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
     }
 
     voce = dati + inizio_indice;
@@ -389,7 +378,7 @@ opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
         if ((size_t)(voce - dati) + TESTA_INDICE > quanti
             || leggi32(voce) != FIRMA_INDICE) {
             opencard_zip_libera(out);
-            return fallisci(errore, OPENCARD_ERR_JSON);
+            return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);
         }
         metodo = leggi16(voce + 10);
         compressa = (size_t)leggi32(voce + 20);
@@ -406,14 +395,14 @@ opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
             || (size_t)(voce - dati) + TESTA_INDICE + lunghezza_nome > quanti
             || distesa > ARCHIVIO_MAX || dove + TESTA_LOCALE > quanti) {
             opencard_zip_libera(out);
-            return fallisci(errore, OPENCARD_ERR_JSON);
+            return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);
         }
         /* Prima di allocare: la somma si ferma al tetto senza aver chiesto
          * la memoria delle voci che lo superano. */
         estratti += distesa;
         if (estratti > ESTRATTI_MAX) {
             opencard_zip_libera(out);
-            return fallisci(errore, OPENCARD_ERR_TROPPO_GRANDE);
+            return opencard_errore_segnala(errore, OPENCARD_ERR_TROPPO_GRANDE);
         }
         memcpy(out->voci[i].nome, voce + TESTA_INDICE, lunghezza_nome);
         out->voci[i].nome[lunghezza_nome] = '\0';
@@ -423,12 +412,12 @@ opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
         locale = dati + dove;
         if (leggi32(locale) != FIRMA_LOCALE) {
             opencard_zip_libera(out);
-            return fallisci(errore, OPENCARD_ERR_JSON);
+            return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);
         }
         testa = TESTA_LOCALE + leggi16(locale + 26) + leggi16(locale + 28);
         if (dove + testa + compressa > quanti) {
             opencard_zip_libera(out);
-            return fallisci(errore, OPENCARD_ERR_JSON);
+            return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);
         }
 
         if (metodo == 0) {
@@ -437,23 +426,23 @@ opencard_esito opencard_zip_leggi(const unsigned char *dati, size_t quanti,
              * l'indice le dà diverse, si leggerebbe oltre la fine del file. */
             if (compressa != distesa) {
                 opencard_zip_libera(out);
-                return fallisci(errore, OPENCARD_ERR_JSON);
+                return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);
             }
             contenuto = malloc(distesa + 1);
             if (contenuto == NULL) {
                 opencard_zip_libera(out);
-                return fallisci(errore, OPENCARD_ERR_MEMORIA);
+                return opencard_errore_segnala(errore, OPENCARD_ERR_MEMORIA);
             }
             memcpy(contenuto, locale + testa, distesa);
             contenuto[distesa] = '\0';
         } else if (metodo == 8) {
             if (!decomprimi(locale + testa, compressa, distesa, &contenuto)) {
                 opencard_zip_libera(out);
-                return fallisci(errore, OPENCARD_ERR_JSON);
+                return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);
             }
         } else {
             opencard_zip_libera(out);
-            return fallisci(errore, OPENCARD_ERR_JSON);
+            return opencard_errore_segnala(errore, OPENCARD_ERR_JSON);
         }
 
         out->voci[i].dati = contenuto;

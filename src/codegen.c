@@ -147,33 +147,6 @@ int opencard_zint_da_simbologia(opencard_simbologia simbologia)
     return ZINT_DI_SIMBOLOGIA[simbologia];
 }
 
-int opencard_symbology(const char *code, opencard_tipo tipo)
-{
-    const char *s;
-    size_t n;
-
-    if (tipo == OPENCARD_QRCODE) {
-        return BARCODE_QRCODE;
-    }
-    if (code == NULL) {
-        return BARCODE_CODE128;
-    }
-
-    estremi(code, &s, &n);
-    if (tutto_cifre(s, n)) {
-        if (n == 13) {
-            return BARCODE_EANX;   /* EAN-13: zint sceglie in base alle cifre */
-        }
-        if (n == 8) {
-            return BARCODE_EANX;   /* EAN-8 */
-        }
-        if (n == 12) {
-            return BARCODE_UPCA;
-        }
-    }
-    return BARCODE_CODE128;
-}
-
 /* EANX conta le cifre come se mancasse sempre quella di controllo: otto cifre
  * per lui sono un EAN-13 da completare con gli zeri davanti. Ma un EAN-8 lo
  * si scrive con tutte e otto, ed è così che lo leggono i lettori dalla
@@ -279,14 +252,6 @@ static int disegna(const char *code, int zint_simbologia,
     return 0;
 }
 
-int opencard_render_bitmap(const char *code, opencard_tipo tipo,
-                           unsigned char **pixel, int *larghezza, int *altezza,
-                           char *errore, size_t errore_len)
-{
-    return disegna(code, opencard_symbology(code, tipo), pixel, larghezza, altezza,
-                   errore, errore_len);
-}
-
 /* EAN e UPC vogliono un numero di cifre preciso, con o senza quella di
  * controllo, che zint calcola da sé. Il controllo sta qui e non in zint
  * perché EAN-8 ed EAN-13 per lui sono la stessa simbologia: senza, uno che
@@ -387,7 +352,7 @@ void opencard_free_bitmap(unsigned char *pixel)
     free(pixel);
 }
 
-int opencard_write_png(const char *code, opencard_tipo tipo, const char *percorso,
+int opencard_write_png(const char *code, opencard_simbologia simbologia, const char *percorso,
                        char *errore, size_t errore_len)
 {
     struct zint_symbol *simbolo;
@@ -401,6 +366,9 @@ int opencard_write_png(const char *code, opencard_tipo tipo, const char *percors
     if (code == NULL || percorso == NULL) {
         return ZINT_ERROR_INVALID_DATA;
     }
+    if (opencard_zint_da_simbologia(simbologia) < 0) {
+        return ZINT_ERROR_INVALID_OPTION;
+    }
 
     simbolo = ZBarcode_Create();
     if (simbolo == NULL) {
@@ -408,7 +376,7 @@ int opencard_write_png(const char *code, opencard_tipo tipo, const char *percors
     }
 
     estremi(code, &s, &n);
-    simbolo->symbology = zint_per_la_lunghezza(opencard_symbology(code, tipo), n);
+    simbolo->symbology = zint_per_la_lunghezza(opencard_zint_da_simbologia(simbologia), n);
     simbolo->show_hrt = 0;      /* il testo lo disegna la UI, raggruppato a tre */
     simbolo->scale = 4.0f;
     strncpy(simbolo->outfile, percorso, sizeof(simbolo->outfile) - 1);

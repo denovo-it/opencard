@@ -205,9 +205,6 @@ object Core {
     /** Il codice disegnato con la simbologia scelta, non con quella indovinata. */
     @JvmStatic external fun renderCodeSimbologia(code: String, simbologia: Int): ImmagineCodice
 
-    /** Quale simbologia proporre per un codice appena letto o scritto. */
-    @JvmStatic external fun simbologiaIndovinata(code: String, isQrcode: Boolean): Int
-
     /**
      * Se un codice si può disegnare in una simbologia, senza disegnarlo.
      *

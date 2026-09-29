@@ -154,10 +154,6 @@ typedef NS_ENUM(NSInteger, OCTipoFile) {
 /// `opencard_simbologia`: l'indice nell'array è il numero da salvare.
 + (NSArray<NSString *> *)nomiSimbologie;
 
-/// Quale codice sembra, guardando il testo. È quella che l'app propone quando
-/// si aggiunge una carta, e che il core usa per i file scritti prima della 1.0.3.
-+ (NSInteger)simbologiaIndovinata:(NSString *)codice qrcode:(BOOL)qrcode;
-
 /// Il tipo di codice che sceglie Automatico: quello del codice, o il QR se non ci sta.
 + (NSInteger)simbologiaAutomatica:(NSString *)codice;
 
@@ -174,11 +170,6 @@ typedef NS_ENUM(NSInteger, OCTipoFile) {
                                  errore:(NSError **)errore;
 
 #pragma mark - Cifratura
-
-/// La chiave con cui il file delle carte sta cifrato sul telefono, 32 byte.
-/// Va data subito dopo l'apertura e prima di leggere qualsiasi cosa; `nil` la
-/// toglie e il file torna a scriversi in chiaro.
-+ (void)impostaChiaveDati:(nullable NSData *)chiave;
 
 /// Se le carte entrano nel backup del telefono, iCloud compreso.
 ///
