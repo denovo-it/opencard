@@ -5,6 +5,7 @@
 #import "OCCore.h"
 
 #import "OCChiaveDati.h"
+#import "OCOrologio.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -214,6 +215,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return NO;
     }
+    [OCOrologio manda];
     return YES;
 }
 
@@ -301,6 +303,10 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return NO;
     }
+    // Dopo ogni scrittura del file l'orologio riceve le carte com'è adesso,
+    // come fa Dati.chiedi su Android. Qui le scritture passano tutte da
+    // questi metodi, quindi la chiamata sta in ognuno.
+    [OCOrologio manda];
     return YES;
 }
 
@@ -312,6 +318,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return NO;
     }
+    [OCOrologio manda];
     return YES;
 }
 
@@ -333,6 +340,8 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 
     if (!esito) {
         [self riporta:errore da:&guasto];
+    } else {
+        [OCOrologio manda];
     }
     return esito;
 }
@@ -434,6 +443,21 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     return fuori;
 }
 
++ (NSData *)backupPerOrologio:(NSError **)errore
+{
+    char *testo = NULL;
+    opencard_errore guasto;
+
+    /* L'istante lo scrive il core. */
+    if (opencard_backup_esporta(NULL, &testo, &guasto) != OPENCARD_OK || testo == NULL) {
+        [self riporta:errore da:&guasto];
+        return nil;
+    }
+    NSData *fuori = [NSData dataWithBytes:testo length:strlen(testo)];
+    opencard_backup_free(testo);
+    return fuori;
+}
+
 + (NSInteger)importa:(NSData *)dati
             password:(NSString *)password
          sostituisci:(BOOL)sostituisci
@@ -450,6 +474,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return -1;
     }
+    [OCOrologio manda];
     return quante;
 }
 
@@ -562,6 +587,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return NO;
     }
+    [OCOrologio manda];
     return YES;
 }
 
@@ -677,6 +703,7 @@ static void OCLiberaPezzi(const char **pezzi, size_t quanti)
         [self riporta:errore da:&guasto];
         return -1;
     }
+    [OCOrologio manda];
     return quante;
 }
 

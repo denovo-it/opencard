@@ -28,6 +28,7 @@ final class Carte: ObservableObject {
     @Published private(set) var guasto = false
 
     private var aperto = false
+    private var telefono: DalTelefono?
 
     init() {
         Nucleo.coda.async {
@@ -39,6 +40,21 @@ final class Carte: ObservableObject {
                 #endif
             } catch {
                 NSLog("OpenCard: dati non aperti: \(error)")
+            }
+            self.ricarica()
+        }
+        telefono = DalTelefono(self)
+    }
+
+    /// Le carte arrivate dal telefono al posto di quelle che c'erano.
+    func ripristina(_ dati: Data) {
+        Nucleo.coda.async {
+            guard self.aperto else { return }
+            do {
+                try Nucleo.ripristina(dati)
+            } catch {
+                NSLog("OpenCard: carte dal telefono non lette: \(error)")
+                return
             }
             self.ricarica()
         }
@@ -83,7 +99,7 @@ final class Carte: ObservableObject {
 /// L'elenco delle carte, ognuna sul suo colore. Un tocco apre il codice.
 struct ElencoView: View {
     @EnvironmentObject private var carte: Carte
-    @State private var percorso: [Int] = []
+    @Stato private var percorso: [Int] = []
 
     var body: some View {
         NavigationStack(path: $percorso) {
@@ -146,8 +162,8 @@ struct CodiceView: View {
     let carta: Carta
 
     @Environment(\.displayScale) private var scalaSchermo
-    @State private var immagine: CGImage?
-    @State private var guasto = false
+    @Stato private var immagine: CGImage?
+    @Stato private var guasto = false
 
     var body: some View {
         GeometryReader { spazio in

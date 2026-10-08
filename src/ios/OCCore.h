@@ -140,6 +140,11 @@ typedef NS_ENUM(NSInteger, OCTipoFile) {
 /// CSV di Catima. Con la password non vuota esce chiuso, foto comprese.
 + (nullable NSData *)esportaCsv:(BOOL)csv password:(NSString *)password errore:(NSError **)errore;
 
+/// Tutte le carte nel formato del backup JSON, senza foto: quello che
+/// l'orologio rilegge con opencard_backup_leggi. Su Android lo stesso lo dà
+/// Core.backupEsporta.
++ (nullable NSData *)backupPerOrologio:(NSError **)errore;
+
 /// Importa un file salvato da OpenCard, un backup JSON o un CSV di Catima. Il
 /// CSV si aggiunge, oppure con `sostituisci` prende il posto delle carte; gli
 /// altri le sostituiscono sempre. Torna quante carte sono entrate, -1 se fallisce.

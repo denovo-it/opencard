@@ -5,6 +5,7 @@
 #import "OCAppDelegate.h"
 
 #import "OCCore.h"
+#import "OCOrologio.h"
 #import "OCTema.h"
 
 @implementation OCAppDelegate
@@ -19,6 +20,9 @@
     if (![OCCore apriConErrore:&errore]) {
         self.erroreApertura = errore.localizedDescription;
     }
+    // Le carte all'Apple Watch. Anche se il file non si è aperto: manda
+    // solo quando c'è qualcosa da mandare.
+    [OCOrologio avvia];
 
     [self applicaAspettoBarra];
     return YES;
