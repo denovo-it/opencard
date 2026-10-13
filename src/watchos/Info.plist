@@ -38,6 +38,25 @@
 	<array>
 		<string>WatchOS</string>
 	</array>
+	<!-- Le chiavi che Xcode scrive da sé e che App Store Connect controlla:
+	     SDK watchOS 27.0 (24R360) di Xcode 27.0 (27A266a), lo stesso SDK che
+	     su Linux sta nel Darwin Swift SDK. Da aggiornare con l'SDK. -->
+	<key>DTPlatformName</key>
+	<string>watchos</string>
+	<key>DTPlatformVersion</key>
+	<string>27.0</string>
+	<key>DTPlatformBuild</key>
+	<string>24R360</string>
+	<key>DTSDKName</key>
+	<string>watchos27.0</string>
+	<key>DTSDKBuild</key>
+	<string>24R360</string>
+	<key>DTXcode</key>
+	<string>2700</string>
+	<key>DTXcodeBuild</key>
+	<string>27A266a</string>
+	<key>DTCompiler</key>
+	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>MinimumOSVersion</key>
 	<string>9.0</string>
 	<key>UIDeviceFamily</key>
