@@ -8,6 +8,7 @@
 // altro.
 
 import SwiftUI
+import WatchKit
 
 @main
 struct OpenCardOrologio: App {
@@ -163,13 +164,15 @@ private struct Avviso: View {
 /// impostazioni.
 ///
 /// La barra in alto è nascosta, per lasciare lo schermo al codice: si torna
-/// all'elenco scorrendo dal bordo sinistro. L'ora in alto a destra invece
+/// all'elenco con un tocco sullo schermo. Il lettore della cassa non tocca, e
+/// senza la freccia indietro lo scorrimento dal bordo non lo trova nessuno. L'ora in alto a destra invece
 /// resta, watchOS non la toglie (`persistentSystemOverlays` non la nasconde):
 /// il codice le passa accanto.
 struct CodiceView: View {
     let carta: Carta
 
     @Environment(\.displayScale) private var scalaSchermo
+    @Environment(\.dismiss) private var chiudi
     @Stato private var immagine: CGImage?
     @Stato private var guasto = false
 
@@ -180,12 +183,26 @@ struct CodiceView: View {
     static let quieteQuadrati = 4
     /// Distanza dal bordo dello schermo, in punti: gli angoli sono arrotondati.
     static let margine: CGFloat = 8
-    /// La fascia del nome, in punti. Dritto sta in alto accanto all'ora;
-    /// ruotato finisce sul lato destro, e la fascia è larga quanto basta per
-    /// tenere il codice lontano dall'ora.
-    static func fasciaNome(ruotato: Bool) -> CGFloat { ruotato ? 52 : 28 }
-    /// La fascia del numero, in punti.
-    static let fasciaNumero: CGFloat = 18
+    /// Verso della rotazione: la cima del codice va verso la mano, così nome e
+    /// numero si leggono dritti tendendo il braccio verso il lettore. Sul polso
+    /// sinistro è orario, sul destro antiorario. La corona non conta: quando la
+    /// si sposta, watchOS gira lo schermo da solo.
+    static var gradi: Double {
+        #if PROVA
+        // Nel simulatore il polso non si cambia: OPENCARD_POLSO=destro.
+        if ProcessInfo.processInfo.environment["OPENCARD_POLSO"] == "destro" { return -90 }
+        #endif
+        return WKInterfaceDevice.current().wristLocation == .right ? -90 : 90
+    }
+
+    /// Le fasce sopra e sotto il codice, in punti: il nome sopra, il numero
+    /// sotto. Dritto, quella del nome sta in alto accanto all'ora. Ruotato,
+    /// quella che finisce sul lato destro, dove c'è l'ora, è larga quanto
+    /// basta per tenerne lontano il codice.
+    static func fasce(ruotato: Bool) -> (nome: CGFloat, numero: CGFloat) {
+        guard ruotato else { return (28, 18) }
+        return gradi > 0 ? (52, 18) : (18, 52)
+    }
 
     var body: some View {
         GeometryReader { spazio in
@@ -193,10 +210,12 @@ struct CodiceView: View {
             let ruotato = immagine.map { ruota($0, schermo: schermo) } ?? false
             contenuto(in: ruotato ? CGSize(width: schermo.height, height: schermo.width) : schermo,
                       ruotato: ruotato)
-                .rotationEffect(.degrees(ruotato ? 90 : 0))
+                .rotationEffect(.degrees(ruotato ? Self.gradi : 0))
                 .frame(width: schermo.width, height: schermo.height)
         }
         .ignoresSafeArea()
+        .contentShape(Rectangle())
+        .onTapGesture { chiudi() }
         .toolbar(.hidden, for: .navigationBar)
         .onAppear(perform: disegna)
     }
@@ -206,7 +225,11 @@ struct CodiceView: View {
             Text(carta.etichetta)
                 .font(.footnote)
                 .lineLimit(1)
-                .frame(height: Self.fasciaNome(ruotato: ruotato), alignment: ruotato ? .center : .top)
+                .frame(height: Self.fasce(ruotato: ruotato).nome, alignment: ruotato ? .center : .top)
+                // Dritto, il nome sta sulla riga dell'ora: a sinistra, e si
+                // accorcia prima di arrivarci, come i titoli di watchOS.
+                .frame(maxWidth: .infinity, alignment: ruotato ? .center : .leading)
+                .padding(.trailing, ruotato ? 0 : 52)
             if let immagine {
                 codice(immagine, in: Self.perIlCodice(spazio, ruotato: ruotato))
                     .frame(maxHeight: .infinity)
@@ -223,7 +246,7 @@ struct CodiceView: View {
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-                .frame(height: Self.fasciaNumero)
+                .frame(height: Self.fasce(ruotato: ruotato).numero)
         }
         .padding(Self.margine)
         .frame(width: spazio.width, height: spazio.height)
@@ -242,7 +265,8 @@ struct CodiceView: View {
 
     /// Lo spazio per il codice e la sua zona bianca, in punti.
     static func perIlCodice(_ schermo: CGSize, ruotato: Bool) -> CGSize {
-        let testi = fasciaNome(ruotato: ruotato) + fasciaNumero + 4
+        let altezze = fasce(ruotato: ruotato)
+        let testi = altezze.nome + altezze.numero + 4
         return CGSize(width: max(schermo.width - 2 * margine, 20),
                       height: max(schermo.height - 2 * margine - testi, 20))
     }
