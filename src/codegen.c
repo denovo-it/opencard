@@ -212,6 +212,12 @@ static int disegna(const char *code, int zint_simbologia,
 
     estremi(code, &s, &n);
     simbolo->symbology = zint_per_la_lunghezza(zint_simbologia, n);
+    /* Sulle carte gli AI dei codici GS1 sono scritti fra tonde, «(01)...»;
+     * zint di suo vuole le quadre e rifiutava il codice con l'errore 252. */
+    if ((zint_simbologia == BARCODE_GS1_128 || zint_simbologia == BARCODE_DBAR_EXP)
+        && n > 0 && s[0] == '(') {
+        simbolo->input_mode |= GS1PARENS_MODE;
+    }
     simbolo->show_hrt = 0;      /* il testo lo disegna la UI, raggruppato a tre */
     simbolo->scale = 4.0f;
 

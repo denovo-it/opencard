@@ -44,6 +44,13 @@ final class DalTelefono: NSObject, WCSessionDelegate {
         ricevi(contesto)
     }
 
+    /// Il telefono è tornato a portata, o la sua app si è aperta dopo quella
+    /// dell'orologio: le carte si chiedono adesso. Senza, l'elenco restava
+    /// vuoto fino alla riapertura dell'app (simulatori, 13 ottobre 2026).
+    func sessionReachabilityDidChange(_ sessione: WCSession) {
+        chiedi(sessione)
+    }
+
     /// Chiede le carte al telefono. Senza telefono a portata non succede
     /// niente, e l'elenco resta com'era.
     private func chiedi(_ sessione: WCSession) {

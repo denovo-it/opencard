@@ -157,7 +157,15 @@ private struct Avviso: View {
 /// Il codice della carta, da far leggere alla cassa.
 ///
 /// A differenza di Wear OS la luminosità non si può alzare: watchOS non lo
-/// permette alle app.
+/// permette alle app. E l'app non può nemmeno restare davanti più a lungo:
+/// `isFrontmostTimeoutExtended` è deprecata da watchOS 7 («No longer
+/// supported»); quando l'orologio torna al quadrante lo decide l'utente nelle
+/// impostazioni.
+///
+/// La barra in alto è nascosta, per lasciare lo schermo al codice: si torna
+/// all'elenco scorrendo dal bordo sinistro. L'ora in alto a destra invece
+/// resta, watchOS non la toglie (`persistentSystemOverlays` non la nasconde):
+/// il codice le passa accanto.
 struct CodiceView: View {
     let carta: Carta
 
@@ -165,28 +173,60 @@ struct CodiceView: View {
     @Stato private var immagine: CGImage?
     @Stato private var guasto = false
 
+    /// Zona bianca ai lati dei codici a barre, in moduli: 10, come Code 128,
+    /// Code 39 e ITF. Gli stessi valori di `CodiceActivity` su Wear OS.
+    static let quieteBarre = 10
+    /// Zona bianca intorno ai codici quadrati e a più righe, in moduli: 4, come il QR.
+    static let quieteQuadrati = 4
+    /// Distanza dal bordo dello schermo, in punti: gli angoli sono arrotondati.
+    static let margine: CGFloat = 8
+    /// La fascia del nome, in punti. Dritto sta in alto accanto all'ora;
+    /// ruotato finisce sul lato destro, e la fascia è larga quanto basta per
+    /// tenere il codice lontano dall'ora.
+    static func fasciaNome(ruotato: Bool) -> CGFloat { ruotato ? 52 : 28 }
+    /// La fascia del numero, in punti.
+    static let fasciaNumero: CGFloat = 18
+
     var body: some View {
         GeometryReader { spazio in
-            VStack(spacing: 2) {
-                Text(carta.etichetta)
-                    .font(.footnote)
-                    .lineLimit(1)
-                if let immagine {
-                    codice(immagine, in: spazio.size)
-                } else if guasto {
-                    Text("errore_dati_wear")
-                        .font(.footnote)
-                        .multilineTextAlignment(.center)
-                }
-                Text(Nucleo.raggruppato(carta.codice))
-                    .font(.caption2)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-            }
-            .frame(width: spazio.size.width, height: spazio.size.height)
+            let schermo = spazio.size
+            let ruotato = immagine.map { ruota($0, schermo: schermo) } ?? false
+            contenuto(in: ruotato ? CGSize(width: schermo.height, height: schermo.width) : schermo,
+                      ruotato: ruotato)
+                .rotationEffect(.degrees(ruotato ? 90 : 0))
+                .frame(width: schermo.width, height: schermo.height)
         }
+        .ignoresSafeArea()
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear(perform: disegna)
+    }
+
+    private func contenuto(in spazio: CGSize, ruotato: Bool) -> some View {
+        VStack(spacing: 2) {
+            Text(carta.etichetta)
+                .font(.footnote)
+                .lineLimit(1)
+                .frame(height: Self.fasciaNome(ruotato: ruotato), alignment: ruotato ? .center : .top)
+            if let immagine {
+                codice(immagine, in: Self.perIlCodice(spazio, ruotato: ruotato))
+                    .frame(maxHeight: .infinity)
+            } else if guasto {
+                Text("errore_dati_wear")
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+                    .frame(maxHeight: .infinity)
+            } else {
+                Spacer()
+            }
+            Text(Nucleo.raggruppato(carta.codice))
+                .font(.caption2)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(height: Self.fasciaNumero)
+        }
+        .padding(Self.margine)
+        .frame(width: spazio.width, height: spazio.height)
     }
 
     private func disegna() {
@@ -200,43 +240,95 @@ struct CodiceView: View {
         }
     }
 
-    /// Il codice alla misura più grande che non lo sfoca.
-    ///
-    /// Il core disegna 4 pixel per modulo. Sullo schermo ogni pixel del disegno
-    /// diventa un numero intero di pixel, oppure, se il codice è più largo dello
-    /// schermo, 2 o 1 pixel per modulo: dividere per 2 o per 4 non spezza un
-    /// modulo a metà. Un codice a barre troppo alto si accorcia, perché una sua
-    /// fascia basta al lettore; uno a più righe deve entrare tutto.
+    /// Lo spazio per il codice e la sua zona bianca, in punti.
+    static func perIlCodice(_ schermo: CGSize, ruotato: Bool) -> CGSize {
+        let testi = fasciaNome(ruotato: ruotato) + fasciaNumero + 4
+        return CGSize(width: max(schermo.width - 2 * margine, 20),
+                      height: max(schermo.height - 2 * margine - testi, 20))
+    }
+
+    /// La zona bianca da aggiungere, in moduli, in orizzontale e in verticale.
+    /// EAN e UPC escono dal core con la loro; i codici a barre non ne hanno
+    /// bisogno sopra e sotto.
+    private var quiete: (x: Int, y: Int) {
+        if carta.aPiuRighe { return (Self.quieteQuadrati, Self.quieteQuadrati) }
+        let propria = opencard_simbologia_quiete_propria(
+            opencard_simbologia(rawValue: UInt32(carta.simbologia))) != 0
+        return (propria ? 0 : Self.quieteBarre, 0)
+    }
+
+    /// Quanti pixel dello schermo per modulo, zona bianca compresa: il numero
+    /// intero più grande che entra. Un modulo è sempre fatto dello stesso
+    /// numero di pixel, quindi il codice resta netto a qualsiasi misura.
+    /// Un codice a barre troppo alto si accorcia, perché una sua fascia basta
+    /// al lettore; uno a più righe deve entrare tutto.
+    private func pixelPerModulo(_ immagine: CGImage, in spazio: CGSize) -> Int {
+        let modulo = CGFloat(Self.modulo(immagine))
+        let moduliLarghi = CGFloat(immagine.width) / modulo + CGFloat(2 * quiete.x)
+        let moduliAlti = CGFloat(immagine.height) / modulo + CGFloat(2 * quiete.y)
+        var pixel = floor(spazio.width * scalaSchermo / moduliLarghi)
+        if carta.aPiuRighe {
+            pixel = min(pixel, floor(spazio.height * scalaSchermo / moduliAlti))
+        }
+        return max(Int(pixel), 1)
+    }
+
+    /// Vero se il codice, girato di 90 gradi, esce con moduli più grossi. Vale
+    /// per quelli larghi e bassi: sul lato lungo dello schermo un EAN-13 passa
+    /// da 2 a 4 pixel per modulo. Un QR, quadrato, resta dritto.
+    private func ruota(_ immagine: CGImage, schermo: CGSize) -> Bool {
+        let girato = CGSize(width: schermo.height, height: schermo.width)
+        return pixelPerModulo(immagine, in: Self.perIlCodice(girato, ruotato: true))
+            > pixelPerModulo(immagine, in: Self.perIlCodice(schermo, ruotato: false))
+    }
+
     private func codice(_ immagine: CGImage, in spazio: CGSize) -> some View {
-        // Spazio per il nome sopra e il numero sotto.
-        let disponibile = CGSize(width: spazio.width, height: max(spazio.height - 44, 20))
-        let fattore = Self.fattore(larghezza: immagine.width, altezza: immagine.height,
-                                   spazio: disponibile, scala: scalaSchermo,
-                                   aPiuRighe: carta.aPiuRighe)
+        let pixel = pixelPerModulo(immagine, in: spazio)
+        let fattore = CGFloat(pixel) / CGFloat(Self.modulo(immagine))
+        let bordoX = CGFloat(quiete.x * pixel) / scalaSchermo
+        let bordoY = CGFloat(quiete.y * pixel) / scalaSchermo
         let larghezza = CGFloat(immagine.width) * fattore / scalaSchermo
-        let altezza = CGFloat(immagine.height) * fattore / scalaSchermo
+        let altezza = min(CGFloat(immagine.height) * fattore / scalaSchermo,
+                          spazio.height - 2 * bordoY)
 
         return Image(decorative: immagine, scale: scalaSchermo / fattore)
             .interpolation(.none)
-            .frame(width: larghezza, height: min(altezza, disponibile.height), alignment: .center)
+            .frame(width: larghezza, height: altezza, alignment: .center)
             .clipped()
+            .padding(.horizontal, bordoX)
+            .padding(.vertical, bordoY)
+            // Con la closure il bianco resta dietro il codice: `background(Color.white)`
+            // si allargava a tutto lo schermo, nome e numero compresi.
+            .background { Color.white }
     }
 
-    static func fattore(larghezza: Int, altezza: Int, spazio: CGSize, scala: CGFloat,
-                        aPiuRighe: Bool) -> CGFloat {
-        let pixelLarghi = spazio.width * scala
-        let pixelAlti = spazio.height * scala
-        let adatto: (CGFloat) -> Bool = { fattore in
-            CGFloat(larghezza) * fattore <= pixelLarghi
-                && (!aPiuRighe || CGFloat(altezza) * fattore <= pixelAlti)
+    /// Quanti pixel del disegno fa un modulo. Di solito 8, ma per i codici
+    /// molto lunghi il core scende di scala: si ricava dalla riga centrale,
+    /// dove ogni tratto bianco o nero è largo un numero intero di moduli.
+    static func modulo(_ immagine: CGImage) -> Int {
+        guard let dati = immagine.dataProvider?.data,
+              let byte = CFDataGetBytePtr(dati) else { return 8 }
+        let passo = immagine.bitsPerPixel / 8
+        let riga = byte + (immagine.height / 2) * immagine.bytesPerRow
+        var risultato = 0
+        var corsa = 0
+        var nero = riga[0] < 128
+        for x in 0..<immagine.width {
+            let questo = riga[x * passo] < 128
+            if questo == nero {
+                corsa += 1
+            } else {
+                risultato = mcd(risultato, corsa)
+                corsa = 1
+                nero = questo
+            }
         }
-        let intero = floor(min(pixelLarghi / CGFloat(larghezza),
-                               aPiuRighe ? pixelAlti / CGFloat(altezza) : .infinity))
-        if intero >= 1 { return intero }
-        for fattore: CGFloat in [0.5, 0.25] where adatto(fattore) {
-            return fattore
-        }
-        return 0.25
+        risultato = mcd(risultato, corsa)
+        return max(risultato, 1)
+    }
+
+    private static func mcd(_ a: Int, _ b: Int) -> Int {
+        b == 0 ? a : mcd(b, a % b)
     }
 }
 

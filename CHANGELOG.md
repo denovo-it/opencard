@@ -20,6 +20,7 @@
 - Su Android, se una foto non si salva, l'app lo dice invece di salvare la carta senza la foto.
 - Su iPhone l'esportazione e l'importazione con la password non bloccano più lo schermo senza dire niente: mentre l'app calcola la chiave compare la rotella.
 - Su iPhone le foto di una carta non perdono più qualità quando si modifica la carta: prima si ricomprimevano a ogni salvataggio, anche se non erano cambiate.
+- I codici GS1-128 e GS1 DataBar Expanded scritti come sulla carta, con le parentesi, «(01)98898765432106(3202)012345», si disegnano. Prima l'app diceva che il codice non era valido.
 
 ## 1.0.6
 
