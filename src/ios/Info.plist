@@ -20,9 +20,9 @@
 	     separati da punto e respinge il caricamento se trova altro. Il segno
 	     della lavorazione sta su Android, in versionName, e nel CHANGELOG. -->
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.7</string>
+	<string>1.0.8</string>
 	<key>CFBundleVersion</key>
-	<string>2026101302</string>
+	<string>2026102001</string>
 	<!-- Dalla 1.0.3 l'app cifra il file delle carte e i backup con password,
 	     con Monocypher (XChaCha20-Poly1305, Argon2id): algoritmi pubblicati,
 	     e sorgente pubblico su GitHub. Per l'EAR (15 CFR 742.15(b) e la nota a

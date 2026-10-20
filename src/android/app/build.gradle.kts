@@ -36,11 +36,11 @@ android {
 
         // Formato YYYYMMDDnn: nn è il progressivo della giornata. Deve solo
         // crescere, e a colpo d'occhio dice quando è stata costruita.
-        versionCode = 2026101302
+        versionCode = 2026102001
         // Il suffisso -dev dice che è una build di lavorazione: sparisce nel
-        // commit che chiude la 1.0.7. Su iOS non si può, App Store Connect
+        // commit che chiude la 1.0.8. Su iOS non si può, App Store Connect
         // vuole solo cifre e punti, quindi lì il numero non ha il suffisso.
-        versionName = "1.0.7"
+        versionName = "1.0.8-dev"
 
         // Niente split per ABI: senza runtime da trascinarsi dietro l'APK è
         // piccolo, e un file solo si distribuisce meglio.

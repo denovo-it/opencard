@@ -1,3 +1,5 @@
+## 1.0.8-dev (in lavorazione)
+
 ## 1.0.7
 
 - Il campo di ricerca ha lo stesso aspetto delle carte, su Android e su iPhone: fondo pieno e angoli arrotondati come loro. Su Android non ha più il bordo sottile, su iPhone non è più la capsula con l'ombra.
