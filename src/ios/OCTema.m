@@ -4,6 +4,8 @@
 
 #import "OCTema.h"
 
+#include "store.h"
+
 NSString *const OCCanale = @"";
 
 @implementation OCTema
@@ -38,6 +40,16 @@ NSString *const OCCanale = @"";
     return [self coloreConRosso:(valore >> 16) & 0xFF
                           verde:(valore >> 8) & 0xFF
                             blu:valore & 0xFF];
+}
+
++ (UIColor *)sopraCarta:(NSString *)esadecimale
+{
+    return opencard_colore_chiaro(esadecimale.UTF8String) ? [self inchiostro] : [self sopraMarca];
+}
+
++ (BOOL)bordoCarta:(NSString *)esadecimale
+{
+    return opencard_colore_con_bordo(esadecimale.UTF8String) != 0;
 }
 
 + (NSString *)versioneEstesa

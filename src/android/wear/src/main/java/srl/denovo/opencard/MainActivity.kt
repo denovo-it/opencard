@@ -108,6 +108,7 @@ class MainActivity : Activity() {
             val carta = carte[posizione]
             riga.vista.text = carta.label
             riga.vista.backgroundTintList = ColorStateList.valueOf(coloreCarta(carta.colore))
+            riga.vista.setTextColor(coloreSopraCarta(carta.colore))
             riga.vista.setOnClickListener { suTocco(carta) }
         }
     }

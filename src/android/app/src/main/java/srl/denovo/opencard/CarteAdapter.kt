@@ -4,10 +4,13 @@
 
 package srl.denovo.opencard
 
+import android.content.res.ColorStateList
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -27,6 +30,7 @@ class CarteAdapter(
     private val suTocco: (Carta) -> Unit,
     private val suOrdineCambiato: (IntArray) -> Unit,
     private val suCestino: (Carta) -> Unit,
+    private val dueColonne: Boolean,
 ) : RecyclerView.Adapter<CarteAdapter.Riquadro>() {
 
     private var carte = mutableListOf<Carta>()
@@ -34,6 +38,7 @@ class CarteAdapter(
 
     class Riquadro(vista: View) : RecyclerView.ViewHolder(vista) {
         val scheda: MaterialCardView = vista.findViewById(R.id.scheda)
+        val riga: LinearLayout = vista.findViewById(R.id.riga)
         val nome: TextView = vista.findViewById(R.id.nome)
         val glifo: ImageView = vista.findViewById(R.id.glifo)
         val cestino: ImageView = vista.findViewById(R.id.cestino)
@@ -57,7 +62,20 @@ class CarteAdapter(
         val carta = carte[posizione]
 
         riquadro.nome.text = carta.label
+        disponi(riquadro)
         riquadro.scheda.setCardBackgroundColor(coloreCarta(carta.colore))
+        // Sul bianco testo e icone scuri, e bianco e nero hanno il bordo: senza,
+        // la scheda si perde nello sfondo chiaro o scuro dell'app.
+        val sopra = coloreSopraCarta(carta.colore)
+        riquadro.nome.setTextColor(sopra)
+        riquadro.glifo.imageTintList = ColorStateList.valueOf(sopra)
+        riquadro.cestino.imageTintList = ColorStateList.valueOf(sopra)
+        riquadro.scheda.strokeColor = COLORE_BORDO_CARTA
+        riquadro.scheda.strokeWidth = if (Core.coloreConBordo(carta.colore)) {
+            riquadro.scheda.resources.displayMetrics.density.toInt().coerceAtLeast(1)
+        } else {
+            0
+        }
         riquadro.glifo.setImageResource(
             // Due icone per diciotto simbologie: quello che conta e' se il
             // codice e' un quadrato o una fila di barre.
@@ -70,14 +88,47 @@ class CarteAdapter(
     }
 
     /**
-     * Trascinamento verticale per riordinare.
+     * Su una colonna glifo, nome e cestino in fila. Su due la scheda è larga
+     * metà, e in fila al nome resterebbe così poco posto da spezzarlo a metà
+     * parola: il glifo va sopra e il nome prende tutta la larghezza.
+     */
+    private fun disponi(riquadro: Riquadro) {
+        val dp = riquadro.riga.resources.displayMetrics.density
+        val nome = riquadro.nome.layoutParams as LinearLayout.LayoutParams
+        val cestino = riquadro.cestino.layoutParams as LinearLayout.LayoutParams
+
+        if (dueColonne) {
+            riquadro.riga.orientation = LinearLayout.VERTICAL
+            riquadro.riga.gravity = Gravity.CENTER_VERTICAL or Gravity.START
+            nome.width = ViewGroup.LayoutParams.MATCH_PARENT
+            nome.weight = 0f
+            nome.marginStart = 0
+            nome.topMargin = (8 * dp).toInt()
+            cestino.gravity = Gravity.END
+        } else {
+            riquadro.riga.orientation = LinearLayout.HORIZONTAL
+            riquadro.riga.gravity = Gravity.CENTER_VERTICAL
+            nome.width = 0
+            nome.weight = 1f
+            nome.marginStart = (16 * dp).toInt()
+            nome.topMargin = 0
+            cestino.gravity = -1
+        }
+        riquadro.nome.layoutParams = nome
+        riquadro.cestino.layoutParams = cestino
+    }
+
+    /**
+     * Trascinamento per riordinare: in verticale, e su due colonne anche di lato.
      *
      * L'ordine si salva quando l'utente lascia la presa, non a ogni scambio:
      * altrimenti si scriverebbe il file dei dati decine di volte per un
      * movimento solo.
      */
     fun trascinamento() = object : ItemTouchHelper.SimpleCallback(
-        ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+        ItemTouchHelper.UP or ItemTouchHelper.DOWN or
+            (if (dueColonne) ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT else 0),
+        0
     ) {
         override fun onMove(
             lista: RecyclerView,

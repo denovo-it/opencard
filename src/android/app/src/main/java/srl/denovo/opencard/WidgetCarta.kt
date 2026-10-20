@@ -115,6 +115,8 @@ class WidgetCarta : AppWidgetProvider() {
                 // vista: setBackgroundColor cancellerebbe il disegno, e con lui
                 // gli angoli arrotondati.
                 viste.setInt(R.id.widget_fondo, "setColorFilter", coloreCarta(carta.colore))
+                viste.setTextColor(R.id.widget_nome, coloreSopraCarta(carta.colore))
+                viste.setTextColor(R.id.widget_sotto, coloreSopraCarta(carta.colore))
                 viste.setOnClickPendingIntent(
                     R.id.widget_radice,
                     apri(contesto, DettaglioActivity.intent(contesto, carta.id), carta.id),

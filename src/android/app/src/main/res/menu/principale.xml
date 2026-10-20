@@ -21,6 +21,10 @@
                 android:icon="@drawable/ic_qrcode"
                 android:title="@string/trasferisci" />
             <item
+                android:id="@+id/due_colonne"
+                android:checkable="true"
+                android:title="@string/due_colonne" />
+            <item
                 android:id="@+id/impostazioni"
                 android:title="@string/impostazioni" />
         </menu>

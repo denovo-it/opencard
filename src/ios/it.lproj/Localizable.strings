@@ -168,6 +168,8 @@
 "qr_su_file" = "Salva i codici su file";
 "qr_salvato" = "Codici salvati sul file.";
 "impostazioni" = "Impostazioni";
+"due_colonne" = "Due colonne";
+"codice_copiato" = "Codice copiato";
 "backup_cloud" = "Includi le carte nel backup del telefono";
 "backup_cloud_acceso_ios" = "Le carte rientrano nel backup del telefono: se hai acceso iCloud ci finiscono anche loro, insieme ai dati delle altre app, e cambiando iPhone le ritrovi.";
 "backup_cloud_spento_ios" = "Le carte restano su questo telefono e non entrano nel backup. Per portarle altrove usa Esporta su file oppure il passaggio a QR.";

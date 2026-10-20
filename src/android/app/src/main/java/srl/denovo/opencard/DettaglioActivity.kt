@@ -5,10 +5,18 @@
 package srl.denovo.opencard
 
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -19,6 +27,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.MenuItemCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.appbar.AppBarLayout
@@ -40,6 +49,12 @@ class DettaglioActivity : AppCompatActivity() {
 
     /** La voce della barra, per cambiarle icona quando la stella si accende. */
     private var vocePreferita: MenuItem? = null
+
+    /** La voce di modifica, scritta col colore di [sopraBarra]. */
+    private var voceModifica: MenuItem? = null
+
+    /** Testo e icone della barra: bianchi, o scuri se la carta è chiara. */
+    private var sopraBarra = Color.WHITE
 
     /**
      * La modifica torna qui, e se la carta è stata cancellata da lì questa
@@ -255,8 +270,48 @@ class DettaglioActivity : AppCompatActivity() {
 
     private fun tinta(carta: Carta) {
         val colore = coloreCarta(carta.colore)
+        val barra = findViewById<MaterialToolbar>(R.id.barra)
         findViewById<AppBarLayout>(R.id.intestazione).setBackgroundColor(colore)
-        findViewById<MaterialToolbar>(R.id.barra).setBackgroundColor(colore)
+        barra.setBackgroundColor(colore)
+
+        // Su una carta bianca il bianco della barra non si vedrebbe: nome,
+        // freccia e voci passano allo scuro. La barra di stato no: sopra resta
+        // arancione.
+        sopraBarra = coloreSopraCarta(carta.colore)
+        findViewById<TextView>(R.id.titolo).setTextColor(sopraBarra)
+        barra.setNavigationIconTint(sopraBarra)
+        barra.overflowIcon?.setTint(sopraBarra)
+        tingiVoci()
+    }
+
+    /** Come [disegnaStella]: vale per chi arriva per ultimo fra carta e menu. */
+    private fun tingiVoci() {
+        vocePreferita?.let {
+            MenuItemCompat.setIconTintList(it, ColorStateList.valueOf(sopraBarra))
+        }
+        voceModifica?.let {
+            val titolo = SpannableString(getString(R.string.modifica))
+            titolo.setSpan(
+                ForegroundColorSpan(sopraBarra), 0, titolo.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+            )
+            it.title = titolo
+        }
+    }
+
+    /**
+     * Il codice della carta negli appunti, come è salvato: senza gli spazi che
+     * lo dividono a gruppi sotto l'immagine.
+     */
+    private fun copia(carta: Carta) {
+        getSystemService(ClipboardManager::class.java)
+            ?.setPrimaryClip(ClipData.newPlainText(carta.label, carta.code))
+        // Da Android 13 lo conferma il sistema con un suo riquadro: il nostro
+        // sarebbe un secondo avviso per la stessa cosa.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            Snackbar.make(findViewById(R.id.radice), R.string.codice_copiato, Snackbar.LENGTH_SHORT)
+                .show()
+        }
     }
 
     private fun disegna(carta: Carta) {
@@ -278,6 +333,9 @@ class DettaglioActivity : AppCompatActivity() {
                 val zoom = ZoomCodice(vista, minimo = (160 * densita).toInt(), massimo = colonna)
                 zoom.imposta((immagine.larghezza * DP_PER_PIXEL * densita).toInt())
                 vista.setOnTouchListener(zoom)
+                // Un tocco sul codice lo copia, per incollarlo in un'app o in
+                // un sito che chiede il numero della tessera.
+                vista.setOnClickListener { copia(carta) }
             },
             { messaggio ->
                 Snackbar.make(findViewById(R.id.radice), messaggio, Snackbar.LENGTH_LONG).show()
@@ -288,7 +346,9 @@ class DettaglioActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.dettaglio, menu)
         vocePreferita = menu.findItem(R.id.preferita)
+        voceModifica = menu.findItem(R.id.modifica)
         disegnaStella()
+        tingiVoci()
         return true
     }
 

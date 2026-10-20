@@ -13,7 +13,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface OCCartaCella : UICollectionViewCell
 
 /// Il cestino compare solo sulle usa e getta.
-- (void)mostra:(OCCarta *)carta conCestino:(BOOL)conCestino;
+/// Su due colonne la scheda è una tessera: glifo in alto, nome sotto a tutta
+/// larghezza, cestino nell'angolo.
+- (void)mostra:(OCCarta *)carta conCestino:(BOOL)conCestino aTessera:(BOOL)aTessera;
 
 @property (nonatomic, copy, nullable) void (^suCestino)(OCCarta *carta);
 

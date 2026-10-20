@@ -18,6 +18,7 @@ object Impostazioni {
 
     const val FILE = "impostazioni"
     private const val BACKUP_CLOUD = "backup_cloud"
+    private const val DUE_COLONNE = "due_colonne"
 
     private fun dove(contesto: Context) =
         contesto.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -34,5 +35,13 @@ object Impostazioni {
 
     fun cambiaBackupNelCloud(contesto: Context, acceso: Boolean) {
         dove(contesto).edit().putBoolean(BACKUP_CLOUD, acceso).apply()
+    }
+
+    /** Le carte su due colonne invece che su una. Di serie una, come prima. */
+    fun dueColonne(contesto: Context): Boolean =
+        dove(contesto).getBoolean(DUE_COLONNE, false)
+
+    fun cambiaDueColonne(contesto: Context, accese: Boolean) {
+        dove(contesto).edit().putBoolean(DUE_COLONNE, accese).apply()
     }
 }

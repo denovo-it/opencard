@@ -11,6 +11,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/// Nelle preferenze: vero se le carte stanno su due colonne. Di serie una.
+extern NSString *const OCChiaveDueColonne;
+
 @interface OCGruppoViewController : UIViewController
 
 - (instancetype)initConUsaEGetta:(BOOL)usaEGetta;

@@ -21,6 +21,8 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
 @property (nonatomic, strong) NSLayoutConstraint *altezzaCodice;
 @property (nonatomic, assign) CGFloat altezzaAlPizzico;
 @property (nonatomic, strong) UILabel *codice;
+/// Il codice come è salvato, per gli appunti: senza gli spazi dei gruppi.
+@property (nonatomic, copy) NSString *codiceIntero;
 /// Nota, scadenza e saldo, uno per riga e solo se ci sono.
 @property (nonatomic, strong) UILabel *dettagli;
 /// Il nome della carta in cima: una vista propria e non il titolo della barra,
@@ -109,6 +111,10 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
     self.immagine.userInteractionEnabled = YES;
     [self.immagine addGestureRecognizer:
         [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pizzica:)]];
+    // Un tocco sul codice lo copia, per incollarlo in un'app o in un sito che
+    // chiede il numero della tessera.
+    [self.immagine addGestureRecognizer:
+        [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(copiaCodice)]];
 
     // Il numero sta attaccato al codice, non in fondo allo schermo: si leggono
     // insieme, e alla cassa serve confrontarli a colpo d'occhio.
@@ -156,6 +162,42 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
                                                            multiplier:0.45],
         self.altezzaCodice,
     ]];
+}
+
+/// iOS non conferma una copia negli appunti: lo dice l'app, con una scritta
+/// che sparisce da sola.
+- (void)copiaCodice
+{
+    if (self.codiceIntero.length == 0) {
+        return;
+    }
+    [UIPasteboard generalPasteboard].string = self.codiceIntero;
+
+    UILabel *avviso = [UILabel new];
+    avviso.text = NSLocalizedString(@"codice_copiato", nil);
+    avviso.font = [UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+    avviso.textColor = [UIColor whiteColor];
+    avviso.backgroundColor = [[OCTema inchiostro] colorWithAlphaComponent:0.9];
+    avviso.textAlignment = NSTextAlignmentCenter;
+    avviso.layer.cornerRadius = 18;
+    avviso.layer.masksToBounds = YES;
+    avviso.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:avviso];
+    [NSLayoutConstraint activateConstraints:@[
+        [avviso.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+        [avviso.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor
+                                            constant:-24],
+        [avviso.heightAnchor constraintEqualToConstant:36],
+        [avviso.widthAnchor constraintEqualToAnchor:avviso.heightAnchor multiplier:1 constant:
+            ceil([avviso intrinsicContentSize].width)],
+    ]];
+    UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, avviso.text);
+
+    [UIView animateWithDuration:0.3
+                          delay:1.5
+                        options:UIViewAnimationOptionCurveEaseIn
+                     animations:^{ avviso.alpha = 0; }
+                     completion:^(BOOL finito) { [avviso removeFromSuperview]; }];
 }
 
 /// L'altezza del codice parte dalla misura naturale dell'immagine e la cambia
@@ -296,6 +338,7 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
     self.titolo.text = carta.etichetta;
     [self.titolo sizeToFit];
     self.codice.text = [OCCore codiceRaggruppato:carta.codice];
+    self.codiceIntero = carta.codice;
     self.preferita = carta.preferita;
     [self disegnaStella];
     [self mostraDettagliDi:carta];

@@ -246,10 +246,18 @@ int opencard_simbologia_una_riga(opencard_simbologia simbologia);
  * altri il margine lo lascia chi li mostra. */
 int opencard_simbologia_quiete_propria(opencard_simbologia simbologia);
 
-/* I colori fra cui l'id sceglie quello di una carta, gli stessi che il modulo
- * offre per la scelta a mano. opencard_colore() torna NULL fuori elenco. */
+/* I colori che il modulo offre per la scelta a mano: prima quelli fra cui l'id
+ * sceglie il colore di una carta, poi bianco e nero, che l'id non dà mai.
+ * opencard_colore() torna NULL fuori elenco. */
 size_t opencard_colori_n(void);
 const char *opencard_colore(size_t i);
+
+/* Vero se sopra il colore il testo va scuro invece che bianco, come sul bianco. */
+int opencard_colore_chiaro(const char *colore);
+
+/* Vero per i colori quasi bianchi o quasi neri, che senza un bordo si perdono
+ * nello sfondo dell'app, chiaro o scuro che sia. */
+int opencard_colore_con_bordo(const char *colore);
 
 /* Una carta dal modulo, tutta insieme, in una scrittura sola: etichetta,
  * codice, simbologia, colore, gruppo, stella, note, scadenza, saldo e foto.

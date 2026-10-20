@@ -207,6 +207,7 @@ class MainActivity : AppCompatActivity() {
             suCestino = { carta -> confermaEliminazione(carta) },
             suErrore = { messaggio -> avvisa(messaggio) },
         )
+        carte.mostraColonne(Impostazioni.dueColonne(this))
         pagine.adapter = carte
 
         // Le schede e lo scorrimento comandano la stessa cosa: toccando una
@@ -446,6 +447,7 @@ class MainActivity : AppCompatActivity() {
         // Nei menu a tendina Android nasconde le icone: qui servono, perché
         // esporta e importa si distinguono a colpo d'occhio dal verso freccia.
         (menu as? MenuBuilder)?.setOptionalIconsVisible(true)
+        menu.findItem(R.id.due_colonne)?.isChecked = carte.dueColonne
         return true
     }
 
@@ -462,6 +464,13 @@ class MainActivity : AppCompatActivity() {
         }
         R.id.trasferisci -> {
             apri(TrasferimentoActivity.intent(this))
+            true
+        }
+        R.id.due_colonne -> {
+            val due = !carte.dueColonne
+            Impostazioni.cambiaDueColonne(this, due)
+            carte.mostraColonne(due)
+            voce.isChecked = due
             true
         }
         R.id.impostazioni -> {

@@ -1,5 +1,9 @@
 ## 1.0.8-dev (in lavorazione)
 
+- Fra i colori della carta ci sono anche il bianco e il nero. Sulla carta bianca nome e icone si scrivono scuri. Le carte bianche e nere hanno un bordo sottile per staccarsi dallo sfondo.
+- Le carte si possono vedere su due colonne: la voce «Due colonne» nel menu con i tre puntini accende e spegne la griglia. La scelta resta anche chiudendo l'app. Su due colonne le carte si spostano anche di lato.
+- Toccando il codice a barre o il QR della carta aperta, il codice si copia negli appunti, pronto da incollare in un'app o in un sito.
+
 ## 1.0.7
 
 - Il campo di ricerca ha lo stesso aspetto delle carte, su Android e su iPhone: fondo pieno e angoli arrotondati come loro. Su Android non ha più il bordo sottile, su iPhone non è più la capsula con l'ombra.

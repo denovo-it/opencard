@@ -33,6 +33,12 @@ static const char *const COLORI[] = {
 };
 #define N_COLORI ((int)(sizeof(COLORI) / sizeof(COLORI[0])))
 
+/* Bianco e nero si scelgono solo a mano. Fuori da COLORI apposta: l'id sceglie
+ * fra quelli, e allungare l'elenco cambierebbe colore alle carte che non ne
+ * hanno uno scelto. */
+static const char *const NEUTRI[] = { "#FFFFFF", "#000000" };
+#define N_NEUTRI ((int)(sizeof(NEUTRI) / sizeof(NEUTRI[0])))
+
 static char percorso_dati[1024];
 static char percorso_flag[1024];
 static char percorso_foto[1024];
@@ -498,12 +504,43 @@ int opencard_simbologia_quiete_propria(opencard_simbologia simbologia)
 
 size_t opencard_colori_n(void)
 {
-    return (size_t)N_COLORI;
+    return (size_t)(N_COLORI + N_NEUTRI);
 }
 
 const char *opencard_colore(size_t i)
 {
-    return i < (size_t)N_COLORI ? COLORI[i] : NULL;
+    if (i < (size_t)N_COLORI) {
+        return COLORI[i];
+    }
+    return i < (size_t)(N_COLORI + N_NEUTRI) ? NEUTRI[i - N_COLORI] : NULL;
+}
+
+static int colore_valido(const char *testo);
+
+/* La luminosità percepita, da 0 a 255, oppure -1 se il colore non si legge. */
+static int luminosita(const char *colore)
+{
+    unsigned int r, g, b;
+
+    if (colore == NULL || !colore_valido(colore)
+        || sscanf(colore + 1, "%2x%2x%2x", &r, &g, &b) != 3) {
+        return -1;
+    }
+    return (int)((299 * r + 587 * g + 114 * b) / 1000);
+}
+
+int opencard_colore_chiaro(const char *colore)
+{
+    /* 186 è la soglia solita: tutti i colori di COLORI ci stanno sotto, e il
+     * testo bianco resta dov'era. */
+    return luminosita(colore) > 186;
+}
+
+int opencard_colore_con_bordo(const char *colore)
+{
+    int l = luminosita(colore);
+
+    return l > 230 || (l >= 0 && l < 25);
 }
 
 opencard_simbologia opencard_simbologia_da_nome(const char *nome)

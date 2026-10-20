@@ -102,6 +102,13 @@ fun coloreCarta(esadecimale: String): Int = try {
     Color.parseColor("#1E88E5")
 }
 
+/** Testo e icone sopra una carta: scuri sui colori chiari, bianchi sugli altri. */
+fun coloreSopraCarta(esadecimale: String): Int =
+    if (Core.coloreChiaro(esadecimale)) Color.parseColor("#202124") else Color.WHITE
+
+/** Il bordo di bianco e nero, grigio come il testo di servizio. */
+val COLORE_BORDO_CARTA: Int = Color.parseColor("#9AA0A6")
+
 /**
  * Errore del core.
  *
@@ -199,8 +206,14 @@ object Core {
     @JvmStatic external fun simbologieEtichette(): Array<String>
     @JvmStatic external fun simbologieProprieta(): IntArray
 
-    /** I colori fra cui l'id sceglie quello di una carta: sono quelli del modulo. */
+    /** I colori del modulo: quelli fra cui l'id sceglie, poi bianco e nero. */
     @JvmStatic external fun colori(): Array<String>
+
+    /** Vero se sopra il colore il testo va scuro, come sul bianco. */
+    @JvmStatic external fun coloreChiaro(colore: String): Boolean
+
+    /** Vero per bianco e nero, che senza bordo si perdono nello sfondo. */
+    @JvmStatic external fun coloreConBordo(colore: String): Boolean
 
     /** Il codice disegnato con la simbologia scelta, non con quella indovinata. */
     @JvmStatic external fun renderCodeSimbologia(code: String, simbologia: Int): ImmagineCodice

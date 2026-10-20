@@ -112,8 +112,10 @@ struct ElencoView: View {
                 } else {
                     List(carte.elenco) { carta in
                         NavigationLink(value: carta.id) {
+                            // Sul bianco il nome va scuro, come sul telefono.
                             Text(carta.etichetta)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(opencard_colore_chiaro(carta.colore) != 0
+                                                 ? Color.black : Color.white)
                                 .lineLimit(2)
                         }
                         .listRowBackground(

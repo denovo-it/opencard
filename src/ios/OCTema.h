@@ -29,6 +29,13 @@ extern NSString *_Nullable const OCCanale;
 /// la lista: si ripiega su un blu neutro.
 + (UIColor *)coloreDaEsadecimale:(NSString *)esadecimale;
 
+/// Testo e icone sopra il colore di una carta: scuri sui colori chiari, come
+/// il bianco, bianchi sugli altri.
++ (UIColor *)sopraCarta:(NSString *)esadecimale;
+
+/// Vero per bianco e nero, che senza bordo si perdono nello sfondo dell'app.
++ (BOOL)bordoCarta:(NSString *)esadecimale;
+
 /// Versione e canale, come vanno mostrati nella schermata di avvio.
 + (NSString *)versioneEstesa;
 

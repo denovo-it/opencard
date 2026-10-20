@@ -10,6 +10,8 @@
 
 static NSString *const OCRiusoCella = @"carta";
 
+NSString *const OCChiaveDueColonne = @"due_colonne";
+
 @interface OCGruppoViewController () <UICollectionViewDataSource, UICollectionViewDelegateFlowLayout>
 @property (nonatomic, strong) UICollectionView *griglia;
 @property (nonatomic, strong) UILabel *vuoto;
@@ -45,6 +47,9 @@ static NSString *const OCRiusoCella = @"carta";
 
     UICollectionViewFlowLayout *disposizione = [UICollectionViewFlowLayout new];
     disposizione.minimumLineSpacing = 0;
+    // Su due colonne le schede si toccano: lo spazio fra loro lo fanno i
+    // margini della cella, come fra una fila e l'altra.
+    disposizione.minimumInteritemSpacing = 0;
     // Lo spazio in fondo lascia respiro all'ultima carta, che altrimenti
     // finirebbe sotto il pulsante di aggiunta.
     disposizione.sectionInset = UIEdgeInsetsMake(8, 0, 96, 0);
@@ -163,7 +168,9 @@ static NSString *const OCRiusoCella = @"carta";
     OCCartaCella *cella = [griglia dequeueReusableCellWithReuseIdentifier:OCRiusoCella
                                                              forIndexPath:posizione];
     OCCarta *carta = self.carte[posizione.item];
-    [cella mostra:carta conCestino:self.usaEGetta];
+    [cella mostra:carta
+       conCestino:self.usaEGetta
+         aTessera:[[NSUserDefaults standardUserDefaults] boolForKey:OCChiaveDueColonne]];
 
     __weak typeof(self) debole = self;
     cella.suCestino = ^(OCCarta *daEliminare) {
@@ -181,20 +188,50 @@ static NSString *const OCRiusoCella = @"carta";
                   layout:(UICollectionViewLayout *)disposizione
   sizeForItemAtIndexPath:(NSIndexPath *)posizione
 {
+    BOOL dueColonne = [[NSUserDefaults standardUserDefaults] boolForKey:OCChiaveDueColonne];
     CGFloat larghezza = CGRectGetWidth(griglia.bounds);
-    CGFloat perIlNome = larghezza - 128;
-    NSString *etichetta = self.carte[posizione.item].etichetta ?: @"";
 
-    CGRect misura = [etichetta boundingRectWithSize:CGSizeMake(perIlNome, CGFLOAT_MAX)
+    if (!dueColonne) {
+        return CGSizeMake(larghezza, [self altezzaDi:posizione.item larghezza:larghezza]);
+    }
+
+    // Su due colonne le schede della stessa fila sono alte uguali: quella
+    // del nome più lungo decide per tutte e due.
+    CGFloat mezza = floor(larghezza / 2);
+    NSInteger prima = posizione.item - posizione.item % 2;
+    CGFloat altezza = [self altezzaATesseraDi:prima larghezza:mezza];
+    if (prima + 1 < (NSInteger)self.carte.count) {
+        altezza = MAX(altezza, [self altezzaATesseraDi:prima + 1 larghezza:mezza]);
+    }
+    return CGSizeMake(mezza, altezza);
+}
+
+/// Quanto è alto il nome di una carta, scritto largo al massimo `larghezza`.
+- (CGFloat)altezzaNomeDi:(NSInteger)indice larghezza:(CGFloat)larghezza
+{
+    NSString *etichetta = self.carte[indice].etichetta ?: @"";
+
+    CGRect misura = [etichetta boundingRectWithSize:CGSizeMake(larghezza, CGFLOAT_MAX)
                                             options:NSStringDrawingUsesLineFragmentOrigin
                                          attributes:@{NSFontAttributeName:
                                                           [UIFont boldSystemFontOfSize:18]}
                                             context:nil];
+    return ceil(CGRectGetHeight(misura));
+}
 
+- (CGFloat)altezzaDi:(NSInteger)indice larghezza:(CGFloat)larghezza
+{
     // 32 sono i margini interni della scheda, 12 quelli fra una scheda e
     // l'altra; il glifo è alto 28 e da solo tiene aperta la riga.
-    CGFloat altezza = MAX(ceil(CGRectGetHeight(misura)), 28) + 32 + 12;
-    return CGSizeMake(larghezza, altezza);
+    return MAX([self altezzaNomeDi:indice larghezza:larghezza - 128], 28) + 32 + 12;
+}
+
+/// A tessera il nome sta sotto il glifo, largo quanto la scheda meno i
+/// margini: 24 fuori e 32 dentro. In altezza 16 + 28 del glifo + 8 sopra il
+/// nome, 16 sotto e i soliti 12 fra una scheda e l'altra.
+- (CGFloat)altezzaATesseraDi:(NSInteger)indice larghezza:(CGFloat)larghezza
+{
+    return [self altezzaNomeDi:indice larghezza:larghezza - 56] + 16 + 28 + 8 + 16 + 12;
 }
 
 - (void)collectionView:(UICollectionView *)griglia didSelectItemAtIndexPath:(NSIndexPath *)posizione

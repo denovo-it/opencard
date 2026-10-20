@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -49,6 +50,17 @@ class PagineCarte(
      */
     var filtro = ""
         private set
+
+    /** Le carte su due colonne: lo sceglie chi usa l'app, dal menu. */
+    var dueColonne = false
+        private set
+
+    /** Cambia le colonne e ridisegna le pagine. */
+    fun mostraColonne(due: Boolean) {
+        if (due == dueColonne) return
+        dueColonne = due
+        notifyDataSetChanged()
+    }
 
     /** Cambia il filtro e ridisegna le pagine, a ogni tasto premuto. */
     fun filtra(testo: String) {
@@ -147,10 +159,15 @@ class PagineCarte(
             suTocco = suTocco,
             suOrdineCambiato = { ids -> suOrdineCambiato(usaEGetta, ids) },
             suCestino = suCestino,
+            dueColonne = dueColonne,
         )
         adattatori[posizione] = adattatore
 
-        pagina.lista.layoutManager = LinearLayoutManager(pagina.lista.context)
+        pagina.lista.layoutManager = if (dueColonne) {
+            GridLayoutManager(pagina.lista.context, 2)
+        } else {
+            LinearLayoutManager(pagina.lista.context)
+        }
         pagina.lista.adapter = adattatore
 
         // Nella scheda con la stella non si trascina: le preferite arrivano dai

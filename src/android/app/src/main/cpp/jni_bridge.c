@@ -457,6 +457,30 @@ Java_srl_denovo_opencard_Core_erroreParti(JNIEnv *env, jclass classe, jint codic
 }
 
 JNIEXPORT jboolean JNICALL
+Java_srl_denovo_opencard_Core_coloreChiaro(JNIEnv *env, jclass classe, jstring colore)
+{
+    char buffer[16];
+
+    (void)classe;
+    if (!stringa(env, colore, buffer, sizeof(buffer))) {
+        return JNI_FALSE;
+    }
+    return opencard_colore_chiaro(buffer) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_srl_denovo_opencard_Core_coloreConBordo(JNIEnv *env, jclass classe, jstring colore)
+{
+    char buffer[16];
+
+    (void)classe;
+    if (!stringa(env, colore, buffer, sizeof(buffer))) {
+        return JNI_FALSE;
+    }
+    return opencard_colore_con_bordo(buffer) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
 Java_srl_denovo_opencard_Core_dataValida(JNIEnv *env, jclass classe, jstring testo)
 {
     char buffer[32];

@@ -170,6 +170,8 @@
     <string name="qr_su_file">Salva i codici su file</string>
     <string name="qr_salvato">Codici salvati sul file.</string>
     <string name="impostazioni">Impostazioni</string>
+    <string name="due_colonne">Due colonne</string>
+    <string name="codice_copiato">Codice copiato</string>
     <string name="backup_cloud">Includi le carte nel backup del telefono</string>
     <string name="backup_cloud_acceso_android">Le carte entrano nel backup automatico di Android e finiscono sul cloud di Google insieme ai dati delle altre app. Cambiando telefono le ritrovi al primo avvio.</string>
     <string name="backup_cloud_spento_android">Le carte restano su questo telefono e non escono. Per portarle altrove usa Esporta su file oppure il passaggio a QR.</string>

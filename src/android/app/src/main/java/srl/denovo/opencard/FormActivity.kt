@@ -31,6 +31,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
@@ -679,7 +680,20 @@ class FormActivity : AppCompatActivity() {
             val quadretto = layoutInflater.inflate(R.layout.item_colore, tavolozza, false)
             val scheda = quadretto.findViewById<MaterialCardView>(R.id.quadretto)
             scheda.setCardBackgroundColor(coloreCarta(colore))
-            scheda.strokeWidth = if (colore.equals(attuale, ignoreCase = true)) 8 else 0
+            // Il bordo grosso segna la scelta; bianco e nero ne hanno sempre
+            // uno per staccarsi dallo sfondo, e scelti lo prendono arancione:
+            // quello di serie, scuro o chiaro col tema, su di loro non si vede.
+            if (colore.equals(attuale, ignoreCase = true)) {
+                if (Core.coloreConBordo(colore)) {
+                    scheda.strokeColor = ContextCompat.getColor(this, R.color.brand)
+                }
+                scheda.strokeWidth = 8
+            } else if (Core.coloreConBordo(colore)) {
+                scheda.strokeColor = COLORE_BORDO_CARTA
+                scheda.strokeWidth = resources.displayMetrics.density.toInt().coerceAtLeast(1)
+            } else {
+                scheda.strokeWidth = 0
+            }
             scheda.setOnClickListener {
                 coloreScelto = colore
                 costruisciTavolozza()

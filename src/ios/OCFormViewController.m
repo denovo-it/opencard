@@ -834,8 +834,13 @@ static const NSUInteger OCLimiteCodice = 500;
         UIButton *quadretto = [UIButton buttonWithType:UIButtonTypeCustom];
         quadretto.backgroundColor = [OCTema coloreDaEsadecimale:colore];
         quadretto.layer.cornerRadius = 24;
-        quadretto.layer.borderWidth = [colore isEqualToString:attuale] ? 3 : 0;
-        quadretto.layer.borderColor = [OCTema inchiostro].CGColor;
+        // Bianco e nero hanno sempre un bordo, se no si perdono nello sfondo;
+        // scelti, lo prendono arancione, perché uno scuro sul nero non si vede.
+        BOOL scelto = [colore isEqualToString:attuale];
+        BOOL neutro = [OCTema bordoCarta:colore];
+        quadretto.layer.borderWidth = scelto ? 3 : (neutro ? 1 : 0);
+        quadretto.layer.borderColor = (neutro ? (scelto ? [OCTema marca] : [OCTema tenue])
+                                              : [OCTema inchiostro]).CGColor;
         quadretto.accessibilityLabel = colore;
         [quadretto addTarget:self action:@selector(coloreToccato:)
             forControlEvents:UIControlEventTouchUpInside];
