@@ -6,4 +6,8 @@
 
 @interface OCSceneDelegate : UIResponder <UIWindowSceneDelegate>
 @property (nonatomic, strong) UIWindow *window;
+
+/// Dopo un cambio di lingua: l'interfaccia rinasce con i testi nuovi e torna
+/// sulle impostazioni, come fa Android con recreate().
+- (void)rifaiInterfacciaSulleImpostazioni;
 @end

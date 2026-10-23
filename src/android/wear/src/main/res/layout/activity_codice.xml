@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Il codice da far leggere alla cassa: fondo bianco, il codice al centro,
      il nome sopra e il numero sotto, piccoli. Le misure dell'immagine le
-     decide CodiceActivity, che conosce il cerchio dello schermo. -->
+     decide CodiceActivity, che conosce il cerchio dello schermo. Un tocco
+     ovunque chiude la carta. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fondo"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF"

@@ -48,6 +48,20 @@
     self.window.rootViewController = [self contenitoreCarte];
 }
 
+- (void)rifaiInterfacciaSulleImpostazioni
+{
+    // Prima si chiude il foglio aperto: cambiando la radice sotto un foglio,
+    // il foglio vecchio può restare nella finestra.
+    [self.window.rootViewController dismissViewControllerAnimated:NO completion:^{
+        UINavigationController *carte = [self contenitoreCarte];
+        self.window.rootViewController = carte;
+        // Il foglio si apre al giro dopo, quando l'elenco è già nella finestra.
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [(OCListaViewController *)carte.viewControllers.firstObject apriImpostazioniAnimate:NO];
+        });
+    }];
+}
+
 - (void)avvisa:(NSString *)messaggio
 {
     UIAlertController *avviso = [UIAlertController alertControllerWithTitle:nil

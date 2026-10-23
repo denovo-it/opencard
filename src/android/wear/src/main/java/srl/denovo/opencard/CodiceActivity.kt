@@ -11,6 +11,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.os.Bundle
+import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.TextView
@@ -20,7 +21,8 @@ import kotlin.math.roundToInt
 
 /**
  * Il codice della carta, da far leggere alla cassa. Si chiude scorrendo verso
- * destra, come ogni schermata di Wear OS.
+ * destra, come ogni schermata di Wear OS, oppure con un tocco, come sull'Apple
+ * Watch.
  *
  * Lo schermo va al massimo finché la schermata è aperta: al lettore serve il
  * contrasto, e all'orologio la luminosità di solito è bassa.
@@ -53,6 +55,7 @@ class CodiceActivity : Activity() {
         window.attributes = window.attributes.apply {
             screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL
         }
+        findViewById<View>(R.id.fondo).setOnClickListener { finish() }
 
         val id = intent.getIntExtra(ID, 0)
         Dati.chiedi(

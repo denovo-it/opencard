@@ -3,6 +3,7 @@
 - Fra i colori della carta ci sono anche il bianco e il nero. Sulla carta bianca nome e icone si scrivono scuri. Le carte bianche e nere hanno un bordo sottile per staccarsi dallo sfondo.
 - Le carte si possono vedere su due colonne: la voce «Due colonne» nel menu con i tre puntini accende e spegne la griglia. La scelta resta anche chiudendo l'app. Su due colonne le carte si spostano anche di lato.
 - Toccando il codice a barre o il QR della carta aperta, il codice si copia negli appunti, pronto da incollare in un'app o in un sito.
+- Sull'orologio un tocco sul codice chiude la carta, oltre allo scorrimento verso destra.
 
 ## 1.0.7
 

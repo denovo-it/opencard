@@ -5,6 +5,8 @@
 #import "OCImpostazioniViewController.h"
 
 #import "OCCore.h"
+#import "OCLingua.h"
+#import "OCSceneDelegate.h"
 #import "OCTema.h"
 
 @interface OCImpostazioniViewController ()
@@ -60,9 +62,8 @@
     linea.backgroundColor = [UIColor separatorColor];
     [linea.heightAnchor constraintEqualToConstant:1].active = YES;
 
-    // La lingua si sceglie come su Android: come il telefono, IT o EN. Su
-    // iPhone però la scelta vale dalla prossima apertura, e un'app non si può
-    // chiudere da sola: lo dice l'avviso che segue la scelta.
+    // La lingua si sceglie come su Android: come il telefono, IT o EN, e vale
+    // subito (OCLingua).
     self.lingua = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.lingua setTitle:NSLocalizedString(@"lingua", nil) forState:UIControlStateNormal];
     self.lingua.titleLabel.font = [UIFont systemFontOfSize:16];
@@ -188,8 +189,8 @@
     self.lingua.menu = [UIMenu menuWithTitle:NSLocalizedString(@"lingua", nil) children:voci];
 }
 
-/// Scrive la scelta dove iPhone la cerca all'avvio. Le schermate aperte restano
-/// nella lingua di prima finché l'app non riparte, e l'avviso lo dice.
+/// Scrive la scelta dove iPhone la cerca all'avvio, la applica subito e rifà
+/// l'interfaccia, che torna su questa schermata con i testi nuovi.
 - (void)cambiaLingua:(NSString *)codice
 {
     if ([codice isEqualToString:[self linguaScelta]]) {
@@ -201,16 +202,10 @@
     } else {
         [preferenze setObject:@[codice] forKey:@"AppleLanguages"];
     }
-    [self aggiornaLingua];
+    [OCLingua applica];
 
-    UIAlertController *avviso = [UIAlertController
-        alertControllerWithTitle:nil
-                         message:NSLocalizedString(@"lingua_riapri_ios", nil)
-                  preferredStyle:UIAlertControllerStyleAlert];
-    [avviso addAction:[UIAlertAction actionWithTitle:@"OK"
-                                               style:UIAlertActionStyleDefault
-                                             handler:nil]];
-    [self presentViewController:avviso animated:YES completion:nil];
+    OCSceneDelegate *scena = (OCSceneDelegate *)self.view.window.windowScene.delegate;
+    [scena rifaiInterfacciaSulleImpostazioni];
 }
 
 /// Butta via tutte le carte, con una domanda prima.

@@ -72,6 +72,7 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 - (void)esporta;
 - (void)trasferisci;
 - (void)apriImpostazioni;
+- (void)apriImpostazioniAnimate:(BOOL)animate;
 @end
 
 @implementation OCListaViewController
@@ -977,12 +978,17 @@ static const NSUInteger OCCartePerLaRicerca = 5;
 
 - (void)apriImpostazioni
 {
+    [self apriImpostazioniAnimate:YES];
+}
+
+- (void)apriImpostazioniAnimate:(BOOL)animate
+{
     OCImpostazioniViewController *schermo = [OCImpostazioniViewController new];
     __weak typeof(self) debole = self;
     schermo.suCarteAzzerate = ^{ [debole ricaricaTutto]; };
     UINavigationController *contenitore =
         [[UINavigationController alloc] initWithRootViewController:schermo];
-    [self presentViewController:contenitore animated:YES completion:nil];
+    [self presentViewController:contenitore animated:animate completion:nil];
 }
 
 /// Passaggio delle carte fra due telefoni con i QR.

@@ -14,6 +14,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// Rilegge tutte e due le schede: una modifica può spostare una carta di gruppo.
 - (void)ricaricaTutto;
 
+/// Apre le impostazioni come foglio. Senza animazione quando l'interfaccia
+/// rinasce dopo un cambio di lingua e deve tornare dove era.
+- (void)apriImpostazioniAnimate:(BOOL)animate;
+
 @end
 
 NS_ASSUME_NONNULL_END
