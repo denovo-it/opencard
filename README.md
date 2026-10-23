@@ -56,6 +56,7 @@ src/                   codice C comune
     condiviso/         il codice Kotlin comune a telefono e orologio
   ios/                 ramo iOS: Objective-C
   watchos/             l'app per Apple Watch, in SwiftUI
+  widget/              il widget di iPhone con le carte con la stella, in SwiftUI
 ```
 
 Il core dipende da [zint](https://github.com/zint/zint) 2.13 (BSD-3-Clause),
