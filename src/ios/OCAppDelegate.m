@@ -6,6 +6,7 @@
 
 #import "OCCore.h"
 #import "OCOrologio.h"
+#import "OCWidget.h"
 #import "OCTema.h"
 
 @implementation OCAppDelegate
@@ -23,6 +24,9 @@
     // Le carte all'Apple Watch. Anche se il file non si è aperto: manda
     // solo quando c'è qualcosa da mandare.
     [OCOrologio avvia];
+    // Il widget legge un file suo: alla prima apertura dopo un aggiornamento
+    // potrebbe ancora non esserci.
+    [OCWidget aggiorna];
 
     [self applicaAspettoBarra];
     return YES;

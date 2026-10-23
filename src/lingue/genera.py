@@ -51,6 +51,10 @@ SUFFISSO_IPHONE = "_ios"
 # che i due telefoni non vedono. Le frasi sono le stesse sui due orologi.
 SUFFISSO_OROLOGIO = "_wear"
 
+# Il widget di iPhone, un'estensione a parte con il suo bundle: prende app_name
+# e le chiavi con questo suffisso, che le app non vedono.
+SUFFISSO_WIDGET = "_widget"
+
 SEGNAPOSTO = re.compile(r"\{(\d+):(testo|intero)\}")
 
 INTESTAZIONE = "generato da src/lingue/genera.py: non modificarlo a mano"
@@ -70,7 +74,12 @@ def per_piattaforma(voci, suffisso_da_tenere):
     """Le voci di una piattaforma: le comuni più le sue, senza quelle dell'altra."""
     altro = SUFFISSO_IPHONE if suffisso_da_tenere == SUFFISSO_ANDROID else SUFFISSO_ANDROID
     return {c: t for c, t in voci.items()
-            if not c.endswith(altro) and not c.endswith(SUFFISSO_OROLOGIO)}
+            if not c.endswith(altro) and not c.endswith(SUFFISSO_OROLOGIO)
+            and not c.endswith(SUFFISSO_WIDGET)}
+
+
+def per_widget(voci):
+    return {c: t for c, t in voci.items() if c == "app_name" or c.endswith(SUFFISSO_WIDGET)}
 
 
 def per_orologio(voci):
@@ -218,6 +227,8 @@ def destinazioni(lingua, voci):
          testo_iphone(di_iphone).encode("utf-8")),
         (RADICE / "src/watchos" / f"{lingua}.lproj" / "Localizable.strings",
          testo_iphone(per_apple_watch(voci)).encode("utf-8")),
+        (RADICE / "src/widget" / f"{lingua}.lproj" / "Localizable.strings",
+         testo_iphone(per_widget(voci)).encode("utf-8")),
     ]
     if lingua == LINGUA_BASE:
         fatti.append((RADICE / "src/android/app/src/main/java/srl/denovo/opencard/TestiCore.kt",

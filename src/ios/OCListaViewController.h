@@ -18,6 +18,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// rinasce dopo un cambio di lingua e deve tornare dove era.
 - (void)apriImpostazioniAnimate:(BOOL)animate;
 
+/// Apre la carta sopra l'elenco, chiudendo quello che c'era davanti. Arriva
+/// dal widget; se la carta non c'è più resta l'elenco.
+- (void)apriCartaConId:(NSInteger)identificativo;
+
 @end
 
 NS_ASSUME_NONNULL_END

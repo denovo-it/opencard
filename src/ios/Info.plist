@@ -101,6 +101,18 @@
 
 	<!-- Le ragioni per cui l'app chiede: le legge l'utente nel dialogo di
 	     sistema, quindi devono dire davvero a cosa serve il permesso. -->
+	<!-- opencard://carta/<id>: il widget apre la carta toccata. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>srl.denovo.opencard</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>opencard</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>La fotocamera serve a leggere il codice della tessera, così non devi batterlo a mano.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

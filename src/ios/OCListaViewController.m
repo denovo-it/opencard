@@ -577,6 +577,18 @@ static const NSUInteger OCCartePerLaRicerca = 5;
     self.altezzaSchede.constant = unaSola ? 0 : 52;
 }
 
+- (void)apriCartaConId:(NSInteger)identificativo
+{
+    if ([OCCore cartaConId:identificativo errore:NULL] == nil) {
+        return;
+    }
+    [self dismissViewControllerAnimated:NO completion:nil];
+    [self.navigationController popToRootViewControllerAnimated:NO];
+    [self.navigationController pushViewController:[[OCDettaglioViewController alloc]
+                                                   initConId:identificativo]
+                                         animated:NO];
+}
+
 - (void)apriCarta:(OCCarta *)carta
 {
     OCDettaglioViewController *dettaglio = [[OCDettaglioViewController alloc]

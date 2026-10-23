@@ -31,9 +31,41 @@
 
     [self.window makeKeyAndVisible];
 
+    // Aperta da un tocco sul widget: la carta si apre quando l'elenco c'è.
+    NSURL *indirizzo = opzioni.URLContexts.anyObject.URL;
+    if (indirizzo != nil) {
+        dispatch_async(dispatch_get_main_queue(), ^{ [self apri:indirizzo]; });
+    }
+
     OCAppDelegate *app = (OCAppDelegate *)[UIApplication sharedApplication].delegate;
     if (app.erroreApertura != nil) {
         [self avvisa:app.erroreApertura];
+    }
+}
+
+/// Un tocco sul widget con l'app già aperta.
+- (void)scene:(UIScene *)scena openURLContexts:(NSSet<UIOpenURLContext *> *)contesti
+{
+    NSURL *indirizzo = contesti.anyObject.URL;
+    if (indirizzo != nil) {
+        [self apri:indirizzo];
+    }
+}
+
+/// opencard://carta/<id>, l'indirizzo che il widget dà a ogni carta.
+- (void)apri:(NSURL *)indirizzo
+{
+    if (![indirizzo.scheme isEqualToString:@"opencard"] || ![indirizzo.host isEqualToString:@"carta"]) {
+        return;
+    }
+    NSInteger identificativo = indirizzo.lastPathComponent.integerValue;
+    UIViewController *radice = self.window.rootViewController;
+    if (identificativo <= 0 || ![radice isKindOfClass:[UINavigationController class]]) {
+        return;
+    }
+    UIViewController *elenco = ((UINavigationController *)radice).viewControllers.firstObject;
+    if ([elenco isKindOfClass:[OCListaViewController class]]) {
+        [(OCListaViewController *)elenco apriCartaConId:identificativo];
     }
 }
 

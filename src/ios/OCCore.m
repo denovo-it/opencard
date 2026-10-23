@@ -6,6 +6,7 @@
 
 #import "OCChiaveDati.h"
 #import "OCOrologio.h"
+#import "OCWidget.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +33,14 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 @end
 
 @implementation OCCore
+
+/// Dopo ogni scrittura del file: le carte all'orologio e quelle con la stella
+/// al widget.
++ (void)carteCambiate
+{
+    [OCOrologio manda];
+    [OCWidget aggiorna];
+}
 
 #pragma mark - Errori
 
@@ -215,7 +224,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return NO;
     }
-    [OCOrologio manda];
+    [self carteCambiate];
     return YES;
 }
 
@@ -306,7 +315,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     // Dopo ogni scrittura del file l'orologio riceve le carte com'è adesso,
     // come fa Dati.chiedi su Android. Qui le scritture passano tutte da
     // questi metodi, quindi la chiamata sta in ognuno.
-    [OCOrologio manda];
+    [self carteCambiate];
     return YES;
 }
 
@@ -318,7 +327,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return NO;
     }
-    [OCOrologio manda];
+    [self carteCambiate];
     return YES;
 }
 
@@ -341,7 +350,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     if (!esito) {
         [self riporta:errore da:&guasto];
     } else {
-        [OCOrologio manda];
+        [self carteCambiate];
     }
     return esito;
 }
@@ -474,7 +483,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return -1;
     }
-    [OCOrologio manda];
+    [self carteCambiate];
     return quante;
 }
 
@@ -587,7 +596,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return NO;
     }
-    [OCOrologio manda];
+    [self carteCambiate];
     return YES;
 }
 
@@ -703,7 +712,7 @@ static void OCLiberaPezzi(const char **pezzi, size_t quanti)
         [self riporta:errore da:&guasto];
         return -1;
     }
-    [OCOrologio manda];
+    [self carteCambiate];
     return quante;
 }
 

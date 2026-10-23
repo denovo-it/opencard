@@ -185,5 +185,8 @@
   "errore_dati_wear": "The cards can't be read. Open OpenCard on your phone to send them again.",
   "csv_titolo": "Cards from a CSV file",
   "csv_avviso": "The cards in the CSV are added to the ones you have, or take their place: in that case your current cards and their photos are removed.",
-  "csv_aggiungi": "Add"
+  "csv_aggiungi": "Add",
+  "nome_widget": "Starred cards",
+  "descrizione_widget": "Your starred cards, one tap away.",
+  "vuoto_widget": "Star a card to see it here."
 }

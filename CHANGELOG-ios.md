@@ -4,6 +4,7 @@
 - Le carte si possono vedere su due colonne: la voce «Due colonne» nel menu con i tre puntini accende e spegne la griglia. La scelta resta anche chiudendo l'app.
 - Toccando il codice a barre o il QR della carta aperta, il codice si copia negli appunti, pronto da incollare in un'app o in un sito.
 - La lingua scelta in Impostazioni vale subito, senza chiudere e riaprire l'app.
+- Sulla schermata iniziale si può mettere il widget delle carte con la stella: il piccolo ne mostra una, il medio fino a 4, il grande fino a 8. Si vedono il nome e il colore della carta, mai il numero, e un tocco apre la carta.
 
 ## 1.0.7
 
