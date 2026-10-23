@@ -144,7 +144,7 @@ abstract class CopiaChangelog : DefaultTask() {
 }
 
 val copiaChangelog = tasks.register<CopiaChangelog>("copiaChangelog") {
-    sorgente.set(file("../../../CHANGELOG.md"))
+    sorgente.set(file("../../../CHANGELOG-android.md"))
 }
 
 androidComponents {
