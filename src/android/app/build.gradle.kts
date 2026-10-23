@@ -36,7 +36,7 @@ android {
 
         // Formato YYYYMMDDnn: nn è il progressivo della giornata. Deve solo
         // crescere, e a colpo d'occhio dice quando è stata costruita.
-        versionCode = 2026101302
+        versionCode = 2026102302
         // Il suffisso -dev dice che è una build di lavorazione: sparisce nel
         // commit che chiude la 1.0.7. Su iOS non si può, App Store Connect
         // vuole solo cifre e punti, quindi lì il numero non ha il suffisso.
@@ -144,7 +144,7 @@ abstract class CopiaChangelog : DefaultTask() {
 }
 
 val copiaChangelog = tasks.register<CopiaChangelog>("copiaChangelog") {
-    sorgente.set(file("../../../CHANGELOG.md"))
+    sorgente.set(file("../../../CHANGELOG-android.md"))
 }
 
 androidComponents {
