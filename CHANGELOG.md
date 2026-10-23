@@ -6,6 +6,7 @@
 
 ## 1.0.7
 
+- OpenCard arriva su Apple Watch: le carte passano dall'iPhone all'orologio appena il telefono è raggiungibile e alla cassa il codice si mostra dal polso. Un tocco chiude la carta.
 - Il campo di ricerca ha lo stesso aspetto delle carte, su Android e su iPhone: fondo pieno e angoli arrotondati come loro. Su Android non ha più il bordo sottile, su iPhone non è più la capsula con l'ombra.
 - Su Android il pulsante «Togli la foto» toglie la foto. Prima apriva la galleria: la foto si toglieva solo toccandola.
 - Le foto delle carte si scrivono intere: se l'app si chiude mentre salva una foto, resta quella di prima. Una foto tolta dal modulo se ne va solo quando la carta è salvata.

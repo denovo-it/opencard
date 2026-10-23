@@ -16,11 +16,14 @@ L'app è pubblicata sui due store ed è gratis:
 - App Store: `https://apps.apple.com/it/app/opencard/id6805435861`
 - Google Play: `https://play.google.com/store/apps/details?id=srl.denovo.opencard`
 
-La versione pubblicata è la 1.0.6, disponibile per iPhone, Android e smartwatch Wear OS.
+Su App Store è pubblicata la 1.0.7, per iPhone e Apple Watch. Su Google Play è
+pubblicata la 1.0.6, per Android e smartwatch Wear OS.
 
 Su Google Play c'è anche l'app per gli smartwatch Wear OS, come Samsung Galaxy
 Watch e Google Pixel Watch: si installa dal Play Store dell'orologio e le carte
-arrivano dal telefono. L'app per Apple Watch è in arrivo.
+arrivano dal telefono. Dalla 1.0.7 c'è anche l'app per Apple Watch, che si
+installa insieme a quella per iPhone: le carte passano dal telefono all'orologio
+appena l'iPhone è raggiungibile.
 
 ## Requisiti
 
@@ -32,7 +35,8 @@ arrivano dal telefono. L'app per Apple Watch è in arrivo.
 - **Wear OS da 3 (API 30) a 6 (API 36)** per l'app dell'orologio, collegato a
   un telefono Android con OpenCard: il telefono manda le carte all'orologio via
   Bluetooth, senza passare da internet.
-- **Apple Watch**: in arrivo.
+- **watchOS da 9.0 a 27** per l'app dell'Apple Watch, abbinato a un iPhone con
+  OpenCard.
 
 ## Struttura
 
@@ -51,7 +55,7 @@ src/                   codice C comune
     wear/              l'app per gli smartwatch Wear OS
     condiviso/         il codice Kotlin comune a telefono e orologio
   ios/                 ramo iOS: Objective-C
-  watchos/             l'app per Apple Watch, in SwiftUI (in lavorazione)
+  watchos/             l'app per Apple Watch, in SwiftUI
 ```
 
 Il core dipende da [zint](https://github.com/zint/zint) 2.13 (BSD-3-Clause),
