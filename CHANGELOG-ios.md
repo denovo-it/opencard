@@ -5,6 +5,7 @@
 - Toccando il codice a barre o il QR della carta aperta, il codice si copia negli appunti, pronto da incollare in un'app o in un sito.
 - La lingua scelta in Impostazioni vale subito, senza chiudere e riaprire l'app.
 - Sulla schermata iniziale si può mettere il widget delle carte con la stella: il piccolo ne mostra una, il medio fino a 4, il grande fino a 8. Si vedono il nome e il colore della carta, mai il numero, e un tocco apre la carta.
+- Si possono salvare i biglietti del treno con il codice Aztec, come quelli di Trenitalia: si leggono dalla fotocamera, da una foto o dal PDF. Sulla carta aperta il codice si mostra uguale all'originale, anche sull'Apple Watch. Il codice di un biglietto non si scrive a mano e non si copia negli appunti. Nell'esportazione per Catima i biglietti non entrano, restano nel backup di OpenCard.
 
 ## 1.0.7
 

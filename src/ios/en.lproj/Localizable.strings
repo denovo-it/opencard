@@ -170,6 +170,7 @@
 "impostazioni" = "Settings";
 "due_colonne" = "Two columns";
 "codice_copiato" = "Code copied";
+"codice_binario" = "Ticket code, it can't be typed: scan another one to change it.";
 "backup_cloud" = "Include the cards in the phone backup";
 "backup_cloud_acceso_ios" = "The cards are included in the phone backup: if iCloud is on they go there too, along with other apps' data, and you get them back on a new iPhone.";
 "backup_cloud_spento_ios" = "The cards stay on this phone and are left out of the backup. To take them elsewhere use Export to file or the QR transfer.";

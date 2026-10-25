@@ -337,8 +337,11 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
     self.title = carta.etichetta;
     self.titolo.text = carta.etichetta;
     [self.titolo sizeToFit];
-    self.codice.text = [OCCore codiceRaggruppato:carta.codice];
-    self.codiceIntero = carta.codice;
+    // Un codice binario è base64: non si mostra e non si copia, e con
+    // codiceIntero vuoto il tocco non fa niente.
+    self.codice.text = carta.binario ? @"" : [OCCore codiceRaggruppato:carta.codice];
+    self.codice.hidden = carta.binario;
+    self.codiceIntero = carta.binario ? @"" : carta.codice;
     self.preferita = carta.preferita;
     [self disegnaStella];
     [self mostraDettagliDi:carta];
@@ -346,6 +349,7 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
 
     UIImage *disegno = [OCCore immaginePerCodice:carta.codice
                                       simbologia:carta.simbologia
+                                         binario:carta.binario
                                           errore:&errore];
     if (disegno == nil) {
         [self avvisa:errore.localizedDescription];

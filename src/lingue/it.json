@@ -176,6 +176,7 @@
   "impostazioni": "Impostazioni",
   "due_colonne": "Due colonne",
   "codice_copiato": "Codice copiato",
+  "codice_binario": "Codice di un biglietto, non si scrive a mano: per cambiarlo se ne legge un altro.",
   "backup_cloud": "Includi le carte nel backup del telefono",
   "backup_cloud_acceso_android": "Le carte entrano nel backup automatico di Android e finiscono sul cloud di Google insieme ai dati delle altre app. Cambiando telefono le ritrovi al primo avvio.",
   "backup_cloud_spento_android": "Le carte restano su questo telefono e non escono. Per portarle altrove usa Esporta su file oppure il passaggio a QR.",

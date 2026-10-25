@@ -15,6 +15,9 @@ struct Carta: Identifiable, Equatable {
     /// "#RRGGBB": quello scelto a mano o quello che spetta all'id.
     let colore: String
     let preferita: Bool
+    /// Codice binario, come i biglietti Trenitalia: `codice` è il base64 dei
+    /// byte, che si disegna ma non si scrive.
+    let binario: Bool
 
     /// Vero per i codici che si disegnano su più righe o come quadrato. Una
     /// fascia orizzontale di un codice a barre è il codice intero, di questi no.
@@ -73,7 +76,8 @@ enum Nucleo {
                                codice: testo(carta.code),
                                simbologia: Int(carta.simbologia.rawValue),
                                colore: stringa(colore),
-                               preferita: carta.favorite != 0))
+                               preferita: carta.favorite != 0,
+                               binario: carta.binario != 0))
         }
         return carte.filter { $0.preferita } + carte.filter { !$0.preferita }
     }
@@ -85,9 +89,12 @@ enum Nucleo {
         var altezza: Int32 = 0
         var messaggio = [CChar](repeating: 0, count: 128)
 
-        let esito = opencard_render_bitmap_simbologia(
-            carta.codice, opencard_simbologia(rawValue: UInt32(carta.simbologia)),
-            &pixel, &larghezza, &altezza, &messaggio, messaggio.count)
+        let simbologia = opencard_simbologia(rawValue: UInt32(carta.simbologia))
+        let esito = carta.binario
+            ? opencard_render_bitmap_binario(carta.codice, simbologia, &pixel, &larghezza,
+                                             &altezza, &messaggio, messaggio.count)
+            : opencard_render_bitmap_simbologia(carta.codice, simbologia, &pixel, &larghezza,
+                                                &altezza, &messaggio, messaggio.count)
         guard esito == 0, let pixel else {
             throw GuastoNucleo(description: stringa(messaggio))
         }

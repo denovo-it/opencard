@@ -185,20 +185,21 @@ static int zint_per_la_lunghezza(int zint_simbologia, size_t n)
  * intero di pixel e le barre non si sfrangiano. */
 #define OPENCARD_SCALA_MINIMA 0.5f
 
-/* Il motore vero: la simbologia arriva già decisa, in costanti di zint. */
-static int disegna(const char *code, int zint_simbologia,
+/* Il motore vero: la simbologia arriva già decisa, in costanti di zint, e i
+ * byte da codificare sono già quelli giusti, `n` compreso: un codice binario
+ * può avere degli zeri in mezzo. */
+static int disegna(const unsigned char *s, size_t n, int zint_simbologia,
                    unsigned char **pixel, int *larghezza, int *altezza,
                    char *errore, size_t errore_len)
 {
     struct zint_symbol *simbolo;
-    const char *s;
-    size_t n, byte;
+    size_t byte;
     int esito;
 
     if (errore != NULL && errore_len > 0) {
         errore[0] = '\0';
     }
-    if (code == NULL || pixel == NULL || larghezza == NULL || altezza == NULL) {
+    if (s == NULL || pixel == NULL || larghezza == NULL || altezza == NULL) {
         return ZINT_ERROR_INVALID_DATA;
     }
     *pixel = NULL;
@@ -210,7 +211,6 @@ static int disegna(const char *code, int zint_simbologia,
         return ZINT_ERROR_MEMORY;
     }
 
-    estremi(code, &s, &n);
     simbolo->symbology = zint_per_la_lunghezza(zint_simbologia, n);
     /* Sulle carte gli AI dei codici GS1 sono scritti fra tonde, «(01)...»;
      * zint di suo vuole le quadre e rifiutava il codice con l'errore 252. */
@@ -224,7 +224,7 @@ static int disegna(const char *code, int zint_simbologia,
     /* Codifica e disegno sono due passi apposta: fra i due `simbolo->width` dice
      * quanti moduli sono venuti fuori, che è l'unico modo di sapere quanto
      * verrebbe larga l'immagine prima di allocarla. */
-    esito = ZBarcode_Encode(simbolo, (const unsigned char *)s, (int)n);
+    esito = ZBarcode_Encode(simbolo, s, (int)n);
     if (esito < ZINT_ERROR) {
         while (simbolo->scale > OPENCARD_SCALA_MINIMA &&
                (float)simbolo->width * 2.0f * simbolo->scale > OPENCARD_LARGHEZZA_MASSIMA) {
@@ -350,7 +350,43 @@ int opencard_render_bitmap_simbologia(const char *code, opencard_simbologia simb
         }
         return ZINT_ERROR_INVALID_OPTION;
     }
-    return disegna(code, zint_simbologia, pixel, larghezza, altezza, errore, errore_len);
+    if (code == NULL) {
+        return disegna(NULL, 0, zint_simbologia, pixel, larghezza, altezza, errore,
+                       errore_len);
+    }
+    {
+        const char *s;
+        size_t n;
+
+        estremi(code, &s, &n);
+        return disegna((const unsigned char *)s, n, zint_simbologia, pixel, larghezza,
+                       altezza, errore, errore_len);
+    }
+}
+
+int opencard_render_bitmap_binario(const char *base64, opencard_simbologia simbologia,
+                                   unsigned char **pixel, int *larghezza, int *altezza,
+                                   char *errore, size_t errore_len)
+{
+    unsigned char byte[OPENCARD_CODE_MAX];
+    int zint_simbologia = opencard_zint_da_simbologia(simbologia);
+    int n;
+
+    if (errore != NULL && errore_len > 0) {
+        errore[0] = '\0';
+    }
+    if (zint_simbologia < 0) {
+        return ZINT_ERROR_INVALID_OPTION;
+    }
+    /* I byte passano a zint così come sono: input_mode resta DATA_MODE, quello
+     * di serie, che non converte niente. Niente taglio degli spazi, che qui
+     * sono byte come gli altri. */
+    n = opencard_base64_decodifica(base64, byte, sizeof(byte));
+    if (n < 0) {
+        return ZINT_ERROR_INVALID_DATA;
+    }
+    return disegna(byte, (size_t)n, zint_simbologia, pixel, larghezza, altezza, errore,
+                   errore_len);
 }
 
 void opencard_free_bitmap(unsigned char *pixel)

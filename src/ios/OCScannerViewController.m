@@ -25,7 +25,7 @@
 @property (nonatomic, copy, nullable) NSString *ultimoAvviso;
 /// Il codice che sta accumulando conferme, e la sua simbologia.
 @property (nonatomic, copy, nullable) NSString *candidato;
-@property (nonatomic, copy, nullable) NSString *candidatoTipo;
+@property (nonatomic, assign) NSInteger candidatoSimbologia;
 /// Quante volte di fila è arrivato uguale, e quando è comparso la prima.
 @property (nonatomic, assign) NSInteger conferme;
 @property (nonatomic, assign) NSTimeInterval primaLettura;
@@ -63,6 +63,73 @@ static NSInteger OCSimbologiaDelTipo(AVMetadataObjectType tipo)
     });
     NSNumber *quale = tipo != nil ? tabella[tipo] : nil;
     return quale != nil ? quale.integerValue : OCSimbologiaAuto;
+}
+
+/// La simbologia del core che corrisponde a un formato di Vision, che è il
+/// lettore delle immagini già scattate. I nomi non sono quelli di AVFoundation,
+/// che legge dal vivo: sono due elenchi diversi per la stessa cosa.
+///
+/// Vale lo stesso della fotocamera: il lettore sa già che codice ha letto, e
+/// dirlo è meglio che ricavarlo dal testo. Un formato che non sappiamo
+/// disegnare torna `OCSimbologiaAuto` e la scelta resta all'app.
+///
+/// MSI Plessey resta fuori: la sua costante esiste da iOS 17 e sotto vale nil,
+/// che dentro un dizionario letterale fa cadere l'app. Il DataBar resta fuori
+/// perché il testo che torna da Vision non è quello che zint vuole in ingresso.
+NSInteger OCSimbologiaDiVision(VNBarcodeSymbology simbologia)
+{
+    static NSDictionary<VNBarcodeSymbology, NSNumber *> *tabella = nil;
+    static dispatch_once_t unaVolta;
+    dispatch_once(&unaVolta, ^{
+        tabella = @{
+            VNBarcodeSymbologyCode128: @(OPENCARD_SIM_CODE128),
+            VNBarcodeSymbologyQR: @(OPENCARD_SIM_QR),
+            VNBarcodeSymbologyAztec: @(OPENCARD_SIM_AZTEC),
+            VNBarcodeSymbologyCodabar: @(OPENCARD_SIM_CODABAR),
+            VNBarcodeSymbologyCode39: @(OPENCARD_SIM_CODE39),
+            VNBarcodeSymbologyCode39Checksum: @(OPENCARD_SIM_CODE39),
+            VNBarcodeSymbologyCode93: @(OPENCARD_SIM_CODE93),
+            VNBarcodeSymbologyCode93i: @(OPENCARD_SIM_CODE93),
+            VNBarcodeSymbologyDataMatrix: @(OPENCARD_SIM_DATAMATRIX),
+            VNBarcodeSymbologyEAN8: @(OPENCARD_SIM_EAN8),
+            VNBarcodeSymbologyEAN13: @(OPENCARD_SIM_EAN13),
+            VNBarcodeSymbologyITF14: @(OPENCARD_SIM_ITF),
+            VNBarcodeSymbologyI2of5: @(OPENCARD_SIM_ITF),
+            VNBarcodeSymbologyI2of5Checksum: @(OPENCARD_SIM_ITF),
+            VNBarcodeSymbologyPDF417: @(OPENCARD_SIM_PDF417),
+            VNBarcodeSymbologyUPCE: @(OPENCARD_SIM_UPCE),
+            VNBarcodeSymbologyMicroQR: @(OPENCARD_SIM_MICROQR),
+        };
+    });
+    NSNumber *quale = simbologia != nil ? tabella[simbologia] : nil;
+    return quale != nil ? quale.integerValue : OCSimbologiaAuto;
+}
+
+BOOL OCTestoLeggibile(NSString *testo)
+{
+    if (testo.length == 0) {
+        return NO;
+    }
+    for (NSUInteger i = 0; i < testo.length; i++) {
+        unichar c = [testo characterAtIndex:i];
+        // GS, RS ed EOT separano i campi dei codici GS1 e ISO 15434: testo.
+        BOOL diTesto = c == '\t' || c == '\n' || c == '\r' || c == 0x1D || c == 0x1E || c == 0x04;
+        if ((c < 0x20 && !diTesto) || c == 0xFFFD) {
+            return NO;
+        }
+    }
+    return YES;
+}
+
+NSString *OCCodiceBinario(NSString *testo)
+{
+    if (testo.length == 0 || OCTestoLeggibile(testo)) {
+        return nil;
+    }
+    // Un carattere sopra 0xFF non viene da un byte: allora non è un codice
+    // binario ma testo rovinato, e non si salva.
+    NSData *byte = [testo dataUsingEncoding:NSISOLatin1StringEncoding allowLossyConversion:NO];
+    return byte.length == testo.length ? [byte base64EncodedStringWithOptions:0] : nil;
 }
 
 /// Letture identiche di fila che rendono buono un codice.
@@ -280,10 +347,14 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
             continue;
         }
         AVMetadataMachineReadableCodeObject *codice = (AVMetadataMachineReadableCodeObject *)oggetto;
-        if (codice.stringValue.length == 0) {
+        // Un biglietto ha byte, non testo: si prende il base64.
+        NSString *binario = OCCodiceBinario(codice.stringValue);
+        if (binario == nil && !OCTestoLeggibile(codice.stringValue)) {
             continue;
         }
-        [self conferma:codice];
+        [self conferma:binario ?: codice.stringValue
+            simbologia:OCSimbologiaDelTipo(codice.type)
+               binario:binario != nil];
         return;
     }
 }
@@ -302,7 +373,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
 /// conferma arriva in poco più di quel terzo di secondo.
 ///
 /// Stessa taratura della versione Android: se cambia di là, cambia anche qui.
-- (void)conferma:(AVMetadataMachineReadableCodeObject *)codice
+- (void)conferma:(NSString *)testo simbologia:(NSInteger)simbologia binario:(BOOL)binario
 {
     // systemUptime e non CACurrentMediaTime: sta in Foundation, che è già
     // collegata, mentre l'altra vorrebbe QuartzCore in tutti e quattro gli
@@ -317,10 +388,9 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
         [self mostraTieniFermo];
     }
 
-    if (![codice.stringValue isEqualToString:self.candidato] ||
-        ![codice.type isEqualToString:self.candidatoTipo]) {
-        self.candidato = codice.stringValue;
-        self.candidatoTipo = codice.type;
+    if (![testo isEqualToString:self.candidato] || simbologia != self.candidatoSimbologia) {
+        self.candidato = testo;
+        self.candidatoSimbologia = simbologia;
         self.conferme = 1;
         self.primaLettura = adesso;
         return;
@@ -331,7 +401,7 @@ static const NSTimeInterval OCScannerAvviso = 2.5;
         adesso - self.primaLettura >= OCScannerAttesaMinima) {
         self.giaLetto = YES;
         if (self.suLettura != nil) {
-            self.suLettura(codice.stringValue, OCSimbologiaDelTipo(codice.type));
+            self.suLettura(testo, simbologia, binario);
         }
         [self chiudi];
     }

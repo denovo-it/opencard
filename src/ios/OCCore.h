@@ -37,6 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Nomi di file, non byte: le foto stanno in una cartella a parte.
 @property (nonatomic, copy) NSString *fotoFronte;
 @property (nonatomic, copy) NSString *fotoRetro;
+/// Codice binario, come i biglietti Trenitalia: `codice` è il base64 dei byte,
+/// che si disegna ma non si mostra e non si copia.
+@property (nonatomic, assign) BOOL binario;
 @end
 
 /// Nessuna scelta dell'utente: la simbologia la decide l'app.
@@ -96,6 +99,7 @@ static const NSInteger OCSimbologiaAuto = -1;
        saldo:(NSString *)saldo
   fotoFronte:(NSString *)fotoFronte
    fotoRetro:(NSString *)fotoRetro
+     binario:(BOOL)binario
       errore:(NSError **)errore;
 
 + (BOOL)elimina:(NSInteger)identificativo errore:(NSError **)errore;
@@ -169,9 +173,11 @@ typedef NS_ENUM(NSInteger, OCTipoFile) {
 /// posto del codice vuoto.
 + (BOOL)codiceSta:(NSString *)codice simbologia:(NSInteger)simbologia;
 
-/// Immagine del codice disegnata con la simbologia scritta nella carta.
+/// Immagine del codice disegnata con la simbologia scritta nella carta. Con
+/// `binario` il codice è il base64 dei byte, come in `OCCarta.binario`.
 + (nullable UIImage *)immaginePerCodice:(NSString *)codice
                              simbologia:(NSInteger)simbologia
+                                binario:(BOOL)binario
                                  errore:(NSError **)errore;
 
 #pragma mark - Cifratura

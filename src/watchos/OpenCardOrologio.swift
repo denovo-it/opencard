@@ -243,7 +243,8 @@ struct CodiceView: View {
             } else {
                 Spacer()
             }
-            Text(Nucleo.raggruppato(carta.codice))
+            // Il base64 di un biglietto non si legge: la fascia resta, vuota.
+            Text(carta.binario ? "" : Nucleo.raggruppato(carta.codice))
                 .font(.caption2)
                 .monospacedDigit()
                 .lineLimit(1)

@@ -138,6 +138,13 @@ typedef struct {
      * quindi un file scritto da una versione precedente si legge senza
      * conversioni e nessuna carta risulta preferita. */
     int favorite;
+    /* Codice binario, come quello dei biglietti Trenitalia: byte qualsiasi,
+     * zeri compresi, che una stringa C non può tenere. In `code` allora c'è
+     * il base64 dei byte, e il disegno lo decodifica prima di passarlo a zint.
+     * Nel file il campo c'è solo quando è acceso: una versione che non lo
+     * conosce disegna il base64 come testo, un codice sbagliato ma nessuna
+     * carta persa. Il core lo spegne se `code` non è base64 valido. */
+    int binario;
 } opencard_card;
 
 typedef struct {
@@ -363,6 +370,11 @@ void opencard_errore_scomponi(const opencard_errore *errore, opencard_errore_par
  * verso NSString, dove il comportamento non è definito: è lì che un backup
  * costruito apposta può far cadere l'app. */
 void opencard_utf8_ripara(char *s);
+
+/* Decodifica il base64 standard (alfabeto con + e /, padding con =) di un
+ * codice binario. Ritorna quanti byte ha scritto in `out`, oppure -1 se il
+ * testo non è base64 valido, è vuoto o non ci sta in `out_size`. */
+int opencard_base64_decodifica(const char *testo, unsigned char *out, size_t out_size);
 
 /* Vero se il nome di una foto resta dentro la cartella delle foto: non vuoto,
  * niente barre, niente "..", niente file nascosti. La lettura delle carte

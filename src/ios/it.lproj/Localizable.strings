@@ -170,6 +170,7 @@
 "impostazioni" = "Impostazioni";
 "due_colonne" = "Due colonne";
 "codice_copiato" = "Codice copiato";
+"codice_binario" = "Codice di un biglietto, non si scrive a mano: per cambiarlo se ne legge un altro.";
 "backup_cloud" = "Includi le carte nel backup del telefono";
 "backup_cloud_acceso_ios" = "Le carte rientrano nel backup del telefono: se hai acceso iCloud ci finiscono anche loro, insieme ai dati delle altre app, e cambiando iPhone le ritrovi.";
 "backup_cloud_spento_ios" = "Le carte restano su questo telefono e non entrano nel backup. Per portarle altrove usa Esporta su file oppure il passaggio a QR.";

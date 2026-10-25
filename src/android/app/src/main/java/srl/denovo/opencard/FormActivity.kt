@@ -77,6 +77,8 @@ class FormActivity : AppCompatActivity() {
      */
     private var codiceNoto = ""
     private var simbologiaNota = Simbologie.AUTO
+    /** Vero se nel campo c'è il base64 di un codice binario: vedi [Carta.binario]. */
+    private var binario = false
     private lateinit var nota: EditText
     private lateinit var scadenza: EditText
     /** La scadenza come la vuole il core, "AAAA-MM-GG" o vuota: il campo mostra
@@ -116,7 +118,8 @@ class FormActivity : AppCompatActivity() {
             val letta = esito.data?.getIntExtra(
                 ScannerActivity.EXTRA_SIMBOLOGIA, Simbologie.AUTO
             ) ?: Simbologie.AUTO
-            if (letto != null) accetta(letto, letta)
+            val binario = esito.data?.getBooleanExtra(ScannerActivity.EXTRA_BINARIO, false) ?: false
+            if (letto != null) accetta(letto, letta, binario)
         }
     }
 
@@ -280,6 +283,8 @@ class FormActivity : AppCompatActivity() {
                 nome.setText(carta.label)
                 codiceNoto = carta.code.trim()
                 simbologiaNota = carta.simbologia
+                // Prima del testo: l'ascoltatore del campo guarda [binario].
+                mostraBinario(carta.binario)
                 codice.setText(carta.code)
                 mostraSimbologia(carta.simbologia)
                 nota.setText(carta.note)
@@ -437,7 +442,8 @@ class FormActivity : AppCompatActivity() {
         val valore = codice.text.toString().trim()
         val quale = simbologiaScelta
 
-        if (valore.isEmpty() || quale == Simbologie.AUTO || Core.codiceSta(valore, quale)) {
+        if (valore.isEmpty() || quale == Simbologie.AUTO || binario
+            || Core.codiceSta(valore, quale)) {
             if (avvisoSimbologia) mostraErrore("")
             return
         }
@@ -465,10 +471,22 @@ class FormActivity : AppCompatActivity() {
         return Core.simbologiaAutomatica(codice)
     }
 
+    /**
+     * Un codice binario non si scrive a mano: il campo mostra il base64 ma non
+     * si modifica, e per cambiarlo se ne legge un altro.
+     */
+    private fun mostraBinario(acceso: Boolean) {
+        binario = acceso
+        codice.isEnabled = !acceso
+        findViewById<TextInputLayout>(R.id.riquadro_codice).helperText =
+            if (acceso) getString(R.string.codice_binario) else null
+    }
+
     /** Codice letto, da qualunque strada sia arrivato. */
-    private fun accetta(letto: String, letta: Int) {
+    private fun accetta(letto: String, letta: Int, binario: Boolean) {
         codiceNoto = letto.trim()
         simbologiaNota = letta
+        mostraBinario(binario)
         codice.setText(letto)
         // Il lettore ha misurato che codice era: si scrive quello nell'elenco,
         // cosi' chi ha inquadrato la tessera vede subito cosa ha preso e non
@@ -543,11 +561,15 @@ class FormActivity : AppCompatActivity() {
             }
             lettore.process(ingresso)
                 .addOnSuccessListener { codici ->
-                    val primo = codici.firstOrNull { !it.rawValue.isNullOrEmpty() }
+                    val primo = codici.firstNotNullOfOrNull { letto ->
+                        ScannerActivity.contenuto(letto)?.let { letto to it }
+                    }
                     if (primo != null) {
+                        val (letto, contenuto) = primo
                         accetta(
-                            primo.rawValue!!,
-                            ScannerActivity.simbologiaDelFormato(primo.format),
+                            contenuto.first,
+                            ScannerActivity.simbologiaDelFormato(letto.format),
+                            contenuto.second,
                         )
                     } else if (!senzaRidurre && !eUnPdf && copia != null && bitmap != null) {
                         leggiDaImmagine(immagine, senzaRidurre = true)
@@ -729,7 +751,9 @@ class FormActivity : AppCompatActivity() {
         // con un avviso che spariva da solo. Si dice qui, prima di salvare.
         // Con Automatico non succede: quella strada una simbologia buona la
         // trova sempre.
-        if (!Core.codiceSta(valore, scelta)) {
+        // Un codice binario si controlla sui byte, non sul base64: lo
+        // disegna il core, e dal lettore arriva già nella sua simbologia.
+        if (!binario && !Core.codiceSta(valore, scelta)) {
             mostraErrore(getString(R.string.simbologia_non_ci_sta, Simbologie.nomi[scelta]))
             return
         }
@@ -756,7 +780,7 @@ class FormActivity : AppCompatActivity() {
                 Core.salva(
                     quale, nuova, etichetta, valore, scelta, colore, disposable, preferita,
                     nota.text.toString().trim(), quandoScade, saldo.text.toString().trim(),
-                    nomiFoto[FRONTE], nomiFoto[RETRO],
+                    nomiFoto[FRONTE], nomiFoto[RETRO], binario,
                 )
             },
             {

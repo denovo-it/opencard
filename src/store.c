@@ -643,6 +643,73 @@ int opencard_foto_nome_sicuro(const char *nome)
            && strchr(nome, '\\') == NULL && strstr(nome, "..") == NULL;
 }
 
+static int valore_base64(char c)
+{
+    if (c >= 'A' && c <= 'Z') {
+        return c - 'A';
+    }
+    if (c >= 'a' && c <= 'z') {
+        return c - 'a' + 26;
+    }
+    if (c >= '0' && c <= '9') {
+        return c - '0' + 52;
+    }
+    if (c == '+') {
+        return 62;
+    }
+    if (c == '/') {
+        return 63;
+    }
+    return -1;
+}
+
+int opencard_base64_decodifica(const char *testo, unsigned char *out, size_t out_size)
+{
+    size_t n, i, scritti = 0;
+
+    if (testo == NULL || out == NULL) {
+        return -1;
+    }
+    n = strlen(testo);
+    /* Sempre a gruppi di quattro, con il padding: è quello che scrivono
+     * android.util.Base64 con NO_WRAP e NSData. */
+    if (n == 0 || n % 4 != 0) {
+        return -1;
+    }
+    for (i = 0; i < n; i += 4) {
+        int a = valore_base64(testo[i]);
+        int b = valore_base64(testo[i + 1]);
+        int c = testo[i + 2] == '=' ? -2 : valore_base64(testo[i + 2]);
+        int d = testo[i + 3] == '=' ? -2 : valore_base64(testo[i + 3]);
+        int ultimo = i + 4 == n;
+
+        if (a < 0 || b < 0 || c == -1 || d == -1) {
+            return -1;
+        }
+        /* Il padding solo in fondo, e mai «=x». */
+        if ((c == -2 || d == -2) && (!ultimo || (c == -2 && d != -2))) {
+            return -1;
+        }
+        if (scritti + 1 > out_size) {
+            return -1;
+        }
+        out[scritti++] = (unsigned char)((a << 2) | (b >> 4));
+        if (c >= 0) {
+            if (scritti + 1 > out_size) {
+                return -1;
+            }
+            out[scritti++] = (unsigned char)(((b & 0x0F) << 4) | (c >> 2));
+        }
+        if (d >= 0) {
+            if (scritti + 1 > out_size) {
+                return -1;
+            }
+            out[scritti++] = (unsigned char)(((c & 0x03) << 6) | d);
+        }
+    }
+    return (int)scritti;
+}
+
 /* Quello che vale per ogni carta, da qualunque parte arrivi (file, backup,
  * CSV, QR, modulo): testi in UTF-8 valido, colore "#RRGGBB" o niente, nomi di
  * foto che restano nella loro cartella, simbologia nell'elenco e is_qrcode
@@ -680,6 +747,14 @@ static void normalizza(opencard_card *carta)
     allinea_is_qrcode(carta);
     carta->disposable = carta->disposable ? 1 : 0;
     carta->favorite = carta->favorite ? 1 : 0;
+    carta->binario = carta->binario ? 1 : 0;
+    if (carta->binario) {
+        unsigned char byte[OPENCARD_CODE_MAX];
+
+        if (opencard_base64_decodifica(carta->code, byte, sizeof(byte)) < 0) {
+            carta->binario = 0;
+        }
+    }
 }
 
 /* Una carta pronta da scrivere con l'id `id`: i testi copiati con i tagli
@@ -704,6 +779,7 @@ static void prepara(opencard_card *dest, const opencard_card *sorgente, int id)
     dest->is_qrcode = sorgente->is_qrcode;
     dest->disposable = sorgente->disposable;
     dest->favorite = sorgente->favorite;
+    dest->binario = sorgente->binario;
     normalizza(dest);
 
     opencard_color_for_id(id, colore_id, sizeof(colore_id));
@@ -722,6 +798,7 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
     const cJSON *color = cJSON_GetObjectItemCaseSensitive(nodo, "color");
     const cJSON *disposable = cJSON_GetObjectItemCaseSensitive(nodo, "disposable");
     const cJSON *favorite = cJSON_GetObjectItemCaseSensitive(nodo, "favorite");
+    const cJSON *binario = cJSON_GetObjectItemCaseSensitive(nodo, "binary");
     const cJSON *simbologia = cJSON_GetObjectItemCaseSensitive(nodo, "symbology");
     const cJSON *note = cJSON_GetObjectItemCaseSensitive(nodo, "note");
     const cJSON *scadenza = cJSON_GetObjectItemCaseSensitive(nodo, "expiry");
@@ -802,6 +879,7 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
     /* Campo assente vuol dire "non preferita": è così che i file scritti
      * dalle versioni precedenti restano validi senza convertire niente. */
     out->favorite = cJSON_IsTrue(favorite) ? 1 : 0;
+    out->binario = cJSON_IsTrue(binario) ? 1 : 0;
 
     /* I campi in più: assenti vuol dire vuoti, e un file di schema 1 non ne
      * ha nemmeno uno. Quello che c'è ma non è testo è un file malformato. */
@@ -988,6 +1066,9 @@ void *opencard_carte_a_json(const opencard_lista *lista, const char *esportato_i
             goto fallito;
         }
         if (card->favorite && cJSON_AddBoolToObject(nodo, "favorite", 1) == NULL) {
+            goto fallito;
+        }
+        if (card->binario && cJSON_AddBoolToObject(nodo, "binary", 1) == NULL) {
             goto fallito;
         }
         /* La simbologia si scrive sempre: "type" da solo saprebbe dire solo

@@ -63,8 +63,8 @@ class CodiceActivity : Activity() {
                 val carta = Core.get(id)
                 Triple(
                     carta,
-                    Core.renderCodeSimbologia(carta.code, carta.simbologia),
-                    Core.groupedCode(carta.code),
+                    Core.renderCodeSimbologia(carta.code, carta.simbologia, carta.binario),
+                    if (carta.binario) "" else Core.groupedCode(carta.code),
                 )
             },
             { (carta, immagine, numero) ->

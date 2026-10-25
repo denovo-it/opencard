@@ -62,6 +62,13 @@ int opencard_render_bitmap_simbologia(const char *code, opencard_simbologia simb
                                       unsigned char **pixel, int *larghezza,
                                       int *altezza, char *errore, size_t errore_len);
 
+/* Come opencard_render_bitmap_simbologia(), per una carta con `binario`
+ * acceso: `base64` è il suo `code`, e a zint arrivano i byte decodificati.
+ * Un base64 non valido torna ZINT_ERROR_INVALID_DATA. */
+int opencard_render_bitmap_binario(const char *base64, opencard_simbologia simbologia,
+                                   unsigned char **pixel, int *larghezza, int *altezza,
+                                   char *errore, size_t errore_len);
+
 void opencard_free_bitmap(unsigned char *pixel);
 
 /* Genera il codice nella simbologia data e scrive un PNG nel percorso indicato.

@@ -4,6 +4,7 @@
 - Le carte si possono vedere su due colonne: la voce «Due colonne» nel menu con i tre puntini accende e spegne la griglia. La scelta resta anche chiudendo l'app. Su due colonne le carte si spostano anche di lato.
 - Toccando il codice a barre o il QR della carta aperta, il codice si copia negli appunti, pronto da incollare in un'app o in un sito.
 - Sull'orologio un tocco sul codice chiude la carta, oltre allo scorrimento verso destra.
+- Si possono salvare i biglietti del treno con il codice Aztec, come quelli di Trenitalia: si leggono dalla fotocamera, da una foto o dal PDF. Sulla carta aperta il codice si mostra uguale all'originale. Il codice di un biglietto non si scrive a mano e non si copia negli appunti. Nell'esportazione per Catima i biglietti non entrano, restano nel backup di OpenCard.
 
 ## 1.0.7
 

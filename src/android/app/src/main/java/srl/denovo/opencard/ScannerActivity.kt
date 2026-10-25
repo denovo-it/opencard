@@ -9,6 +9,7 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Base64
 import android.util.Size
 import android.view.View
 import android.widget.TextView
@@ -88,6 +89,12 @@ class ScannerActivity : AppCompatActivity() {
         /** La simbologia letta, o [Simbologie.AUTO] se non la sappiamo tradurre. */
         const val EXTRA_SIMBOLOGIA = "simbologia"
 
+        /** Tabulazione, a capo, GS, RS ed EOT: caratteri di controllo che un testo può avere. */
+        private const val CONTROLLI_DI_TESTO = "\t\n\r\u001D\u001E\u0004"
+
+        /** Acceso se [EXTRA_CODICE] è il base64 di un codice binario. */
+        const val EXTRA_BINARIO = "binario"
+
         /** Acceso, la schermata raccoglie i pezzi invece di chiudersi al primo. */
         const val EXTRA_TRASFERIMENTO = "trasferimento"
 
@@ -123,6 +130,27 @@ class ScannerActivity : AppCompatActivity() {
             Barcode.FORMAT_UPC_A -> 11
             Barcode.FORMAT_UPC_E -> 12
             else -> Simbologie.AUTO
+        }
+
+        /**
+         * Il testo da salvare per un codice letto, e se è binario; null se il
+         * lettore non ha dato niente.
+         *
+         * I biglietti Trenitalia sono Aztec con dentro byte qualsiasi, zeri
+         * compresi: `rawValue` li consegna storpiati, o non li consegna. Quando
+         * il testo ha caratteri di controllo, o manca, si prendono i byte
+         * grezzi e si salvano in base64, come vuole il core. GS, RS ed EOT
+         * restano testo: separano i campi dei codici GS1 e ISO 15434.
+         */
+        fun contenuto(codice: Barcode): Pair<String, Boolean>? {
+            val testo = codice.rawValue
+            val byte = codice.rawBytes
+            val leggibile = testo != null && testo.isNotEmpty() && testo.none {
+                (it < ' ' && it !in CONTROLLI_DI_TESTO) || it == '\uFFFD'
+            }
+            if (leggibile) return testo!! to false
+            if (byte == null || byte.isEmpty()) return null
+            return Base64.encodeToString(byte, Base64.NO_WRAP) to true
         }
 
         fun intentTrasferimento(contesto: android.content.Context) =
@@ -214,7 +242,7 @@ class ScannerActivity : AppCompatActivity() {
                     raccogli(codici.mapNotNull { it.rawValue }.filter { it.isNotEmpty() })
                     return@addOnSuccessListener
                 }
-                val primo = codici.firstOrNull { !it.rawValue.isNullOrEmpty() }
+                val primo = codici.firstOrNull { contenuto(it) != null }
                 if (primo != null && !giaLetto) {
                     conferma(primo)
                 }
@@ -242,7 +270,7 @@ class ScannerActivity : AppCompatActivity() {
      * codice diverso.
      */
     private fun conferma(codice: Barcode) {
-        val valore = codice.rawValue ?: return
+        val (valore, binario) = contenuto(codice) ?: return
         val adesso = android.os.SystemClock.elapsedRealtime()
 
         // L'avviso prima di tutto: il caso in cui serve davvero è proprio
@@ -265,7 +293,7 @@ class ScannerActivity : AppCompatActivity() {
         conferme++
         if (conferme >= CONFERME && adesso - primaLettura >= ATTESA_MINIMA_MS) {
             giaLetto = true
-            restituisci(valore, simbologiaDelFormato(codice.format))
+            restituisci(valore, simbologiaDelFormato(codice.format), binario)
         }
     }
 
@@ -331,10 +359,11 @@ class ScannerActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun restituisci(codice: String, simbologia: Int) {
+    private fun restituisci(codice: String, simbologia: Int, binario: Boolean) {
         val esito = Intent()
             .putExtra(EXTRA_CODICE, codice)
             .putExtra(EXTRA_SIMBOLOGIA, simbologia)
+            .putExtra(EXTRA_BINARIO, binario)
         setResult(Activity.RESULT_OK, esito)
         finish()
     }

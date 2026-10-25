@@ -164,7 +164,7 @@
 
     NSMutableArray<UIImage *> *immagini = [NSMutableArray arrayWithCapacity:codici.count];
     for (NSString *testo in codici) {
-        UIImage *immagine = [OCCore immaginePerCodice:testo simbologia:OPENCARD_SIM_QR errore:&errore];
+        UIImage *immagine = [OCCore immaginePerCodice:testo simbologia:OPENCARD_SIM_QR binario:NO errore:&errore];
         if (immagine == nil) {
             [self avvisa:errore.localizedDescription];
             return;

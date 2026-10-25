@@ -24,46 +24,6 @@ static NSArray<NSString *> *OCColoriScelta(void)
     return colori;
 }
 
-/// La simbologia del core che corrisponde a un formato di Vision, che è il
-/// lettore delle immagini già scattate. I nomi non sono quelli di AVFoundation,
-/// che legge dal vivo: sono due elenchi diversi per la stessa cosa.
-///
-/// Vale lo stesso della fotocamera: il lettore sa già che codice ha letto, e
-/// dirlo è meglio che ricavarlo dal testo. Un formato che non sappiamo
-/// disegnare torna `OCSimbologiaAuto` e la scelta resta all'app.
-///
-/// MSI Plessey resta fuori: la sua costante esiste da iOS 17 e sotto vale nil,
-/// che dentro un dizionario letterale fa cadere l'app. Il DataBar resta fuori
-/// perché il testo che torna da Vision non è quello che zint vuole in ingresso.
-static NSInteger OCSimbologiaDiVision(VNBarcodeSymbology simbologia)
-{
-    static NSDictionary<VNBarcodeSymbology, NSNumber *> *tabella = nil;
-    static dispatch_once_t unaVolta;
-    dispatch_once(&unaVolta, ^{
-        tabella = @{
-            VNBarcodeSymbologyCode128: @(OPENCARD_SIM_CODE128),
-            VNBarcodeSymbologyQR: @(OPENCARD_SIM_QR),
-            VNBarcodeSymbologyAztec: @(OPENCARD_SIM_AZTEC),
-            VNBarcodeSymbologyCodabar: @(OPENCARD_SIM_CODABAR),
-            VNBarcodeSymbologyCode39: @(OPENCARD_SIM_CODE39),
-            VNBarcodeSymbologyCode39Checksum: @(OPENCARD_SIM_CODE39),
-            VNBarcodeSymbologyCode93: @(OPENCARD_SIM_CODE93),
-            VNBarcodeSymbologyCode93i: @(OPENCARD_SIM_CODE93),
-            VNBarcodeSymbologyDataMatrix: @(OPENCARD_SIM_DATAMATRIX),
-            VNBarcodeSymbologyEAN8: @(OPENCARD_SIM_EAN8),
-            VNBarcodeSymbologyEAN13: @(OPENCARD_SIM_EAN13),
-            VNBarcodeSymbologyITF14: @(OPENCARD_SIM_ITF),
-            VNBarcodeSymbologyI2of5: @(OPENCARD_SIM_ITF),
-            VNBarcodeSymbologyI2of5Checksum: @(OPENCARD_SIM_ITF),
-            VNBarcodeSymbologyPDF417: @(OPENCARD_SIM_PDF417),
-            VNBarcodeSymbologyUPCE: @(OPENCARD_SIM_UPCE),
-            VNBarcodeSymbologyMicroQR: @(OPENCARD_SIM_MICROQR),
-        };
-    });
-    NSNumber *quale = simbologia != nil ? tabella[simbologia] : nil;
-    return quale != nil ? quale.integerValue : OCSimbologiaAuto;
-}
-
 /// Gli stessi limiti del form Android (`activity_form.xml`): oltre, il core
 /// taglierebbe in silenzio e la carta arriverebbe monca senza che si veda.
 static const NSUInteger OCLimiteNome = 120;
@@ -89,6 +49,10 @@ static const NSUInteger OCLimiteCodice = 500;
 /// Automatico se ne serve finché il codice resta quello.
 @property (nonatomic, copy) NSString *codiceNoto;
 @property (nonatomic, assign) NSInteger simbologiaNota;
+/// Vero se nel campo c'è il base64 di un codice binario: vedi `OCCarta.binario`.
+@property (nonatomic, assign) BOOL binario;
+/// La riga sotto il codice che lo spiega, visibile solo per un codice binario.
+@property (nonatomic, strong) UILabel *spiegaBinario;
 
 @property (nonatomic, strong) UITextView *note;
 /// La riga della scadenza: dice «Nessuna» o la data, e toccata apre il calendario.
@@ -247,6 +211,13 @@ static const NSUInteger OCLimiteCodice = 500;
     // scelta che prima non ci stava può andare bene, e viceversa.
     [self.codice addTarget:self action:@selector(codiceCambiato)
           forControlEvents:UIControlEventEditingChanged];
+
+    self.spiegaBinario = [UILabel new];
+    self.spiegaBinario.text = NSLocalizedString(@"codice_binario", nil);
+    self.spiegaBinario.font = [UIFont systemFontOfSize:13];
+    self.spiegaBinario.textColor = [OCTema attenuato];
+    self.spiegaBinario.numberOfLines = 0;
+    self.spiegaBinario.hidden = YES;
 
     // Barre o quadrato non basta più: le simbologie sono 18, e quale sia
     // cambia il disegno alla cassa. Un pulsante che apre l'elenco occupa una
@@ -407,7 +378,7 @@ static const NSUInteger OCLimiteCodice = 500;
         // e un messaggio in fondo non lo leggeva nessuno. Da vuoto è `hidden`,
         // e una vista nascosta esce dal conto della colonna: niente buco.
         self.errore,
-        self.nome, self.codice, [self titoletto:NSLocalizedString(@"tipo_di_codice", nil)], self.tipo, acquisizione,
+        self.nome, self.codice, self.spiegaBinario, [self titoletto:NSLocalizedString(@"tipo_di_codice", nil)], self.tipo, acquisizione,
         [self titoletto:NSLocalizedString(@"colore", nil)], scorrevoleColori,
         [self titoletto:NSLocalizedString(@"nota", nil)], self.note,
         rigaScadenza, self.saldo, rigaFoto,
@@ -554,7 +525,7 @@ static const NSUInteger OCLimiteCodice = 500;
                         [NSCharacterSet whitespaceAndNewlineCharacterSet]] ?: @"";
     NSInteger quale = self.simbologiaScelta;
 
-    if (valore.length == 0 || quale == OCSimbologiaAuto ||
+    if (valore.length == 0 || quale == OCSimbologiaAuto || self.binario ||
         [OCCore codiceSta:valore simbologia:quale]) {
         if (self.avvisoSimbologia) {
             [self mostraErrore:@""];
@@ -871,6 +842,7 @@ static const NSUInteger OCLimiteCodice = 500;
     }
 
     self.nome.text = carta.etichetta;
+    [self mostraBinario:carta.binario];
     self.codice.text = carta.codice;
     self.codiceNoto = [carta.codice stringByTrimmingCharactersInSet:
                        [NSCharacterSet whitespaceAndNewlineCharacterSet]];
@@ -937,7 +909,9 @@ static const NSUInteger OCLimiteCodice = 500;
     // Una simbologia scelta a mano invece può non contenere il codice, e finora
     // la carta si salvava lo stesso: il codice si scopriva mancante aprendola.
     // Si dice qui, prima di salvare.
-    if (![OCCore codiceSta:valore simbologia:simbologia]) {
+    // Un codice binario si controlla sui byte, non sul base64: lo disegna il
+    // core, e dal lettore arriva già nella sua simbologia.
+    if (!self.binario && ![OCCore codiceSta:valore simbologia:simbologia]) {
         NSArray<NSString *> *nomi = [OCCore nomiSimbologie];
         [self mostraErrore:[NSString stringWithFormat:
                             NSLocalizedString(@"simbologia_non_ci_sta", nil),
@@ -969,6 +943,7 @@ static const NSUInteger OCLimiteCodice = 500;
                     saldo:self.saldo.text ?: @""
                fotoFronte:fronte
                 fotoRetro:retro
+                  binario:self.binario
                    errore:&errore]) {
         [self mostraErrore:errore.localizedDescription];
         return;
@@ -1081,11 +1056,22 @@ static const NSUInteger OCLimiteCodice = 500;
 
 #pragma mark - Acquisizione del codice
 
-- (void)accetta:(NSString *)letto simbologia:(NSInteger)letta
+/// Un codice binario non si scrive a mano: il campo mostra il base64 ma non si
+/// modifica, e per cambiarlo se ne legge un altro.
+- (void)mostraBinario:(BOOL)acceso
+{
+    self.binario = acceso;
+    self.codice.enabled = !acceso;
+    self.codice.textColor = acceso ? [OCTema attenuato] : [UIColor labelColor];
+    self.spiegaBinario.hidden = !acceso;
+}
+
+- (void)accetta:(NSString *)letto simbologia:(NSInteger)letta binario:(BOOL)binario
 {
     self.codiceNoto = [letto stringByTrimmingCharactersInSet:
                        [NSCharacterSet whitespaceAndNewlineCharacterSet]];
     self.simbologiaNota = letta;
+    [self mostraBinario:binario];
     self.codice.text = letto;
     // Il lettore ha misurato che codice era: si scrive quello nell'elenco, così
     // chi ha inquadrato la tessera vede subito cosa ha preso e non deve
@@ -1102,8 +1088,8 @@ static const NSUInteger OCLimiteCodice = 500;
 {
     OCScannerViewController *scanner = [OCScannerViewController new];
     __weak typeof(self) debole = self;
-    scanner.suLettura = ^(NSString *codice, NSInteger simbologia) {
-        [debole accetta:codice simbologia:simbologia];
+    scanner.suLettura = ^(NSString *codice, NSInteger simbologia, BOOL binario) {
+        [debole accetta:codice simbologia:simbologia binario:binario];
     };
 
     UINavigationController *contenitore = [[UINavigationController alloc]
@@ -1247,11 +1233,14 @@ static const NSUInteger OCLimiteCodice = 500;
             }
 
             for (VNBarcodeObservation *trovato in fatta.results) {
-                if (trovato.payloadStringValue.length == 0) {
+                // Un biglietto ha byte, non testo: si prende il base64.
+                NSString *binario = OCCodiceBinario(trovato.payloadStringValue);
+                if (binario == nil && !OCTestoLeggibile(trovato.payloadStringValue)) {
                     continue;
                 }
-                [self accetta:trovato.payloadStringValue
-                   simbologia:OCSimbologiaDiVision(trovato.symbology)];
+                [self accetta:binario ?: trovato.payloadStringValue
+                   simbologia:OCSimbologiaDiVision(trovato.symbology)
+                      binario:binario != nil];
                 return;
             }
             [self mostraErrore:NSLocalizedString(@"nessun_codice_nell_immagine", nil)];

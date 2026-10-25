@@ -160,6 +160,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     carta.saldo = [NSString stringWithUTF8String:card->saldo];
     carta.fotoFronte = [NSString stringWithUTF8String:card->foto_fronte];
     carta.fotoRetro = [NSString stringWithUTF8String:card->foto_retro];
+    carta.binario = card->binario != 0;
     return carta;
 }
 
@@ -284,6 +285,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
        saldo:(NSString *)saldo
   fotoFronte:(NSString *)fotoFronte
    fotoRetro:(NSString *)fotoRetro
+     binario:(BOOL)binario
       errore:(NSError **)errore
 {
     opencard_card carta;
@@ -307,6 +309,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     carta.simbologia = (opencard_simbologia)simbologia;
     carta.disposable = usaEGetta ? 1 : 0;
     carta.favorite = preferita ? 1 : 0;
+    carta.binario = binario ? 1 : 0;
 
     if (opencard_salva(&carta, nuova ? 1 : 0, &guasto) != OPENCARD_OK) {
         [self riporta:errore da:&guasto];
@@ -524,16 +527,21 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
 /// un'immagine, senza passare da un file. Il tipo lo dice la simbologia.
 + (UIImage *)immaginePerCodice:(NSString *)codice
                     simbologia:(NSInteger)simbologia
+                       binario:(BOOL)binario
                         errore:(NSError **)errore
 {
     unsigned char *pixel = NULL;
     char messaggio[128] = {0};
     int larghezza = 0, altezza = 0;
 
-    int esito = opencard_render_bitmap_simbologia(codice.UTF8String,
-                                                  (opencard_simbologia)simbologia,
-                                                  &pixel, &larghezza, &altezza,
-                                                  messaggio, sizeof(messaggio));
+    int esito = binario
+        ? opencard_render_bitmap_binario(codice.UTF8String, (opencard_simbologia)simbologia,
+                                         &pixel, &larghezza, &altezza,
+                                         messaggio, sizeof(messaggio))
+        : opencard_render_bitmap_simbologia(codice.UTF8String,
+                                            (opencard_simbologia)simbologia,
+                                            &pixel, &larghezza, &altezza,
+                                            messaggio, sizeof(messaggio));
     if (esito != 0 || pixel == NULL) {
         if (errore != NULL) {
             NSString *testo = messaggio[0] != '\0'

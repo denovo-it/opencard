@@ -176,7 +176,8 @@ static jobject carta_a_java(JNIEnv *env, jclass classe, jmethodID costruttore,
                                 (jboolean)(card->disposable ? JNI_TRUE : JNI_FALSE),
                                 (jboolean)(card->favorite ? JNI_TRUE : JNI_FALSE),
                                 (jint)card->simbologia,
-                                note, scadenza, saldo, foto_fronte, foto_retro);
+                                note, scadenza, saldo, foto_fronte, foto_retro,
+                                (jboolean)(card->binario ? JNI_TRUE : JNI_FALSE));
 
     (*env)->DeleteLocalRef(env, label);
     (*env)->DeleteLocalRef(env, code);
@@ -203,7 +204,7 @@ static jobjectArray lista_a_java(JNIEnv *env, const opencard_lista *lista)
                                       "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZI"
                                       "Ljava/lang/String;Ljava/lang/String;"
                                       "Ljava/lang/String;Ljava/lang/String;"
-                                      "Ljava/lang/String;)V");
+                                      "Ljava/lang/String;Z)V");
     if (costruttore == NULL) {
         return NULL;
     }
@@ -312,7 +313,7 @@ Java_srl_denovo_opencard_Core_get(JNIEnv *env, jclass classe, jint id)
                                       "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZI"
                                       "Ljava/lang/String;Ljava/lang/String;"
                                       "Ljava/lang/String;Ljava/lang/String;"
-                                      "Ljava/lang/String;)V");
+                                      "Ljava/lang/String;Z)V");
     if (costruttore == NULL) {
         return NULL;
     }
@@ -331,7 +332,7 @@ Java_srl_denovo_opencard_Core_salva(JNIEnv *env, jclass classe, jint id, jboolea
                                     jstring label, jstring code, jint simbologia,
                                     jstring color, jboolean disposable, jboolean preferita,
                                     jstring note, jstring scadenza, jstring saldo,
-                                    jstring fronte, jstring retro)
+                                    jstring fronte, jstring retro, jboolean binario)
 {
     opencard_card carta;
     opencard_errore errore;
@@ -352,6 +353,7 @@ Java_srl_denovo_opencard_Core_salva(JNIEnv *env, jclass classe, jint id, jboolea
     carta.simbologia = (opencard_simbologia)simbologia;
     carta.disposable = disposable == JNI_TRUE;
     carta.favorite = preferita == JNI_TRUE;
+    carta.binario = binario == JNI_TRUE;
     if (opencard_salva(&carta, nuova == JNI_TRUE, &errore) != OPENCARD_OK) {
         lancia(env, &errore);
     }
@@ -632,8 +634,9 @@ Java_srl_denovo_opencard_Core_groupedCode(JNIEnv *env, jclass classe, jstring co
     return stringa_verso_java(env, uscita);
 }
 
-/* Il disegno vero, nella simbologia della carta. */
-static jobject disegna_codice(JNIEnv *env, jstring code, jint simbologia)
+/* Il disegno vero, nella simbologia della carta. Con `binario` il testo è il
+ * base64 dei byte da disegnare. */
+static jobject disegna_codice(JNIEnv *env, jstring code, jint simbologia, jboolean binario)
 {
     const char *ingresso;
     char *testo;
@@ -668,9 +671,15 @@ static jobject disegna_codice(JNIEnv *env, jstring code, jint simbologia)
         return NULL;
     }
     opencard_utf8_ripara(testo);
-    esito = opencard_render_bitmap_simbologia(testo, (opencard_simbologia)simbologia,
-                                              &pixel, &larghezza, &altezza,
-                                              messaggio, sizeof(messaggio));
+    if (binario == JNI_TRUE) {
+        esito = opencard_render_bitmap_binario(testo, (opencard_simbologia)simbologia,
+                                               &pixel, &larghezza, &altezza,
+                                               messaggio, sizeof(messaggio));
+    } else {
+        esito = opencard_render_bitmap_simbologia(testo, (opencard_simbologia)simbologia,
+                                                  &pixel, &larghezza, &altezza,
+                                                  messaggio, sizeof(messaggio));
+    }
     free(testo);
     if (esito != 0) {
         jclass eccezione = (*env)->FindClass(env, CLASSE_ECCEZIONE);
@@ -1004,10 +1013,11 @@ Java_srl_denovo_opencard_Core_setPreferita(JNIEnv *env, jclass classe, jint id,
 
 JNIEXPORT jobject JNICALL
 Java_srl_denovo_opencard_Core_renderCodeSimbologia(JNIEnv *env, jclass classe,
-                                                   jstring code, jint simbologia)
+                                                   jstring code, jint simbologia,
+                                                   jboolean binario)
 {
     (void)classe;
-    return disegna_codice(env, code, simbologia);
+    return disegna_codice(env, code, simbologia, binario);
 }
 
 JNIEXPORT jboolean JNICALL

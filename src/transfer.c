@@ -31,6 +31,10 @@
  * più. Una versione che non lo conosce non lo legge, ma nemmeno lo incontra:
  * chi scrive il bit scrive anche il formato 2 nell'intestazione. */
 #define FLAG_EXTRA      0x20
+/* Codice binario: viaggia come il base64 che sta in `code`. Una versione che
+ * non conosce il bit lo ignora e disegna il base64 come testo, come fa
+ * leggendo il campo "binary" da un backup. */
+#define FLAG_BINARIO    0x40
 
 /* Cosa c'è nel blocco, dopo il byte della simbologia. I due bit alti sono
  * lasciati alle foto, se un giorno si troverà il modo di farle viaggiare. */
@@ -267,7 +271,8 @@ static long scrivi_carte(const opencard_lista *lista, unsigned char *out, size_t
                                | FLAG_COLORE
                                | (cifre ? FLAG_CIFRE : 0)
                                | (card->favorite ? FLAG_PREFERITA : 0)
-                               | (vuole_extra(card) ? FLAG_EXTRA : 0));
+                               | (vuole_extra(card) ? FLAG_EXTRA : 0)
+                               | (card->binario ? FLAG_BINARIO : 0));
         out[scritti++] = flag;
 
         out[scritti++] = (unsigned char)etichetta;
@@ -426,6 +431,7 @@ static opencard_esito leggi_carte(const unsigned char *dati, size_t n,
          * la carta arriva senza stella invece di non arrivare. Per questo il
          * numero di formato resta 1. */
         card->favorite = (flag & FLAG_PREFERITA) ? 1 : 0;
+        card->binario = (flag & FLAG_BINARIO) ? 1 : 0;
         card->id = 0;   /* lo assegna chi riceve */
 
         if (flag & FLAG_COLORE) {

@@ -398,6 +398,12 @@ opencard_esito opencard_csv_scrivi(const opencard_lista *lista, char **uscita,
         char balance[OPENCARD_SALDO_MAX], balancetype[8];
         int s = (int)carta->simbologia;
 
+        /* Un codice binario in Catima non si porta: il CSV va per testo, e il
+         * base64 scritto come codice disegnerebbe un biglietto che il
+         * controllore rifiuta. La carta resta nel backup di OpenCard. */
+        if (carta->binario) {
+            continue;
+        }
         snprintf(id, sizeof(id), "%d", carta->id);
         millis_da_data(carta->scadenza, millis, sizeof(millis));
         /* Il colore che si vede, anche quando lo decide l'id: Catima non lo

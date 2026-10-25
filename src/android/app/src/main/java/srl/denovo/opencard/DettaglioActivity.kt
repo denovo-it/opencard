@@ -111,7 +111,11 @@ class DettaglioActivity : AppCompatActivity() {
                 title = trovata.label
                 findViewById<TextView>(R.id.titolo).text = trovata.label
                 disegnaStella()
-                findViewById<TextView>(R.id.codice).text = Core.groupedCode(trovata.code)
+                // Un codice binario è base64: sotto l'immagine non dice niente.
+                findViewById<TextView>(R.id.codice).apply {
+                    text = if (trovata.binario) "" else Core.groupedCode(trovata.code)
+                    visibility = if (trovata.binario) View.GONE else View.VISIBLE
+                }
                 mostraDettagli(trovata)
                 tinta(trovata)
                 disegna(trovata)
@@ -318,7 +322,7 @@ class DettaglioActivity : AppCompatActivity() {
         Dati.chiedi(
             // Con la simbologia scelta, non con quella indovinata: una carta
             // Aztec disegnata a indovinare tornerebbe un Code 128.
-            { Core.renderCodeSimbologia(carta.code, carta.simbologia) },
+            { Core.renderCodeSimbologia(carta.code, carta.simbologia, carta.binario) },
             { immagine ->
                 val vista = findViewById<ImageView>(R.id.immagine)
                 vista.setImageBitmap(immagine.aBitmap())
@@ -335,7 +339,8 @@ class DettaglioActivity : AppCompatActivity() {
                 vista.setOnTouchListener(zoom)
                 // Un tocco sul codice lo copia, per incollarlo in un'app o in
                 // un sito che chiede il numero della tessera.
-                vista.setOnClickListener { copia(carta) }
+                // Il base64 di un biglietto negli appunti non serve a nessuno.
+                if (!carta.binario) vista.setOnClickListener { copia(carta) }
             },
             { messaggio ->
                 Snackbar.make(findViewById(R.id.radice), messaggio, Snackbar.LENGTH_LONG).show()

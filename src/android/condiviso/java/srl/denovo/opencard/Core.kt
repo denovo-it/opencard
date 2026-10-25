@@ -33,6 +33,11 @@ data class Carta(
     /** Nome del file, non il percorso: le foto stanno in una cartella a parte. */
     val fotoFronte: String,
     val fotoRetro: String,
+    /**
+     * Codice binario, come i biglietti Trenitalia: in [code] c'è il base64 dei
+     * byte, che non si mostra e non si copia.
+     */
+    val binario: Boolean,
 )
 
 /**
@@ -183,6 +188,7 @@ object Core {
         id: Int, nuova: Boolean, label: String, code: String, simbologia: Int,
         colore: String, disposable: Boolean, preferita: Boolean,
         note: String, scadenza: String, saldo: String, fotoFronte: String, fotoRetro: String,
+        binario: Boolean,
     )
 
     /**
@@ -215,8 +221,13 @@ object Core {
     /** Vero per bianco e nero, che senza bordo si perdono nello sfondo. */
     @JvmStatic external fun coloreConBordo(colore: String): Boolean
 
-    /** Il codice disegnato con la simbologia scelta, non con quella indovinata. */
-    @JvmStatic external fun renderCodeSimbologia(code: String, simbologia: Int): ImmagineCodice
+    /**
+     * Il codice disegnato con la simbologia scelta, non con quella indovinata.
+     * Con [binario] [code] è il base64 dei byte, come in [Carta.binario].
+     */
+    @JvmStatic external fun renderCodeSimbologia(
+        code: String, simbologia: Int, binario: Boolean,
+    ): ImmagineCodice
 
     /**
      * Se un codice si può disegnare in una simbologia, senza disegnarlo.
