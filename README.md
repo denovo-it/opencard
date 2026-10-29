@@ -16,8 +16,8 @@ L'app è pubblicata sui due store ed è gratis:
 - App Store: `https://apps.apple.com/it/app/opencard/id6805435861`
 - Google Play: `https://play.google.com/store/apps/details?id=srl.denovo.opencard`
 
-Su App Store è pubblicata la 1.0.7, per iPhone e Apple Watch. Su Google Play è
-pubblicata la 1.0.6, per Android e smartwatch Wear OS.
+Su App Store e su Google Play è pubblicata la 1.0.7: per iPhone e Apple Watch,
+per Android e smartwatch Wear OS.
 
 Su Google Play c'è anche l'app per gli smartwatch Wear OS, come Samsung Galaxy
 Watch e Google Pixel Watch: si installa dal Play Store dell'orologio e le carte
