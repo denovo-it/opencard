@@ -32,6 +32,12 @@
 	<array>
 		<integer>1</integer>
 	</array>
+	<!-- App Store Connect lo pretende per ogni binario a 64 bit (ITMS-90502,
+	     29 ottobre 2026): senza, la consegna della 2026102901 e' stata rifiutata. -->
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>
