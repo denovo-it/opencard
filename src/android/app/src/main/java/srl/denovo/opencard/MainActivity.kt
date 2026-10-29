@@ -5,6 +5,7 @@
 package srl.denovo.opencard
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -99,9 +100,19 @@ class MainActivity : AppCompatActivity() {
         if (destinazione != null) scriviBackup(destinazione) else avvisa(getString(R.string.backup_annullato))
     }
 
-    /** Il file cifrato non e' JSON: si salva col suo tipo e la sua estensione. */
-    private val salvaBackupCifrato = registerForActivityResult(
-        ActivityResultContracts.CreateDocument("application/octet-stream")
+    /** Il tipo del file da salvare, deciso prima di aprire il selettore. */
+    private var tipoBackup = "application/octet-stream"
+
+    /**
+     * Il tipo va col file: text/csv, application/zip, e octet-stream solo
+     * per quello cifrato, che un tipo suo non ce l'ha. Con octet-stream
+     * fisso, Dropbox salvava il CSV come «.csv.bin».
+     */
+    private val salvaFileBackup = registerForActivityResult(
+        object : ActivityResultContracts.CreateDocument("application/octet-stream") {
+            override fun createIntent(context: Context, input: String): Intent =
+                super.createIntent(context, input).setType(tipoBackup)
+        }
     ) { destinazione ->
         if (destinazione != null) scriviBackup(destinazione) else avvisa(getString(R.string.backup_annullato))
     }
@@ -506,9 +517,14 @@ class MainActivity : AppCompatActivity() {
                         bottone = R.string.salva,
                     ) { password ->
                         passwordBackup = password
+                        tipoBackup = when {
+                            password.isNotEmpty() -> "application/octet-stream"
+                            csv -> "text/csv"
+                            else -> "application/zip"
+                        }
                         // Nome, data ed estensione li sceglie il core,
                         // uguali su iPhone.
-                        salvaBackupCifrato.launch(Core.esportaNome(csv, password))
+                        salvaFileBackup.launch(Core.esportaNome(csv, password))
                     }
                     }
                 }

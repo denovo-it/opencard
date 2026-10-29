@@ -1,5 +1,6 @@
 ## 1.0.8-dev (in lavorazione)
 
+- Nel CSV per le altre app le carte usa e getta stanno nel gruppo «Usa e getta», come lo vuole Catima, e rileggendo il CSV tornano usa e getta. Prima rientravano tutte fra le carte fedeltà: la stella aveva la sua colonna, l'usa e getta no.
 - Fra i colori della carta ci sono anche il bianco e il nero. Sulla carta bianca nome e icone si scrivono scuri. Le carte bianche e nere hanno un bordo sottile per staccarsi dallo sfondo.
 - Le carte si possono vedere su due colonne: la voce «Due colonne» nel menu con i tre puntini accende e spegne la griglia. La scelta resta anche chiudendo l'app.
 - Toccando il codice a barre o il QR della carta aperta, il codice si copia negli appunti, pronto da incollare in un'app o in un sito.

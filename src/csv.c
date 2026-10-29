@@ -12,6 +12,12 @@
 
 #define VERSIONE "2"
 
+/* L'unico gruppo di Catima che scriviamo. L'usa e getta non ha una colonna
+ * come la stella: senza il gruppo, un CSV riletto riportava le carte tutte
+ * fra le fedeltà. Il nome resta questo anche su un telefono in inglese: è
+ * la chiave con cui si rilegge. */
+#define GRUPPO_USA_GETTA "Usa e getta"
+
 static const char *const COLONNE =
     "_id,store,note,validfrom,expiry,balance,balancetype,cardid,barcodeid,"
     "barcodetype,barcodeencoding,headercolor,starstatus,lastused,archive";
@@ -381,7 +387,7 @@ opencard_esito opencard_csv_scrivi(const opencard_lista *lista, char **uscita,
 {
     buffer b = {NULL, 0, 0};
     size_t i;
-    int ok;
+    int ok, usa_getta = 0;
 
     if (lista == NULL || uscita == NULL || quanti == NULL) {
         return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
@@ -389,8 +395,14 @@ opencard_esito opencard_csv_scrivi(const opencard_lista *lista, char **uscita,
     *uscita = NULL;
     *quanti = 0;
 
-    ok = testo(&b, VERSIONE "\n\n") && testo(&b, "_id\n\n")   /* nessun gruppo */
-         && testo(&b, COLONNE) && testo(&b, "\n");
+    /* Il gruppo si dichiara solo se c'è una carta che ci sta; i biglietti
+     * binari restano fuori anche da qui. */
+    for (i = 0; i < lista->n; i++) {
+        usa_getta += lista->carte[i].disposable && !lista->carte[i].binario;
+    }
+    ok = testo(&b, VERSIONE "\n\n") && testo(&b, "_id\n")
+         && (usa_getta == 0 || testo(&b, GRUPPO_USA_GETTA "\n"))
+         && testo(&b, "\n") && testo(&b, COLONNE) && testo(&b, "\n");
 
     for (i = 0; ok && i < lista->n; i++) {
         const opencard_card *carta = &lista->carte[i];
@@ -431,6 +443,16 @@ opencard_esito opencard_csv_scrivi(const opencard_lista *lista, char **uscita,
              && testo(&b, "\n");
     }
     ok = ok && testo(&b, "\ncardId,groupId\n");
+    for (i = 0; ok && i < lista->n; i++) {
+        const opencard_card *carta = &lista->carte[i];
+        char id[16];
+
+        if (!carta->disposable || carta->binario) {
+            continue;
+        }
+        snprintf(id, sizeof(id), "%d", carta->id);
+        ok = testo(&b, id) && testo(&b, "," GRUPPO_USA_GETTA "\n");
+    }
 
     if (!ok) {
         free(b.p);
@@ -632,11 +654,11 @@ static size_t colonna(const riga_csv *intestazione, const char *nome)
     return (size_t)-1;
 }
 
-enum { C_STORE, C_NOTE, C_EXPIRY, C_BALANCE, C_BALANCETYPE, C_CARDID,
+enum { C_ID, C_STORE, C_NOTE, C_EXPIRY, C_BALANCE, C_BALANCETYPE, C_CARDID,
        C_BARCODEID, C_BARCODETYPE, C_HEADERCOLOR, C_STARSTATUS, C_QUANTE };
 
 static const char *const NOMI_COLONNE[C_QUANTE] = {
-    "store", "note", "expiry", "balance", "balancetype", "cardid",
+    "_id", "store", "note", "expiry", "balance", "balancetype", "cardid",
     "barcodeid", "barcodetype", "headercolor", "starstatus"
 };
 
@@ -646,8 +668,8 @@ opencard_esito opencard_csv_leggi(const unsigned char *dati, size_t quanti,
     const char *t = (const char *)dati;
     riga_csv riga = {{NULL, 0, 0}, NULL, 0, 0};
     riga_csv testa = {{NULL, 0, 0}, NULL, 0, 0};
-    size_t pos = 0, dove[C_QUANTE], colonne;
-    int letta, k;
+    size_t pos = 0, dove[C_QUANTE], colonne, i;
+    int letta, k, testa_gruppi = 0;
 
     if (dati == NULL || out == NULL) {
         return opencard_errore_segnala(errore, OPENCARD_ERR_ARGOMENTI);
@@ -686,6 +708,9 @@ opencard_esito opencard_csv_leggi(const unsigned char *dati, size_t quanti,
         }
 
         memset(&carta, 0, sizeof(carta));
+        /* L'`_id` di Catima serve solo a trovare la carta fra i collegamenti
+         * dei gruppi, in fondo: poi si azzera, e gli id li dà il telefono. */
+        carta.id = (int)strtol(valore(&riga, dove[C_ID]), NULL, 10);
         metti(carta.label, sizeof(carta.label), valore(&riga, dove[C_STORE]));
         /* In Catima `cardid` è il numero della carta e `barcodeid`, quando
          * c'è, il valore che il codice a barre porta davvero: disegnano quello
@@ -723,6 +748,36 @@ opencard_esito opencard_csv_leggi(const unsigned char *dati, size_t quanti,
             letta = -1;
             break;
         }
+    }
+
+    /* In fondo i collegamenti `cardId,groupId`. Il gruppo «Usa e getta» è il
+     * nostro: una carta che ci sta torna usa e getta. Gli altri gruppi
+     * restano a Catima. La riga che ha chiuso la tabella può essere già
+     * l'intestazione, se non c'è la riga vuota in mezzo. */
+    if (letta == 1) {
+        do {
+            if (strcmp(valore(&riga, 0), "cardId") == 0
+                && strcmp(valore(&riga, 1), "groupId") == 0) {
+                testa_gruppi = 1;
+                break;
+            }
+        } while ((letta = prossima_riga(t, quanti, &pos, &riga)) == 1);
+        while (testa_gruppi && (letta = prossima_riga(t, quanti, &pos, &riga)) == 1) {
+            if (riga_vuota(&riga)) {
+                break;
+            }
+            if (!uguale_senza_maiuscole(valore(&riga, 1), GRUPPO_USA_GETTA)) {
+                continue;
+            }
+            for (i = 0; i < out->n; i++) {
+                if (out->carte[i].id == (int)strtol(valore(&riga, 0), NULL, 10)) {
+                    out->carte[i].disposable = 1;
+                }
+            }
+        }
+    }
+    for (i = 0; i < out->n; i++) {
+        out->carte[i].id = 0;
     }
     libera_riga(&riga);
     libera_riga(&testa);
