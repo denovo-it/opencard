@@ -40,11 +40,20 @@ object Dati {
         applicazione = contesto.applicationContext
         fileCarte = File(contesto.filesDir, "opencard.json")
         Core.storeInit(contesto.filesDir.absolutePath)
-        // La chiave prima di qualsiasi lettura: un file cifrato senza chiave
-        // non si apre, e senza questa riga l'app direbbe che il file è rotto.
-        // Se il portachiavi non risponde si va avanti in chiaro, come prima:
-        // meglio un file leggibile che un'app che non si apre.
-        Core.storeChiave(ChiaveDati.dammi(contesto))
+
+        val chiave = ChiaveDati.dammi(contesto)
+
+        if (chiave == null && fileCarte.exists()) {
+            val testa = ByteArray(6)
+            fileCarte.inputStream().use { it.read(testa) }
+            if (testa.contentEquals("OCENC1".toByteArray(Charsets.US_ASCII))) {
+                throw RuntimeException(
+                    contesto.getString(R.string.core_chiave_persa)
+                )
+            }
+        }
+
+        Core.storeChiave(chiave)
         ripristinaDalCloud(contesto)
         // Le foto rimaste dalle versioni che eliminando una carta dall'elenco
         // non le cancellavano.

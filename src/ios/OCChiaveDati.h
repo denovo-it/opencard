@@ -17,6 +17,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// un'app che non si apre.
 + (nullable NSData *)chiave;
 
+/// I 32 byte se gia' nel portachiavi, nil altrimenti. Non crea una chiave
+/// nuova: serve a distinguere "chiave non ancora creata" da "chiave persa
+/// nel passaggio a un dispositivo nuovo".
++ (nullable NSData *)chiaveSeEsiste;
+
 @end
 
 NS_ASSUME_NONNULL_END

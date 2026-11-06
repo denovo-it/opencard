@@ -113,10 +113,28 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
         [self riporta:errore da:&guasto];
         return NO;
     }
-    // La chiave prima di qualsiasi lettura e prima che il file venga creato:
-    // un file cifrato senza chiave non si apre, e l'app direbbe che è rotto.
-    // Se il portachiavi non risponde si va avanti in chiaro, come prima.
-    [self impostaChiaveDati:[OCChiaveDati chiave]];
+    NSData *chiave = [OCChiaveDati chiaveSeEsiste];
+
+    if (chiave == nil) {
+        NSString *percorso = [NSString stringWithUTF8String:opencard_store_percorso()];
+        NSFileHandle *fh = [NSFileHandle fileHandleForReadingAtPath:percorso];
+        if (fh != nil) {
+            NSData *testa = [fh readDataOfLength:OPENCARD_CRIPTO_MAGIA_N];
+            [fh closeFile];
+            if (opencard_cripto_e_cifrato(testa.bytes, testa.length)) {
+                if (errore != NULL) {
+                    *errore = [NSError errorWithDomain:OCDominioErrore
+                        code:OPENCARD_ERR_PASSWORD
+                        userInfo:@{NSLocalizedDescriptionKey:
+                            NSLocalizedString(@"core_chiave_persa", nil)}];
+                }
+                return NO;
+            }
+        }
+        chiave = [OCChiaveDati chiave];
+    }
+
+    [self impostaChiaveDati:chiave];
 
     if (opencard_init_db() != OPENCARD_OK) {
         [self riporta:errore da:&guasto];

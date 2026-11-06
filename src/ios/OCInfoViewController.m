@@ -37,6 +37,13 @@ static NSString *OCIntroPrivacy(void)
     return NSLocalizedString(@"privacy_intro_ios", nil);
 }
 
+static NSString *const OCTermini = @"https://denovo.srl/opencard-termini/";
+
+static NSString *OCIntroTermini(void)
+{
+    return NSLocalizedString(@"termini_intro_ios", nil);
+}
+
 /* Testo lungo: sta nei file di lingua, e NSLocalizedString non si può usare
  * fuori da una funzione. */
 static NSString *OCBackupTelefono(void)
@@ -272,6 +279,13 @@ static NSString *OCIntroOpenSource(void)
     ] a:foglio.colonna];
     [foglio.colonna addArrangedSubview:[self sottotitolo:NSLocalizedString(@"backup_sottotitolo", nil)]];
     [foglio.colonna addArrangedSubview:[self paragrafo:OCBackupTelefono() dimensione:13]];
+    [foglio.colonna addArrangedSubview:[self riga]];
+
+    [foglio.colonna addArrangedSubview:[self titolo:NSLocalizedString(@"termini_titolo", nil)]];
+    [foglio.colonna addArrangedSubview:[self paragrafo:OCIntroTermini() dimensione:14]];
+    [self aggiungiCollegamenti:@[
+        @[@"denovo.srl/opencard-termini", NSLocalizedString(@"pagina_apri", nil), OCTermini],
+    ] a:foglio.colonna];
     [foglio.colonna addArrangedSubview:[self riga]];
 
     [foglio.colonna addArrangedSubview:[self titolo:NSLocalizedString(@"licenza_uso_titolo", nil)]];

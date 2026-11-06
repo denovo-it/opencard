@@ -20,6 +20,9 @@ const val SORGENTE = "https://github.com/denovo-it/opencard"
 /** La privacy policy dell'app, la stessa dichiarata nelle schede dei due store. */
 const val PRIVACY = "https://denovo.srl/opencard-privacy/"
 
+/** I termini di servizio dell'app, gli stessi dichiarati nella scheda di Google Play. */
+const val TERMINI = "https://denovo.srl/opencard-termini/"
+
 /** La pagina dell'app sul sito, quella che si dà negli store al posto di denovo.srl. */
 const val PAGINA = "https://denovo.srl/opencard/"
 

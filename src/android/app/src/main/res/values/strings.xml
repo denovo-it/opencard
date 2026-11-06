@@ -119,6 +119,9 @@
     <string name="errore_precedente">Here is the detail, useful to whoever develops the app:\n\n%1$s</string>
     <string name="privacy_intro_android">OpenCard collects nothing and doesn\'t even have permission to connect to the internet: your cards stay in the app\'s private storage. The page below says it in full, and it\'s the one declared to Google and Apple.</string>
     <string name="backup_privacy_android">By default the cards do not go into the automatic backup to Google\'s cloud: you turn it on in Settings. If you change phone you take them with you through a backup file or the QR transfer.</string>
+    <string name="termini_titolo">Terms of service</string>
+    <string name="termini_intro_android">The terms that apply when you use OpenCard.</string>
+    <string name="termini_riga">denovo.srl/opencard-termini</string>
     <string name="componenti_sistema">System components</string>
     <string name="preferisci">Add to favorites</string>
     <string name="codice_non_generabile">The code can\'t be generated.</string>
@@ -140,6 +143,7 @@
     <string name="core_trasferimento_versione">The code comes from a newer version of OpenCard (format %1$s). Update the app on this phone.</string>
     <string name="core_trasferimento_troppe">There are too many cards for the QR transfer. Use export to file.</string>
     <string name="core_password">The password does not open this backup, or the file has been changed.</string>
+    <string name="core_chiave_persa">Your cards are encrypted with a key from your previous phone that did not transfer to this device. To recover them, use a file backup or QR transfer from the previous phone.</string>
     <string name="core_troppo_grande">The backup is over %1$s MB, the most OpenCard can open.</string>
     <string name="nota">Note</string>
     <string name="scadenza">Expiry</string>

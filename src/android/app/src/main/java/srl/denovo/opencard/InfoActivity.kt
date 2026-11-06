@@ -127,6 +127,15 @@ class InfoActivity : AppCompatActivity() {
         contenuto.addView(paragrafo(getString(R.string.backup_privacy_android), 13f, colore = R.color.muted))
         contenuto.addView(riga())
 
+        contenuto.addView(titolo(getString(R.string.termini_titolo)))
+        contenuto.addView(paragrafo(getString(R.string.termini_intro_android), 14f))
+        contenuto.addView(
+            voceCollegamento(
+                getString(R.string.termini_riga), getString(R.string.privacy_apri), TERMINI
+            )
+        )
+        contenuto.addView(riga())
+
         contenuto.addView(titolo(getString(R.string.licenza_uso_titolo)))
         contenuto.addView(paragrafo(getString(R.string.licenza_uso), 15f))
         contenuto.addView(riga())

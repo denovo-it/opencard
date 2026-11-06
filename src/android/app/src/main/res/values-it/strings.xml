@@ -119,6 +119,9 @@
     <string name="errore_precedente">Questo è il dettaglio, utile a chi sviluppa:\n\n%1$s</string>
     <string name="privacy_intro_android">OpenCard non raccoglie niente e non ha nemmeno il permesso di collegarsi a internet: le carte restano nella memoria privata dell\'app. La pagina qui sotto lo dice per esteso, ed è quella dichiarata a Google e ad Apple.</string>
     <string name="backup_privacy_android">Di serie le carte non entrano nel backup automatico verso il cloud di Google: si accende da Impostazioni. Se cambi telefono le porti con il backup su file oppure con il passaggio a QR.</string>
+    <string name="termini_titolo">Termini di servizio</string>
+    <string name="termini_intro_android">Le condizioni che si applicano quando usi OpenCard.</string>
+    <string name="termini_riga">denovo.srl/opencard-termini</string>
     <string name="componenti_sistema">Componenti di sistema</string>
     <string name="preferisci">Preferisci</string>
     <string name="codice_non_generabile">Codice non generabile.</string>
@@ -140,6 +143,7 @@
     <string name="core_trasferimento_versione">Il codice arriva da una versione più recente di OpenCard (formato %1$s). Aggiorna l\'app su questo telefono.</string>
     <string name="core_trasferimento_troppe">Le carte sono troppe per il passaggio con i QR. Usa l\'esportazione su file.</string>
     <string name="core_password">La password non apre questo backup, oppure il file è stato modificato.</string>
+    <string name="core_chiave_persa">Le carte sono cifrate con una chiave del telefono precedente che non è arrivata su questo dispositivo. Per recuperarle serve il backup su file o il passaggio a QR dal telefono precedente.</string>
     <string name="core_troppo_grande">Il backup supera i %1$s MB, il massimo che OpenCard riesce a riaprire.</string>
     <string name="nota">Nota</string>
     <string name="scadenza">Scadenza</string>

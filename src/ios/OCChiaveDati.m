@@ -70,4 +70,9 @@ static const NSUInteger OCByteChiave = 32;
     return chiave;
 }
 
++ (NSData *)chiaveSeEsiste
+{
+    return [self leggi];
+}
+
 @end
