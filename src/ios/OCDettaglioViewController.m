@@ -464,7 +464,7 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
         img.translatesAutoresizingMaskIntoConstraints = NO;
 
         UIImage *disegno = [OCCore immaginePerCodice:c.codice simbologia:c.simbologia
-                                             binario:c.binario];
+                                             binario:c.binario errore:nil];
         if (disegno != nil) img.image = disegno;
 
         UILabel *etichetta = [UILabel new];
