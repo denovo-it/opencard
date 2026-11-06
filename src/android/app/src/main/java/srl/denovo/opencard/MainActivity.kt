@@ -291,6 +291,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         Dati.erroreDiApertura?.let { avvisa(it) }
         mostraUltimoErrore()
+        carte.mostraColonne(Impostazioni.dueColonne(this))
         ricarica()
     }
 
@@ -458,7 +459,6 @@ class MainActivity : AppCompatActivity() {
         // Nei menu a tendina Android nasconde le icone: qui servono, perché
         // esporta e importa si distinguono a colpo d'occhio dal verso freccia.
         (menu as? MenuBuilder)?.setOptionalIconsVisible(true)
-        menu.findItem(R.id.due_colonne)?.isChecked = carte.dueColonne
         return true
     }
 
@@ -477,14 +477,7 @@ class MainActivity : AppCompatActivity() {
             apri(TrasferimentoActivity.intent(this))
             true
         }
-        R.id.due_colonne -> {
-            val due = !carte.dueColonne
-            Impostazioni.cambiaDueColonne(this, due)
-            carte.mostraColonne(due)
-            voce.isChecked = due
-            true
-        }
-        R.id.impostazioni -> {
+R.id.impostazioni -> {
             startActivity(Intent(this, ImpostazioniActivity::class.java))
             true
         }

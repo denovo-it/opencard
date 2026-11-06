@@ -53,6 +53,7 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
 @property (nonatomic, assign) CGFloat traslazioneY;
 @property (nonatomic, strong) UIScrollView *compagneScorrevole;
 @property (nonatomic, strong) UIStackView *compagneRiga;
+@property (nonatomic, weak) UIStackView *colonnaEsterna;
 @end
 
 @implementation OCDettaglioViewController
@@ -161,6 +162,8 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
 
     self.compagneScorrevole = [UIScrollView new];
     self.compagneScorrevole.showsHorizontalScrollIndicator = NO;
+    self.compagneScorrevole.pagingEnabled = YES;
+    self.compagneScorrevole.clipsToBounds = NO;
     [self.compagneScorrevole addSubview:self.compagneRiga];
     [NSLayoutConstraint activateConstraints:@[
         [self.compagneRiga.topAnchor constraintEqualToAnchor:self.compagneScorrevole.topAnchor],
@@ -168,13 +171,13 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
         [self.compagneRiga.leadingAnchor constraintEqualToAnchor:self.compagneScorrevole.leadingAnchor],
         [self.compagneRiga.trailingAnchor constraintEqualToAnchor:self.compagneScorrevole.trailingAnchor],
         [self.compagneRiga.heightAnchor constraintEqualToAnchor:self.compagneScorrevole.heightAnchor],
-        [self.compagneScorrevole.heightAnchor constraintEqualToConstant:90],
     ]];
     self.compagneScorrevole.hidden = YES;
 
     UIStackView *colonna = [[UIStackView alloc] initWithArrangedSubviews:@[
         self.immagine, self.codice, self.compagneScorrevole, self.dettagli, [self costruisciBloccoFoto],
     ]];
+    self.colonnaEsterna = colonna;
     colonna.axis = UILayoutConstraintAxisVertical;
     colonna.spacing = 12;
     colonna.translatesAutoresizingMaskIntoConstraints = NO;
@@ -455,13 +458,17 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
 
         UIView *riquadro = [UIView new];
         riquadro.backgroundColor = [OCTema coloreDaEsadecimale:c.colore];
-        riquadro.layer.cornerRadius = 8;
+        riquadro.layer.cornerRadius = 12;
         riquadro.clipsToBounds = YES;
-        [riquadro.widthAnchor constraintEqualToConstant:80].active = YES;
+        [self.compagneRiga addArrangedSubview:riquadro];
+        [riquadro.widthAnchor constraintEqualToAnchor:self.view.widthAnchor constant:-48].active = YES;
 
         UIImageView *img = [UIImageView new];
         img.contentMode = UIViewContentModeScaleAspectFit;
         img.translatesAutoresizingMaskIntoConstraints = NO;
+        img.backgroundColor = [UIColor whiteColor];
+        img.layer.cornerRadius = 6;
+        img.clipsToBounds = YES;
 
         UIImage *disegno = [OCCore immaginePerCodice:c.codice simbologia:c.simbologia
                                              binario:c.binario errore:nil];
@@ -469,23 +476,35 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
 
         UILabel *etichetta = [UILabel new];
         etichetta.text = c.etichetta;
-        etichetta.font = [UIFont systemFontOfSize:10];
-        etichetta.textColor = [UIColor whiteColor];
+        etichetta.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
+        etichetta.textColor = [OCTema sopraCarta:c.colore];
         etichetta.textAlignment = NSTextAlignmentCenter;
         etichetta.numberOfLines = 1;
         etichetta.translatesAutoresizingMaskIntoConstraints = NO;
 
+        UILabel *numero = [UILabel new];
+        numero.text = c.binario ? @"" : [OCCore codiceRaggruppato:c.codice];
+        numero.font = [UIFont monospacedDigitSystemFontOfSize:16 weight:UIFontWeightRegular];
+        numero.textColor = [OCTema sopraCarta:c.colore];
+        numero.textAlignment = NSTextAlignmentCenter;
+        numero.numberOfLines = 1;
+        numero.translatesAutoresizingMaskIntoConstraints = NO;
+
         [riquadro addSubview:img];
+        [riquadro addSubview:numero];
         [riquadro addSubview:etichetta];
         [NSLayoutConstraint activateConstraints:@[
-            [img.topAnchor constraintEqualToAnchor:riquadro.topAnchor constant:6],
-            [img.leadingAnchor constraintEqualToAnchor:riquadro.leadingAnchor constant:6],
-            [img.trailingAnchor constraintEqualToAnchor:riquadro.trailingAnchor constant:-6],
-            [img.heightAnchor constraintEqualToConstant:48],
-            [etichetta.topAnchor constraintEqualToAnchor:img.bottomAnchor constant:4],
-            [etichetta.leadingAnchor constraintEqualToAnchor:riquadro.leadingAnchor constant:4],
-            [etichetta.trailingAnchor constraintEqualToAnchor:riquadro.trailingAnchor constant:-4],
-            [etichetta.bottomAnchor constraintEqualToAnchor:riquadro.bottomAnchor constant:-6],
+            [etichetta.topAnchor constraintEqualToAnchor:riquadro.topAnchor constant:10],
+            [etichetta.leadingAnchor constraintEqualToAnchor:riquadro.leadingAnchor constant:12],
+            [etichetta.trailingAnchor constraintEqualToAnchor:riquadro.trailingAnchor constant:-12],
+            [img.topAnchor constraintEqualToAnchor:etichetta.bottomAnchor constant:10],
+            [img.leadingAnchor constraintEqualToAnchor:riquadro.leadingAnchor constant:16],
+            [img.trailingAnchor constraintEqualToAnchor:riquadro.trailingAnchor constant:-16],
+            [img.heightAnchor constraintEqualToConstant:80],
+            [numero.topAnchor constraintEqualToAnchor:img.bottomAnchor constant:8],
+            [numero.leadingAnchor constraintEqualToAnchor:riquadro.leadingAnchor constant:12],
+            [numero.trailingAnchor constraintEqualToAnchor:riquadro.trailingAnchor constant:-12],
+            [numero.bottomAnchor constraintEqualToAnchor:riquadro.bottomAnchor constant:-10],
         ]];
 
         NSInteger idCompagna = c.identificativo;
@@ -494,8 +513,6 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
         riquadro.tag = idCompagna;
         riquadro.userInteractionEnabled = YES;
         [riquadro addGestureRecognizer:tap];
-
-        [self.compagneRiga addArrangedSubview:riquadro];
     }
 }
 

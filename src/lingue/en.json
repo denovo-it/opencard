@@ -199,5 +199,8 @@
   "carte_compagne": "Companion cards",
   "compagne_desc": "Show linked cards below the main code",
   "compagne_seleziona": "Select companions",
-  "nessuna_compagna": "No companion cards"
+  "nessuna_compagna": "No companion cards",
+  "hack": "Hack",
+  "hack_desc": "Options for power users",
+  "due_colonne_desc": "Show cards in two columns in the list"
 }

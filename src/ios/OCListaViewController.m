@@ -180,8 +180,7 @@ static const NSUInteger OCCartePerLaRicerca = 5;
     self.navigationItem.rightBarButtonItem = backup;
 }
 
-/// Il menu dei tre puntini. Si rifà quando cambiano le colonne, perché la
-/// spunta della voce la legge solo quando viene costruito.
+/// Il menu dei tre puntini.
 - (UIMenu *)menuBackup API_AVAILABLE(ios(14.0))
 {
     __weak typeof(self) debole = self;
@@ -201,25 +200,8 @@ static const NSUInteger OCCartePerLaRicerca = 5;
                                                 image:[UIImage systemImageNamed:@"gearshape"]
                                            identifier:nil
                                               handler:^(UIAction *azione) { [debole apriImpostazioni]; }];
-    UIAction *colonne = [UIAction actionWithTitle:NSLocalizedString(@"due_colonne", nil)
-                                            image:[UIImage systemImageNamed:@"square.grid.2x2"]
-                                       identifier:nil
-                                          handler:^(UIAction *azione) { [debole cambiaColonne]; }];
-    colonne.state = [[NSUserDefaults standardUserDefaults] boolForKey:OCChiaveDueColonne]
-        ? UIMenuElementStateOn : UIMenuElementStateOff;
     return [UIMenu menuWithTitle:@""
-                        children:@[importa, esporta, passa, colonne, impostazioni]];
-}
-
-/// Una colonna o due: la scelta resta, e vale per tutte le schede.
-- (void)cambiaColonne
-{
-    NSUserDefaults *preferenze = [NSUserDefaults standardUserDefaults];
-    [preferenze setBool:![preferenze boolForKey:OCChiaveDueColonne] forKey:OCChiaveDueColonne];
-    if (@available(iOS 14.0, *)) {
-        self.navigationItem.rightBarButtonItem.menu = [self menuBackup];
-    }
-    [self ricaricaTutto];
+                        children:@[importa, esporta, passa, impostazioni]];
 }
 
 #pragma mark - Schede e pagine

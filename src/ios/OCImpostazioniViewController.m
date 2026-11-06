@@ -58,9 +58,54 @@
     self.spiegazione.numberOfLines = 0;
     [self mostraSpiegazione];
 
-    UIView *lineaCompagne = [UIView new];
-    lineaCompagne.backgroundColor = [UIColor separatorColor];
-    [lineaCompagne.heightAnchor constraintEqualToConstant:1].active = YES;
+    UIView *lineaHack = [UIView new];
+    lineaHack.backgroundColor = [UIColor separatorColor];
+    [lineaHack.heightAnchor constraintEqualToConstant:1].active = YES;
+
+    UILabel *hackFrecciaLabel = [UILabel new];
+    hackFrecciaLabel.text = @"\u25B8";
+    hackFrecciaLabel.font = [UIFont systemFontOfSize:16];
+    hackFrecciaLabel.textColor = [OCTema attenuato];
+
+    UILabel *hackTitolo = [UILabel new];
+    hackTitolo.text = NSLocalizedString(@"hack", nil);
+    hackTitolo.font = [UIFont systemFontOfSize:16];
+
+    UILabel *hackDesc = [UILabel new];
+    hackDesc.text = NSLocalizedString(@"hack_desc", nil);
+    hackDesc.font = [UIFont systemFontOfSize:13];
+    hackDesc.textColor = [OCTema attenuato];
+
+    UIStackView *hackRigaTitolo = [[UIStackView alloc] initWithArrangedSubviews:@[hackTitolo, hackFrecciaLabel]];
+    hackRigaTitolo.axis = UILayoutConstraintAxisHorizontal;
+    hackRigaTitolo.spacing = 8;
+    hackRigaTitolo.alignment = UIStackViewAlignmentCenter;
+
+    UIStackView *hackIntestazione = [[UIStackView alloc] initWithArrangedSubviews:@[hackRigaTitolo, hackDesc]];
+    hackIntestazione.axis = UILayoutConstraintAxisVertical;
+    hackIntestazione.spacing = 4;
+
+    UILabel *voceDueColonne = [UILabel new];
+    voceDueColonne.text = NSLocalizedString(@"due_colonne", nil);
+    voceDueColonne.font = [UIFont systemFontOfSize:16];
+    voceDueColonne.numberOfLines = 0;
+
+    UISwitch *intDueColonne = [UISwitch new];
+    intDueColonne.onTintColor = [OCTema marca];
+    intDueColonne.on = [[NSUserDefaults standardUserDefaults] boolForKey:@"due_colonne"];
+    [intDueColonne addTarget:self action:@selector(cambiaDueColonne:)
+            forControlEvents:UIControlEventValueChanged];
+
+    UIStackView *rigaDueColonne = [[UIStackView alloc] initWithArrangedSubviews:@[voceDueColonne, intDueColonne]];
+    rigaDueColonne.axis = UILayoutConstraintAxisHorizontal;
+    rigaDueColonne.spacing = 12;
+    rigaDueColonne.alignment = UIStackViewAlignmentCenter;
+
+    UILabel *spiegaDueColonne = [UILabel new];
+    spiegaDueColonne.text = NSLocalizedString(@"due_colonne_desc", nil);
+    spiegaDueColonne.font = [UIFont systemFontOfSize:13];
+    spiegaDueColonne.textColor = [OCTema attenuato];
+    spiegaDueColonne.numberOfLines = 0;
 
     UILabel *voceCompagne = [UILabel new];
     voceCompagne.text = NSLocalizedString(@"carte_compagne", nil);
@@ -83,6 +128,22 @@
     spiegaCompagne.font = [UIFont systemFontOfSize:13];
     spiegaCompagne.textColor = [OCTema attenuato];
     spiegaCompagne.numberOfLines = 0;
+
+    UIStackView *hackContenuto = [[UIStackView alloc] initWithArrangedSubviews:@[
+        rigaDueColonne, spiegaDueColonne, rigaCompagne, spiegaCompagne]];
+    hackContenuto.axis = UILayoutConstraintAxisVertical;
+    hackContenuto.spacing = 8;
+    hackContenuto.hidden = YES;
+    hackContenuto.layoutMargins = UIEdgeInsetsMake(0, 16, 0, 0);
+    hackContenuto.layoutMarginsRelativeArrangement = YES;
+
+    UITapGestureRecognizer *tapHack = [[UITapGestureRecognizer alloc]
+        initWithTarget:self action:@selector(toggleHack:)];
+    [hackIntestazione addGestureRecognizer:tapHack];
+    hackIntestazione.userInteractionEnabled = YES;
+    hackIntestazione.tag = 900;
+    hackContenuto.tag = 901;
+    hackFrecciaLabel.tag = 902;
 
     UIView *linea = [UIView new];
     linea.backgroundColor = [UIColor separatorColor];
@@ -123,17 +184,17 @@
     cosaFa.numberOfLines = 0;
 
     UIStackView *colonna = [[UIStackView alloc] initWithArrangedSubviews:@[
-        titoloBackup, riga, self.spiegazione, lineaCompagne,
-        rigaCompagne, spiegaCompagne, linea, self.lingua, self.linguaAdesso,
+        titoloBackup, riga, self.spiegazione, lineaHack,
+        hackIntestazione, hackContenuto, linea, self.lingua, self.linguaAdesso,
         linea2, azzera, cosaFa,
     ]];
     colonna.axis = UILayoutConstraintAxisVertical;
     colonna.spacing = 12;
     colonna.translatesAutoresizingMaskIntoConstraints = NO;
     [colonna setCustomSpacing:24 afterView:self.spiegazione];
-    [colonna setCustomSpacing:24 afterView:lineaCompagne];
-    [colonna setCustomSpacing:4 afterView:rigaCompagne];
-    [colonna setCustomSpacing:24 afterView:spiegaCompagne];
+    [colonna setCustomSpacing:24 afterView:lineaHack];
+    [colonna setCustomSpacing:8 afterView:hackIntestazione];
+    [colonna setCustomSpacing:24 afterView:hackContenuto];
     [colonna setCustomSpacing:24 afterView:linea];
     [colonna setCustomSpacing:4 afterView:self.lingua];
     [colonna setCustomSpacing:24 afterView:self.linguaAdesso];
@@ -169,6 +230,23 @@
 {
     [OCCore metticiLeCarteNelBackup:self.interruttore.isOn];
     [self mostraSpiegazione];
+}
+
+- (void)toggleHack:(UITapGestureRecognizer *)gesto
+{
+    UIView *colonna = gesto.view.superview;
+    UIView *contenuto = [colonna viewWithTag:901];
+    UILabel *freccia = (UILabel *)[colonna viewWithTag:902];
+    BOOL visibile = !contenuto.hidden;
+    [UIView animateWithDuration:0.25 animations:^{
+        contenuto.hidden = visibile;
+        freccia.text = visibile ? @"\u25B8" : @"\u25BE";
+    }];
+}
+
+- (void)cambiaDueColonne:(UISwitch *)interruttore
+{
+    [[NSUserDefaults standardUserDefaults] setBool:interruttore.isOn forKey:@"due_colonne"];
 }
 
 - (void)cambiaCompagne:(UISwitch *)interruttore

@@ -8,6 +8,7 @@ package srl.denovo.opencard
 
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -41,6 +42,20 @@ class ImpostazioniActivity : AppCompatActivity() {
         interruttore.setOnCheckedChangeListener { _, acceso ->
             Impostazioni.cambiaBackupNelCloud(this, acceso)
             spiega.setText(testo(acceso))
+        }
+
+        val hackContenuto = findViewById<View>(R.id.hack_contenuto)
+        val hackFreccia = findViewById<ImageView>(R.id.hack_freccia)
+        findViewById<View>(R.id.hack_riga).setOnClickListener {
+            val visibile = hackContenuto.visibility == View.VISIBLE
+            hackContenuto.visibility = if (visibile) View.GONE else View.VISIBLE
+            hackFreccia.rotation = if (visibile) 0f else 180f
+        }
+
+        val dueColonne = findViewById<MaterialSwitch>(R.id.due_colonne)
+        dueColonne.isChecked = Impostazioni.dueColonne(this)
+        dueColonne.setOnCheckedChangeListener { _, acceso ->
+            Impostazioni.cambiaDueColonne(this, acceso)
         }
 
         val compagne = findViewById<MaterialSwitch>(R.id.carte_compagne)

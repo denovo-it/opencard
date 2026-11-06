@@ -322,7 +322,7 @@ Java_srl_denovo_opencard_Core_get(JNIEnv *env, jclass classe, jint id)
                                       "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZI"
                                       "Ljava/lang/String;Ljava/lang/String;"
                                       "Ljava/lang/String;Ljava/lang/String;"
-                                      "Ljava/lang/String;Z)V");
+                                      "Ljava/lang/String;Z[I)V");
     if (costruttore == NULL) {
         return NULL;
     }
