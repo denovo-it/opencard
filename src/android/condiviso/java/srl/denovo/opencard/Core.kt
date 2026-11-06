@@ -38,6 +38,7 @@ data class Carta(
      * byte, che non si mostra e non si copia.
      */
     val binario: Boolean,
+    val compagne: IntArray,
 )
 
 /**
@@ -188,7 +189,7 @@ object Core {
         id: Int, nuova: Boolean, label: String, code: String, simbologia: Int,
         colore: String, disposable: Boolean, preferita: Boolean,
         note: String, scadenza: String, saldo: String, fotoFronte: String, fotoRetro: String,
-        binario: Boolean,
+        binario: Boolean, compagne: IntArray,
     )
 
     /**

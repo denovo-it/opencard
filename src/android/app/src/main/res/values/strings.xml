@@ -184,6 +184,10 @@
     <string name="csv_titolo">Cards from a CSV file</string>
     <string name="csv_avviso">The cards in the CSV are added to the ones you have, or take their place: in that case your current cards and their photos are removed.</string>
     <string name="csv_aggiungi">Add</string>
+    <string name="carte_compagne">Companion cards</string>
+    <string name="compagne_desc">Show linked cards below the main code</string>
+    <string name="compagne_seleziona">Select companions</string>
+    <string name="nessuna_compagna">No companion cards</string>
 
     <plurals name="carte_ricevute">
         <item quantity="one">One card received.</item>

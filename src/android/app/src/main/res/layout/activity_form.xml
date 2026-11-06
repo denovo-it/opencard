@@ -292,6 +292,24 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/compagne_bottone"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/compagne_seleziona"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/compagne_elenco"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/muted"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
             <com.google.android.material.checkbox.MaterialCheckBox
                 android:id="@+id/usa_e_getta"
                 android:layout_width="match_parent"

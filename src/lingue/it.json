@@ -195,5 +195,9 @@
   "csv_aggiungi": "Aggiungi",
   "nome_widget": "Carte con la stella",
   "descrizione_widget": "Le carte con la stella, da aprire con un tocco.",
-  "vuoto_widget": "Metti la stella a una carta per vederla qui."
+  "vuoto_widget": "Metti la stella a una carta per vederla qui.",
+  "carte_compagne": "Carte compagne",
+  "compagne_desc": "Mostra le carte collegate sotto il codice principale",
+  "compagne_seleziona": "Seleziona compagne",
+  "nessuna_compagna": "Nessuna carta compagna"
 }

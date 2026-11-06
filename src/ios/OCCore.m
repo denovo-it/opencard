@@ -179,6 +179,13 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     carta.fotoFronte = [NSString stringWithUTF8String:card->foto_fronte];
     carta.fotoRetro = [NSString stringWithUTF8String:card->foto_retro];
     carta.binario = card->binario != 0;
+    {
+        NSMutableArray<NSNumber *> *ids = [NSMutableArray arrayWithCapacity:card->n_compagne];
+        for (int i = 0; i < card->n_compagne; i++) {
+            [ids addObject:@(card->compagne[i])];
+        }
+        carta.compagne = ids;
+    }
     return carta;
 }
 
@@ -304,6 +311,7 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
   fotoFronte:(NSString *)fotoFronte
    fotoRetro:(NSString *)fotoRetro
      binario:(BOOL)binario
+    compagne:(NSArray<NSNumber *> *)compagne
       errore:(NSError **)errore
 {
     opencard_card carta;
@@ -328,6 +336,13 @@ static void OCLiberaPixel(void *info, const void *dati, size_t dimensione)
     carta.disposable = usaEGetta ? 1 : 0;
     carta.favorite = preferita ? 1 : 0;
     carta.binario = binario ? 1 : 0;
+    {
+        NSInteger nc = MIN((NSInteger)compagne.count, OPENCARD_COMPAGNE_MAX);
+        for (NSInteger i = 0; i < nc; i++) {
+            carta.compagne[i] = (int)compagne[i].integerValue;
+        }
+        carta.n_compagne = (int)nc;
+    }
 
     if (opencard_salva(&carta, nuova ? 1 : 0, &guasto) != OPENCARD_OK) {
         [self riporta:errore da:&guasto];

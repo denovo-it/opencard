@@ -168,6 +168,13 @@ static jobject carta_a_java(JNIEnv *env, jclass classe, jmethodID costruttore,
     foto_fronte = stringa_verso_java(env, card->foto_fronte);
     foto_retro = stringa_verso_java(env, card->foto_retro);
 
+    /* Le compagne: un array di int con gli id. */
+    jintArray compagne_arr = (*env)->NewIntArray(env, card->n_compagne);
+    if (compagne_arr != NULL && card->n_compagne > 0) {
+        (*env)->SetIntArrayRegion(env, compagne_arr, 0, card->n_compagne,
+                                  (const jint *)card->compagne);
+    }
+
     /* `coloreScelto` dice se il colore è stato deciso dall'utente: serve al
      * form, che altrimenti non saprebbe se mostrare la scelta o il predefinito. */
     oggetto = (*env)->NewObject(env, classe, costruttore,
@@ -177,7 +184,8 @@ static jobject carta_a_java(JNIEnv *env, jclass classe, jmethodID costruttore,
                                 (jboolean)(card->favorite ? JNI_TRUE : JNI_FALSE),
                                 (jint)card->simbologia,
                                 note, scadenza, saldo, foto_fronte, foto_retro,
-                                (jboolean)(card->binario ? JNI_TRUE : JNI_FALSE));
+                                (jboolean)(card->binario ? JNI_TRUE : JNI_FALSE),
+                                compagne_arr);
 
     (*env)->DeleteLocalRef(env, label);
     (*env)->DeleteLocalRef(env, code);
@@ -187,6 +195,7 @@ static jobject carta_a_java(JNIEnv *env, jclass classe, jmethodID costruttore,
     (*env)->DeleteLocalRef(env, saldo);
     (*env)->DeleteLocalRef(env, foto_fronte);
     (*env)->DeleteLocalRef(env, foto_retro);
+    if (compagne_arr != NULL) (*env)->DeleteLocalRef(env, compagne_arr);
     return oggetto;
 }
 
@@ -204,7 +213,7 @@ static jobjectArray lista_a_java(JNIEnv *env, const opencard_lista *lista)
                                       "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZI"
                                       "Ljava/lang/String;Ljava/lang/String;"
                                       "Ljava/lang/String;Ljava/lang/String;"
-                                      "Ljava/lang/String;Z)V");
+                                      "Ljava/lang/String;Z[I)V");
     if (costruttore == NULL) {
         return NULL;
     }
@@ -332,7 +341,8 @@ Java_srl_denovo_opencard_Core_salva(JNIEnv *env, jclass classe, jint id, jboolea
                                     jstring label, jstring code, jint simbologia,
                                     jstring color, jboolean disposable, jboolean preferita,
                                     jstring note, jstring scadenza, jstring saldo,
-                                    jstring fronte, jstring retro, jboolean binario)
+                                    jstring fronte, jstring retro, jboolean binario,
+                                    jintArray compagne)
 {
     opencard_card carta;
     opencard_errore errore;
@@ -354,6 +364,12 @@ Java_srl_denovo_opencard_Core_salva(JNIEnv *env, jclass classe, jint id, jboolea
     carta.disposable = disposable == JNI_TRUE;
     carta.favorite = preferita == JNI_TRUE;
     carta.binario = binario == JNI_TRUE;
+    if (compagne != NULL) {
+        jsize nc = (*env)->GetArrayLength(env, compagne);
+        if (nc > OPENCARD_COMPAGNE_MAX) nc = OPENCARD_COMPAGNE_MAX;
+        (*env)->GetIntArrayRegion(env, compagne, 0, nc, (jint *)carta.compagne);
+        carta.n_compagne = (int)nc;
+    }
     if (opencard_salva(&carta, nuova == JNI_TRUE, &errore) != OPENCARD_OK) {
         lancia(env, &errore);
     }

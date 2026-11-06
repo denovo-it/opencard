@@ -51,6 +51,8 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
 @property (nonatomic, assign) CGFloat rotazione;
 /// Lo spostamento verticale del codice fatto col dito.
 @property (nonatomic, assign) CGFloat traslazioneY;
+@property (nonatomic, strong) UIScrollView *compagneScorrevole;
+@property (nonatomic, strong) UIStackView *compagneRiga;
 @end
 
 @implementation OCDettaglioViewController
@@ -152,8 +154,26 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
     self.dettagli.numberOfLines = 0;
     self.dettagli.hidden = YES;
 
+    self.compagneRiga = [UIStackView new];
+    self.compagneRiga.axis = UILayoutConstraintAxisHorizontal;
+    self.compagneRiga.spacing = 8;
+    self.compagneRiga.translatesAutoresizingMaskIntoConstraints = NO;
+
+    self.compagneScorrevole = [UIScrollView new];
+    self.compagneScorrevole.showsHorizontalScrollIndicator = NO;
+    [self.compagneScorrevole addSubview:self.compagneRiga];
+    [NSLayoutConstraint activateConstraints:@[
+        [self.compagneRiga.topAnchor constraintEqualToAnchor:self.compagneScorrevole.topAnchor],
+        [self.compagneRiga.bottomAnchor constraintEqualToAnchor:self.compagneScorrevole.bottomAnchor],
+        [self.compagneRiga.leadingAnchor constraintEqualToAnchor:self.compagneScorrevole.leadingAnchor],
+        [self.compagneRiga.trailingAnchor constraintEqualToAnchor:self.compagneScorrevole.trailingAnchor],
+        [self.compagneRiga.heightAnchor constraintEqualToAnchor:self.compagneScorrevole.heightAnchor],
+        [self.compagneScorrevole.heightAnchor constraintEqualToConstant:90],
+    ]];
+    self.compagneScorrevole.hidden = YES;
+
     UIStackView *colonna = [[UIStackView alloc] initWithArrangedSubviews:@[
-        self.immagine, self.codice, self.dettagli, [self costruisciBloccoFoto],
+        self.immagine, self.codice, self.compagneScorrevole, self.dettagli, [self costruisciBloccoFoto],
     ]];
     colonna.axis = UILayoutConstraintAxisVertical;
     colonna.spacing = 12;
@@ -392,6 +412,7 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
     self.preferita = carta.preferita;
     [self disegnaStella];
     [self mostraDettagliDi:carta];
+    [self mostraCompagneDi:carta];
     [self mostraFotoDi:carta];
 
     UIImage *disegno = [OCCore immaginePerCodice:carta.codice
@@ -410,6 +431,79 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
                                      orientation:UIImageOrientationUp];
     self.immagine.image = aPasso6;
     self.altezzaCodice.constant = MAX(OCAltezzaMinimaCodice, aPasso6.size.height);
+}
+
+- (void)mostraCompagneDi:(OCCarta *)carta
+{
+    for (UIView *v in self.compagneRiga.arrangedSubviews) {
+        [v removeFromSuperview];
+    }
+
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"carte_compagne"]
+        || carta.compagne.count == 0) {
+        self.compagneScorrevole.hidden = YES;
+        return;
+    }
+
+    self.compagneScorrevole.hidden = NO;
+    __weak typeof(self) debole = self;
+
+    for (NSNumber *cid in carta.compagne) {
+        NSError *err = nil;
+        OCCarta *c = [OCCore cartaConId:cid.integerValue errore:&err];
+        if (c == nil) continue;
+
+        UIView *riquadro = [UIView new];
+        riquadro.backgroundColor = [OCTema coloreDaEsadecimale:c.colore];
+        riquadro.layer.cornerRadius = 8;
+        riquadro.clipsToBounds = YES;
+        [riquadro.widthAnchor constraintEqualToConstant:80].active = YES;
+
+        UIImageView *img = [UIImageView new];
+        img.contentMode = UIViewContentModeScaleAspectFit;
+        img.translatesAutoresizingMaskIntoConstraints = NO;
+
+        UIImage *disegno = [OCCore immaginePerCodice:c.codice simbologia:c.simbologia
+                                             binario:c.binario];
+        if (disegno != nil) img.image = disegno;
+
+        UILabel *etichetta = [UILabel new];
+        etichetta.text = c.etichetta;
+        etichetta.font = [UIFont systemFontOfSize:10];
+        etichetta.textColor = [UIColor whiteColor];
+        etichetta.textAlignment = NSTextAlignmentCenter;
+        etichetta.numberOfLines = 1;
+        etichetta.translatesAutoresizingMaskIntoConstraints = NO;
+
+        [riquadro addSubview:img];
+        [riquadro addSubview:etichetta];
+        [NSLayoutConstraint activateConstraints:@[
+            [img.topAnchor constraintEqualToAnchor:riquadro.topAnchor constant:6],
+            [img.leadingAnchor constraintEqualToAnchor:riquadro.leadingAnchor constant:6],
+            [img.trailingAnchor constraintEqualToAnchor:riquadro.trailingAnchor constant:-6],
+            [img.heightAnchor constraintEqualToConstant:48],
+            [etichetta.topAnchor constraintEqualToAnchor:img.bottomAnchor constant:4],
+            [etichetta.leadingAnchor constraintEqualToAnchor:riquadro.leadingAnchor constant:4],
+            [etichetta.trailingAnchor constraintEqualToAnchor:riquadro.trailingAnchor constant:-4],
+            [etichetta.bottomAnchor constraintEqualToAnchor:riquadro.bottomAnchor constant:-6],
+        ]];
+
+        NSInteger idCompagna = c.identificativo;
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc]
+            initWithTarget:debole action:@selector(apriCompagna:)];
+        riquadro.tag = idCompagna;
+        riquadro.userInteractionEnabled = YES;
+        [riquadro addGestureRecognizer:tap];
+
+        [self.compagneRiga addArrangedSubview:riquadro];
+    }
+}
+
+- (void)apriCompagna:(UITapGestureRecognizer *)gesto
+{
+    NSInteger cid = gesto.view.tag;
+    OCDettaglioViewController *vc = [[OCDettaglioViewController alloc] initConId:cid];
+    [self.navigationController pushViewController:vc animated:YES];
 }
 
 /// Saldo, scadenza e nota, in quest'ordine e solo quelli compilati. Il riquadro

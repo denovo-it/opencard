@@ -79,6 +79,9 @@ class FormActivity : AppCompatActivity() {
     private var simbologiaNota = Simbologie.AUTO
     /** Vero se nel campo c'è il base64 di un codice binario: vedi [Carta.binario]. */
     private var binario = false
+    private var compagneScelte = intArrayOf()
+    private lateinit var compagneBottone: Button
+    private lateinit var compagneElenco: TextView
     private lateinit var nota: EditText
     private lateinit var scadenza: EditText
     /** La scadenza come la vuole il core, "AAAA-MM-GG" o vuota: il campo mostra
@@ -221,6 +224,13 @@ class FormActivity : AppCompatActivity() {
         stella = findViewById(R.id.preferita)
         tavolozza = findViewById(R.id.tavolozza)
         errore = findViewById(R.id.errore)
+        compagneBottone = findViewById(R.id.compagne_bottone)
+        compagneElenco = findViewById(R.id.compagne_elenco)
+        if (Impostazioni.carteCompagne(this)) {
+            compagneBottone.visibility = View.VISIBLE
+            compagneElenco.visibility = View.VISIBLE
+            compagneBottone.setOnClickListener { scegliCompagne() }
+        }
 
         // L'avviso sul tipo di codice segue anche il codice: cambiandolo a mano
         // una scelta che prima non ci stava puo' andare bene, e viceversa.
@@ -295,6 +305,8 @@ class FormActivity : AppCompatActivity() {
                 casella.isChecked = carta.disposable
                 stella.isChecked = carta.preferita
                 usaEGetta = carta.disposable
+                compagneScelte = carta.compagne
+                aggiornaElencoCompagne()
                 coloreProposto = carta.colore
                 if (carta.coloreScelto) coloreScelto = carta.colore
                 costruisciTavolozza()
@@ -780,7 +792,7 @@ class FormActivity : AppCompatActivity() {
                 Core.salva(
                     quale, nuova, etichetta, valore, scelta, colore, disposable, preferita,
                     nota.text.toString().trim(), quandoScade, saldo.text.toString().trim(),
-                    nomiFoto[FRONTE], nomiFoto[RETRO], binario,
+                    nomiFoto[FRONTE], nomiFoto[RETRO], binario, compagneScelte,
                 )
             },
             {
@@ -792,6 +804,49 @@ class FormActivity : AppCompatActivity() {
             },
             { avvisa(it) },
         )
+    }
+
+    private fun scegliCompagne() {
+        Dati.chiedi<Array<Carta>>(
+            { Core.getAll() },
+            { tutte ->
+                val altre = tutte.filter { it.id != id }
+                if (altre.isEmpty()) return@chiedi
+                val nomi = altre.map { it.label }.toTypedArray()
+                val scelte = BooleanArray(altre.size) { i -> compagneScelte.contains(altre[i].id) }
+
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.compagne_seleziona)
+                    .setMultiChoiceItems(nomi, scelte) { _, quale, acceso ->
+                        scelte[quale] = acceso
+                    }
+                    .setPositiveButton(android.R.string.ok) { _, _ ->
+                        compagneScelte = altre.indices.filter { scelte[it] }
+                            .map { altre[it].id }.toIntArray()
+                        aggiornaElencoCompagne()
+                    }
+                    .setNegativeButton(R.string.annulla, null)
+                    .show()
+            },
+        )
+    }
+
+    private fun aggiornaElencoCompagne() {
+        if (!Impostazioni.carteCompagne(this)) return
+        if (compagneScelte.isEmpty()) {
+            compagneElenco.text = getString(R.string.nessuna_compagna)
+        } else {
+            Dati.chiedi<List<String>>(
+                {
+                    val nomi = mutableListOf<String>()
+                    for (cid in compagneScelte) {
+                        try { nomi += Core.get(cid).label } catch (_: OpenCardException) { }
+                    }
+                    nomi
+                },
+                { nomi -> compagneElenco.text = nomi.joinToString(", ") },
+            )
+        }
     }
 
     /**

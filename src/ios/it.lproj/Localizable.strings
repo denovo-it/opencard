@@ -182,3 +182,7 @@
 "csv_titolo" = "Carte da un file CSV";
 "csv_avviso" = "Le carte del CSV si aggiungono a quelle che hai, oppure prendono il loro posto: in quel caso spariscono le carte di adesso e le loro foto.";
 "csv_aggiungi" = "Aggiungi";
+"carte_compagne" = "Carte compagne";
+"compagne_desc" = "Mostra le carte collegate sotto il codice principale";
+"compagne_seleziona" = "Seleziona compagne";
+"nessuna_compagna" = "Nessuna carta compagna";

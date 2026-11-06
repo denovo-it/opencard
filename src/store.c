@@ -755,6 +755,29 @@ static void normalizza(opencard_card *carta)
             carta->binario = 0;
         }
     }
+    /* Compagne: togliere duplicati, autoreferenze e contare. */
+    {
+        int pulite[OPENCARD_COMPAGNE_MAX];
+        int np = 0;
+        int k;
+
+        for (k = 0; k < carta->n_compagne && k < OPENCARD_COMPAGNE_MAX; k++) {
+            int cid = carta->compagne[k];
+            int dup = 0;
+            int j;
+
+            if (cid < 1 || cid == carta->id) continue;
+            for (j = 0; j < np; j++) {
+                if (pulite[j] == cid) { dup = 1; break; }
+            }
+            if (!dup) pulite[np++] = cid;
+        }
+        memcpy(carta->compagne, pulite, (size_t)np * sizeof(int));
+        carta->n_compagne = np;
+        for (k = np; k < OPENCARD_COMPAGNE_MAX; k++) {
+            carta->compagne[k] = 0;
+        }
+    }
 }
 
 /* Una carta pronta da scrivere con l'id `id`: i testi copiati con i tagli
@@ -780,6 +803,8 @@ static void prepara(opencard_card *dest, const opencard_card *sorgente, int id)
     dest->disposable = sorgente->disposable;
     dest->favorite = sorgente->favorite;
     dest->binario = sorgente->binario;
+    memcpy(dest->compagne, sorgente->compagne, sizeof(dest->compagne));
+    dest->n_compagne = sorgente->n_compagne;
     normalizza(dest);
 
     opencard_color_for_id(id, colore_id, sizeof(colore_id));
@@ -805,6 +830,7 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
     const cJSON *saldo = cJSON_GetObjectItemCaseSensitive(nodo, "balance");
     const cJSON *foto_fronte = cJSON_GetObjectItemCaseSensitive(nodo, "photo_front");
     const cJSON *foto_retro = cJSON_GetObjectItemCaseSensitive(nodo, "photo_back");
+    const cJSON *compagne = cJSON_GetObjectItemCaseSensitive(nodo, "companions");
 
     memset(out, 0, sizeof(*out));
 
@@ -915,6 +941,18 @@ static opencard_esito carta_da_json(const cJSON *nodo, int posizione, int schema
         copia(out->foto_retro, sizeof(out->foto_retro), foto_retro->valuestring);
     } else if (foto_retro != NULL && !cJSON_IsNull(foto_retro)) {
         return imposta_codice(errore, OPENCARD_ERR_CARTA);
+    }
+    if (cJSON_IsArray(compagne)) {
+        const cJSON *elem;
+        int nc = 0;
+
+        cJSON_ArrayForEach(elem, compagne) {
+            if (nc >= OPENCARD_COMPAGNE_MAX) break;
+            if (cJSON_IsNumber(elem)) {
+                out->compagne[nc++] = intero_da(elem->valuedouble);
+            }
+        }
+        out->n_compagne = nc;
     }
     /* Il colore resta anche se è quello dell'id: leggere non cambia la carta,
      * e dopo una rinumerazione l'id sarebbe un altro. */
@@ -1096,6 +1134,20 @@ void *opencard_carte_a_json(const opencard_lista *lista, const char *esportato_i
         if (card->foto_retro[0] != '\0' &&
             cJSON_AddStringToObject(nodo, "photo_back", card->foto_retro) == NULL) {
             goto fallito;
+        }
+        if (card->n_compagne > 0) {
+            cJSON *arr = cJSON_AddArrayToObject(nodo, "companions");
+            int ci;
+
+            if (arr == NULL) goto fallito;
+            for (ci = 0; ci < card->n_compagne; ci++) {
+                cJSON *num = cJSON_CreateNumber(card->compagne[ci]);
+
+                if (num == NULL || !cJSON_AddItemToArray(arr, num)) {
+                    if (num != NULL) cJSON_Delete(num);
+                    goto fallito;
+                }
+            }
         }
     }
     return radice;
@@ -1542,6 +1594,40 @@ opencard_esito opencard_salva(const opencard_card *carta, int nuova,
         opencard_lista_free(&tutte);
         return imposta_codice(errore, OPENCARD_ERR_MEMORIA);
     }
+
+    /* Sincronizza le compagne in modo bidirezionale: se A elenca B, B deve
+     * elencare A. Toglie dalla lista delle altre carte i riferimenti che la
+     * carta salvata non ha più. */
+    {
+        size_t si;
+        int mio_id = pronta.id;
+
+        for (si = 0; si < tutte.n; si++) {
+            opencard_card *altra = &tutte.carte[si];
+            int mi_ha = 0, la_ho = 0;
+            int ai, aj;
+
+            if (altra->id == mio_id) continue;
+
+            for (ai = 0; ai < altra->n_compagne; ai++) {
+                if (altra->compagne[ai] == mio_id) { mi_ha = 1; break; }
+            }
+            for (ai = 0; ai < pronta.n_compagne; ai++) {
+                if (pronta.compagne[ai] == altra->id) { la_ho = 1; break; }
+            }
+
+            if (la_ho && !mi_ha && altra->n_compagne < OPENCARD_COMPAGNE_MAX) {
+                altra->compagne[altra->n_compagne++] = mio_id;
+            } else if (!la_ho && mi_ha) {
+                for (aj = ai; aj < altra->n_compagne - 1; aj++) {
+                    altra->compagne[aj] = altra->compagne[aj + 1];
+                }
+                altra->n_compagne--;
+                altra->compagne[altra->n_compagne] = 0;
+            }
+        }
+    }
+
     esito = salva(&tutte, errore);
     /* Una foto tolta o sostituita col nome cambiato se ne va qui, dopo la
      * scrittura riuscita: se la carta non si salva, le foto restano. Prima
@@ -1565,6 +1651,18 @@ opencard_esito opencard_delete(int id, opencard_errore *errore)
     }
     for (i = 0; i < tutte.n; i++) {
         if (tutte.carte[i].id != id) {
+            /* Togliere l'id cancellato dalle compagne delle altre carte. */
+            int ci, co = 0;
+
+            for (ci = 0; ci < tutte.carte[i].n_compagne; ci++) {
+                if (tutte.carte[i].compagne[ci] != id) {
+                    tutte.carte[i].compagne[co++] = tutte.carte[i].compagne[ci];
+                }
+            }
+            for (ci = co; ci < OPENCARD_COMPAGNE_MAX; ci++) {
+                tutte.carte[i].compagne[ci] = 0;
+            }
+            tutte.carte[i].n_compagne = co;
             tutte.carte[scritte++] = tutte.carte[i];
         }
     }

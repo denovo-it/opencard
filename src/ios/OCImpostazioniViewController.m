@@ -58,6 +58,32 @@
     self.spiegazione.numberOfLines = 0;
     [self mostraSpiegazione];
 
+    UIView *lineaCompagne = [UIView new];
+    lineaCompagne.backgroundColor = [UIColor separatorColor];
+    [lineaCompagne.heightAnchor constraintEqualToConstant:1].active = YES;
+
+    UILabel *voceCompagne = [UILabel new];
+    voceCompagne.text = NSLocalizedString(@"carte_compagne", nil);
+    voceCompagne.font = [UIFont systemFontOfSize:16];
+    voceCompagne.numberOfLines = 0;
+
+    UISwitch *intCompagne = [UISwitch new];
+    intCompagne.onTintColor = [OCTema marca];
+    intCompagne.on = [[NSUserDefaults standardUserDefaults] boolForKey:@"carte_compagne"];
+    [intCompagne addTarget:self action:@selector(cambiaCompagne:)
+          forControlEvents:UIControlEventValueChanged];
+
+    UIStackView *rigaCompagne = [[UIStackView alloc] initWithArrangedSubviews:@[voceCompagne, intCompagne]];
+    rigaCompagne.axis = UILayoutConstraintAxisHorizontal;
+    rigaCompagne.spacing = 12;
+    rigaCompagne.alignment = UIStackViewAlignmentCenter;
+
+    UILabel *spiegaCompagne = [UILabel new];
+    spiegaCompagne.text = NSLocalizedString(@"compagne_desc", nil);
+    spiegaCompagne.font = [UIFont systemFontOfSize:13];
+    spiegaCompagne.textColor = [OCTema attenuato];
+    spiegaCompagne.numberOfLines = 0;
+
     UIView *linea = [UIView new];
     linea.backgroundColor = [UIColor separatorColor];
     [linea.heightAnchor constraintEqualToConstant:1].active = YES;
@@ -97,13 +123,17 @@
     cosaFa.numberOfLines = 0;
 
     UIStackView *colonna = [[UIStackView alloc] initWithArrangedSubviews:@[
-        titoloBackup, riga, self.spiegazione, linea, self.lingua, self.linguaAdesso,
+        titoloBackup, riga, self.spiegazione, lineaCompagne,
+        rigaCompagne, spiegaCompagne, linea, self.lingua, self.linguaAdesso,
         linea2, azzera, cosaFa,
     ]];
     colonna.axis = UILayoutConstraintAxisVertical;
     colonna.spacing = 12;
     colonna.translatesAutoresizingMaskIntoConstraints = NO;
     [colonna setCustomSpacing:24 afterView:self.spiegazione];
+    [colonna setCustomSpacing:24 afterView:lineaCompagne];
+    [colonna setCustomSpacing:4 afterView:rigaCompagne];
+    [colonna setCustomSpacing:24 afterView:spiegaCompagne];
     [colonna setCustomSpacing:24 afterView:linea];
     [colonna setCustomSpacing:4 afterView:self.lingua];
     [colonna setCustomSpacing:24 afterView:self.linguaAdesso];
@@ -139,6 +169,11 @@
 {
     [OCCore metticiLeCarteNelBackup:self.interruttore.isOn];
     [self mostraSpiegazione];
+}
+
+- (void)cambiaCompagne:(UISwitch *)interruttore
+{
+    [[NSUserDefaults standardUserDefaults] setBool:interruttore.isOn forKey:@"carte_compagne"];
 }
 
 #pragma mark - Lingua

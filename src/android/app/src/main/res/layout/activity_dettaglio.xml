@@ -84,6 +84,21 @@
             android:textColor="@color/ink"
             android:textSize="20sp" />
 
+        <HorizontalScrollView
+            android:id="@+id/compagne_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/compagne_lista"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
         <!-- I campi della 1.0.3. Chi non li compila non se li vede: restano
              invisibili finché non hanno qualcosa dentro, così la carta di chi
              usa l'app come prima non cambia di una riga. -->

@@ -28,7 +28,7 @@ extern "C" {
  *
  * Un file più vecchio si legge; uno più nuovo no, perché riscrivendolo si
  * perderebbe quello che non si conosce. */
-#define OPENCARD_SCHEMA_VERSION 3
+#define OPENCARD_SCHEMA_VERSION 4
 
 /* Limiti generosi rispetto all'uso reale: una tessera fedeltà ha un nome
  * corto e un codice di poche decine di caratteri. Sono fissi per non spargere
@@ -42,6 +42,7 @@ extern "C" {
 #define OPENCARD_FOTO_MAX  64    /* nome del file, non il percorso: le foto
                                   * stanno in una cartella dentro i dati
                                   * dell'app, e nel JSON viaggia solo il nome */
+#define OPENCARD_COMPAGNE_MAX 10 /* quante carte compagne al massimo */
 
 /* Le simbologie che l'app sa disegnare. L'ordine non conta, i numeri sì: il
  * passaggio a QR ne scrive uno per carta, quindi vanno aggiunte in fondo e mai
@@ -145,6 +146,8 @@ typedef struct {
      * conosce disegna il base64 come testo, un codice sbagliato ma nessuna
      * carta persa. Il core lo spegne se `code` non è base64 valido. */
     int binario;
+    int compagne[OPENCARD_COMPAGNE_MAX];
+    int n_compagne;
 } opencard_card;
 
 typedef struct {

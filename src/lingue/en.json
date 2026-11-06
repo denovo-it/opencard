@@ -195,5 +195,9 @@
   "csv_aggiungi": "Add",
   "nome_widget": "Starred cards",
   "descrizione_widget": "Your starred cards, one tap away.",
-  "vuoto_widget": "Star a card to see it here."
+  "vuoto_widget": "Star a card to see it here.",
+  "carte_compagne": "Companion cards",
+  "compagne_desc": "Show linked cards below the main code",
+  "compagne_seleziona": "Select companions",
+  "nessuna_compagna": "No companion cards"
 }

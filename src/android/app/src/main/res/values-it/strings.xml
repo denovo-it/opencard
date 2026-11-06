@@ -184,6 +184,10 @@
     <string name="csv_titolo">Carte da un file CSV</string>
     <string name="csv_avviso">Le carte del CSV si aggiungono a quelle che hai, oppure prendono il loro posto: in quel caso spariscono le carte di adesso e le loro foto.</string>
     <string name="csv_aggiungi">Aggiungi</string>
+    <string name="carte_compagne">Carte compagne</string>
+    <string name="compagne_desc">Mostra le carte collegate sotto il codice principale</string>
+    <string name="compagne_seleziona">Seleziona compagne</string>
+    <string name="nessuna_compagna">Nessuna carta compagna</string>
 
     <plurals name="carte_ricevute">
         <item quantity="one">Ricevuta una carta.</item>

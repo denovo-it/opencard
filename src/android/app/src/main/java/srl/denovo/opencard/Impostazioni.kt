@@ -19,6 +19,7 @@ object Impostazioni {
     const val FILE = "impostazioni"
     private const val BACKUP_CLOUD = "backup_cloud"
     private const val DUE_COLONNE = "due_colonne"
+    private const val CARTE_COMPAGNE = "carte_compagne"
 
     private fun dove(contesto: Context) =
         contesto.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -43,5 +44,12 @@ object Impostazioni {
 
     fun cambiaDueColonne(contesto: Context, accese: Boolean) {
         dove(contesto).edit().putBoolean(DUE_COLONNE, accese).apply()
+    }
+
+    fun carteCompagne(contesto: Context): Boolean =
+        dove(contesto).getBoolean(CARTE_COMPAGNE, false)
+
+    fun cambiaCarteCompagne(contesto: Context, accese: Boolean) {
+        dove(contesto).edit().putBoolean(CARTE_COMPAGNE, accese).apply()
     }
 }

@@ -65,6 +65,30 @@
                 android:layout_marginBottom="20dp"
                 android:background="?android:attr/listDivider" />
 
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/carte_compagne"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/carte_compagne"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+            <TextView
+                android:id="@+id/compagne_spiega"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="4dp"
+                android:text="@string/compagne_desc"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?android:attr/textColorSecondary" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="20dp"
+                android:background="?android:attr/listDivider" />
+
             <!-- Riga che si tocca: il valore attuale sta sotto, come nelle
                  impostazioni di sistema. -->
             <LinearLayout

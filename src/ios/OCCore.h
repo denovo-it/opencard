@@ -40,6 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// Codice binario, come i biglietti Trenitalia: `codice` è il base64 dei byte,
 /// che si disegna ma non si mostra e non si copia.
 @property (nonatomic, assign) BOOL binario;
+@property (nonatomic, copy) NSArray<NSNumber *> *compagne;
 @end
 
 /// Nessuna scelta dell'utente: la simbologia la decide l'app.
@@ -100,6 +101,7 @@ static const NSInteger OCSimbologiaAuto = -1;
   fotoFronte:(NSString *)fotoFronte
    fotoRetro:(NSString *)fotoRetro
      binario:(BOOL)binario
+    compagne:(NSArray<NSNumber *> *)compagne
       errore:(NSError **)errore;
 
 + (BOOL)elimina:(NSInteger)identificativo errore:(NSError **)errore;

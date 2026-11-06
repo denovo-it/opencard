@@ -43,6 +43,12 @@ class ImpostazioniActivity : AppCompatActivity() {
             spiega.setText(testo(acceso))
         }
 
+        val compagne = findViewById<MaterialSwitch>(R.id.carte_compagne)
+        compagne.isChecked = Impostazioni.carteCompagne(this)
+        compagne.setOnCheckedChangeListener { _, acceso ->
+            Impostazioni.cambiaCarteCompagne(this, acceso)
+        }
+
         findViewById<View>(R.id.riga_lingua).setOnClickListener { scegliLingua() }
         mostraLingua()
 

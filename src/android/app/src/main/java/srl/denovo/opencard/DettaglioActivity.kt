@@ -24,6 +24,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -130,9 +131,83 @@ class DettaglioActivity : AppCompatActivity() {
                 mostraDettagli(trovata)
                 tinta(trovata)
                 disegna(trovata)
+                mostraCompagne(trovata)
             },
             { messaggio ->
                 Snackbar.make(findViewById(R.id.radice), messaggio, Snackbar.LENGTH_LONG).show()
+            },
+        )
+    }
+
+    private fun mostraCompagne(carta: Carta) {
+        val scroll = findViewById<View>(R.id.compagne_scroll)
+        val lista = findViewById<LinearLayout>(R.id.compagne_lista)
+
+        if (!Impostazioni.carteCompagne(this) || carta.compagne.isEmpty()) {
+            scroll.visibility = View.GONE
+            lista.removeAllViews()
+            return
+        }
+
+        Dati.chiedi<List<Carta>>(
+            {
+                val risultato = mutableListOf<Carta>()
+                for (cid in carta.compagne) {
+                    try { risultato += Core.get(cid) } catch (_: OpenCardException) { }
+                }
+                risultato
+            },
+            { compagne ->
+                lista.removeAllViews()
+                if (compagne.isEmpty()) {
+                    scroll.visibility = View.GONE
+                    return@chiedi
+                }
+                scroll.visibility = View.VISIBLE
+                val densita = resources.displayMetrics.density
+                val lato = (80 * densita).toInt()
+                val spazio = (8 * densita).toInt()
+                val contesto = this
+
+                for (c in compagne) {
+                    val riquadro = LinearLayout(contesto).apply {
+                        orientation = LinearLayout.VERTICAL
+                        val parametri = LinearLayout.LayoutParams(lato, LinearLayout.LayoutParams.WRAP_CONTENT)
+                        parametri.setMargins(0, 0, spazio, 0)
+                        layoutParams = parametri
+                        setBackgroundColor(coloreCarta(c.colore))
+                        setPadding(spazio, spazio, spazio, spazio)
+                        isClickable = true
+                        isFocusable = true
+                    }
+
+                    val img = ImageView(contesto).apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT, (48 * densita).toInt()
+                        )
+                        scaleType = ImageView.ScaleType.FIT_CENTER
+                        adjustViewBounds = true
+                    }
+
+                    val etichetta = TextView(contesto).apply {
+                        text = c.label
+                        maxLines = 1
+                        textSize = 10f
+                        setTextColor(coloreSopraCarta(c.colore))
+                        textAlignment = View.TEXT_ALIGNMENT_CENTER
+                    }
+
+                    riquadro.addView(img)
+                    riquadro.addView(etichetta)
+                    val idCompagna = c.id
+                    riquadro.setOnClickListener { startActivity(DettaglioActivity.intent(contesto, idCompagna)) }
+                    lista.addView(riquadro)
+
+                    Dati.chiedi(
+                        { Core.renderCodeSimbologia(c.code, c.simbologia, c.binario) },
+                        { immagine -> img.setImageBitmap(immagine.aBitmap()) },
+                    )
+                }
             },
         )
     }

@@ -88,6 +88,9 @@ static const NSUInteger OCLimiteCodice = 500;
 @property (nonatomic, strong) UIScrollView *scorrevole;
 @property (nonatomic, strong) UILabel *errore;
 @property (nonatomic, strong) UIButton *elimina;
+@property (nonatomic, copy) NSArray<NSNumber *> *compagneScelte;
+@property (nonatomic, strong) UIButton *compagneBottone;
+@property (nonatomic, strong) UILabel *compagneElenco;
 @end
 
 @implementation OCFormViewController
@@ -98,6 +101,7 @@ static const NSUInteger OCLimiteCodice = 500;
     if (self != nil) {
         _identificativo = 0;
         _usaEGetta = usaEGetta;
+        _compagneScelte = @[];
         _coloreProposto = [OCCore colorePerId:[OCCore prossimoId]];
         // Zero sarebbe Code 128, che qui vorrebbe dire «lo so» quando non lo
         // sappiamo ancora.
@@ -372,6 +376,18 @@ static const NSUInteger OCLimiteCodice = 500;
     [self.elimina addTarget:self action:@selector(confermaEliminazione)
            forControlEvents:UIControlEventTouchUpInside];
 
+    self.compagneBottone = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.compagneBottone setTitle:NSLocalizedString(@"compagne_seleziona", nil) forState:UIControlStateNormal];
+    [self.compagneBottone addTarget:self action:@selector(scegliCompagne)
+                   forControlEvents:UIControlEventTouchUpInside];
+    self.compagneBottone.hidden = ![[NSUserDefaults standardUserDefaults] boolForKey:@"carte_compagne"];
+    self.compagneElenco = [UILabel new];
+    self.compagneElenco.font = [UIFont preferredFontForTextStyle:UIFontTextStyleCaption1];
+    self.compagneElenco.textColor = [UIColor secondaryLabelColor];
+    self.compagneElenco.numberOfLines = 0;
+    self.compagneElenco.text = NSLocalizedString(@"nessuna_compagna", nil);
+    self.compagneElenco.hidden = self.compagneBottone.hidden;
+
     UIStackView *colonna = [[UIStackView alloc] initWithArrangedSubviews:@[
         // L'errore sta in cima e non in fondo: Salva è nella barra, sempre
         // sotto gli occhi, mentre il modulo può essere scorso fin dove si vuole,
@@ -382,6 +398,7 @@ static const NSUInteger OCLimiteCodice = 500;
         [self titoletto:NSLocalizedString(@"colore", nil)], scorrevoleColori,
         [self titoletto:NSLocalizedString(@"nota", nil)], self.note,
         rigaScadenza, self.saldo, rigaFoto,
+        self.compagneBottone, self.compagneElenco,
         rigaUsaEGetta, spiegazione, rigaStella, self.elimina,
     ]];
     colonna.axis = UILayoutConstraintAxisVertical;
@@ -865,7 +882,65 @@ static const NSUInteger OCLimiteCodice = 500;
     if (carta.coloreScelto) {
         self.coloreScelto = carta.colore;
     }
+    self.compagneScelte = carta.compagne ?: @[];
+    [self aggiornaElencoCompagne];
     [self aggiornaTavolozza];
+}
+
+- (void)scegliCompagne
+{
+    NSError *errore = nil;
+    NSArray<OCCarta *> *tutte = [OCCore tutteLeCarte:&errore];
+    if (tutte == nil) return;
+
+    NSMutableArray<OCCarta *> *altre = [NSMutableArray array];
+    for (OCCarta *c in tutte) {
+        if (c.identificativo != self.identificativo) [altre addObject:c];
+    }
+    if (altre.count == 0) return;
+
+    UIAlertController *foglio = [UIAlertController alertControllerWithTitle:
+        NSLocalizedString(@"compagne_seleziona", nil)
+        message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+
+    for (OCCarta *c in altre) {
+        BOOL selezionata = [self.compagneScelte containsObject:@(c.identificativo)];
+        NSString *titolo = selezionata ? [NSString stringWithFormat:@"\u2713 %@", c.etichetta] : c.etichetta;
+        [foglio addAction:[UIAlertAction actionWithTitle:titolo style:UIAlertActionStyleDefault
+            handler:^(UIAlertAction *azione) {
+                NSMutableArray *nuove = [self.compagneScelte mutableCopy];
+                if (selezionata) {
+                    [nuove removeObject:@(c.identificativo)];
+                } else if (nuove.count < OPENCARD_COMPAGNE_MAX) {
+                    [nuove addObject:@(c.identificativo)];
+                }
+                self.compagneScelte = nuove;
+                [self aggiornaElencoCompagne];
+                [self scegliCompagne];
+            }]];
+    }
+    [foglio addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"annulla", nil)
+                                               style:UIAlertActionStyleCancel handler:nil]];
+    if (foglio.popoverPresentationController != nil) {
+        foglio.popoverPresentationController.sourceView = self.compagneBottone;
+    }
+    [self presentViewController:foglio animated:YES completion:nil];
+}
+
+- (void)aggiornaElencoCompagne
+{
+    if (self.compagneBottone.hidden) return;
+    if (self.compagneScelte.count == 0) {
+        self.compagneElenco.text = NSLocalizedString(@"nessuna_compagna", nil);
+        return;
+    }
+    NSMutableArray<NSString *> *nomi = [NSMutableArray array];
+    for (NSNumber *cid in self.compagneScelte) {
+        NSError *err = nil;
+        OCCarta *c = [OCCore cartaConId:cid.integerValue errore:&err];
+        if (c != nil) [nomi addObject:c.etichetta];
+    }
+    self.compagneElenco.text = [nomi componentsJoinedByString:@", "];
 }
 
 - (void)salva
@@ -944,6 +1019,7 @@ static const NSUInteger OCLimiteCodice = 500;
                fotoFronte:fronte
                 fotoRetro:retro
                   binario:self.binario
+                 compagne:self.compagneScelte ?: @[]
                    errore:&errore]) {
         [self mostraErrore:errore.localizedDescription];
         return;
