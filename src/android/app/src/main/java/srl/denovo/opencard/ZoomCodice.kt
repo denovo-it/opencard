@@ -12,16 +12,19 @@ import android.view.View
 import android.widget.ImageView
 
 /**
- * Il pinch sull'immagine del codice: due dita la allargano o la stringono,
- * fra un minimo e la larghezza della colonna. L'altezza segue da sola, con
- * `adjustViewBounds`. La misura non si ricorda: alla prossima apertura il
- * codice torna a quella naturale.
+ * Gesti sull'immagine del codice alla cassa: pinch per il formato, un dito per
+ * spostarlo in verticale, doppio tocco per ruotarlo di 90 gradi, tocco singolo
+ * per copiare il numero.
  *
- * L'immagine sta dentro una NestedScrollView: appena c'è il secondo dito si
- * chiede al genitore di non intercettare, se no lo scorrimento si mangia il
- * gesto. Con un dito solo lo scorrimento resta suo.
+ * L'immagine sta dentro una NestedScrollView. Appena il dito tocca l'immagine
+ * si chiede al genitore di non intercettare, cosi' lo scorrimento della pagina
+ * non ruba il gesto. Lo scorrimento resta disponibile toccando fuori dal codice.
  *
- * Un tocco solo, senza pinch, arriva all'immagine come un clic normale.
+ * Al doppio tocco l'immagine ruota di 90 gradi in senso orario, con
+ * un'animazione breve. Il bottone nella barra fa la stessa cosa.
+ *
+ * Niente si ricorda fra un'apertura e l'altra: [azzera] riporta tutto come
+ * all'inizio.
  */
 class ZoomCodice(
     private val vista: ImageView,
@@ -31,6 +34,7 @@ class ZoomCodice(
 
     private val massimo = maxOf(massimo, minimo)
     private var larghezza = 0
+    private var rotazione = 0f
 
     private val rilevatore = ScaleGestureDetector(
         vista.context,
@@ -45,24 +49,50 @@ class ZoomCodice(
     private val tocco = GestureDetector(
         vista.context,
         object : GestureDetector.SimpleOnGestureListener() {
-            override fun onSingleTapUp(evento: MotionEvent): Boolean = vista.performClick()
+            override fun onSingleTapConfirmed(evento: MotionEvent): Boolean =
+                vista.performClick()
+
+            override fun onDoubleTap(evento: MotionEvent): Boolean {
+                ruota()
+                return true
+            }
+
+            override fun onScroll(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                dx: Float,
+                dy: Float,
+            ): Boolean {
+                vista.translationY -= dy
+                return true
+            }
         },
     )
 
-    /** La larghezza in pixel, portata dentro i limiti. */
     fun imposta(nuova: Int) {
         larghezza = nuova.coerceIn(minimo, massimo)
         vista.layoutParams = vista.layoutParams.apply { width = larghezza }
     }
 
-    // Il performClick lo fa il rilevatore del tocco, solo quando è un tocco.
+    fun ruota() {
+        rotazione = (rotazione + 90f) % 360f
+        vista.animate().rotation(rotazione).setDuration(200).start()
+    }
+
+    fun azzera() {
+        rotazione = 0f
+        vista.rotation = 0f
+        vista.translationY = 0f
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouch(v: View, evento: MotionEvent): Boolean {
-        if (evento.actionMasked == MotionEvent.ACTION_POINTER_DOWN) {
-            v.parent.requestDisallowInterceptTouchEvent(true)
+        when (evento.actionMasked) {
+            MotionEvent.ACTION_DOWN,
+            MotionEvent.ACTION_POINTER_DOWN ->
+                v.parent.requestDisallowInterceptTouchEvent(true)
         }
         rilevatore.onTouchEvent(evento)
-        // Il secondo dito annulla il tocco: un pinch non copia niente.
         tocco.onTouchEvent(evento)
         return true
     }

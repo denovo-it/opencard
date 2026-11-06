@@ -9,6 +9,11 @@
         android:title="@string/preferita"
         app:showAsAction="always" />
     <item
+        android:id="@+id/ruota"
+        android:icon="@drawable/ic_ruota"
+        android:title="@string/ruota_codice"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/modifica"
         android:title="@string/modifica"
         app:showAsAction="ifRoom" />

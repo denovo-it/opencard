@@ -56,6 +56,12 @@ class DettaglioActivity : AppCompatActivity() {
     /** Testo e icone della barra: bianchi, o scuri se la carta è chiara. */
     private var sopraBarra = Color.WHITE
 
+    /** Il gestore dei gesti sul codice, per ruotarlo dal bottone e azzerarlo all'uscita. */
+    private var zoom: ZoomCodice? = null
+
+    /** La voce della barra per la rotazione: si tinge col colore della carta. */
+    private var voceRuota: MenuItem? = null
+
     /**
      * La modifica torna qui, e se la carta è stata cancellata da lì questa
      * schermata non ha più niente da mostrare: si chiude e si torna all'elenco.
@@ -95,6 +101,11 @@ class DettaglioActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         carica()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        zoom?.azzera()
     }
 
     private fun alMassimoLaLuminosita() {
@@ -293,6 +304,9 @@ class DettaglioActivity : AppCompatActivity() {
         vocePreferita?.let {
             MenuItemCompat.setIconTintList(it, ColorStateList.valueOf(sopraBarra))
         }
+        voceRuota?.let {
+            MenuItemCompat.setIconTintList(it, ColorStateList.valueOf(sopraBarra))
+        }
         voceModifica?.let {
             val titolo = SpannableString(getString(R.string.modifica))
             titolo.setSpan(
@@ -334,9 +348,10 @@ class DettaglioActivity : AppCompatActivity() {
                 // Da lì il pinch lo allarga o lo stringe.
                 val densita = resources.displayMetrics.density
                 val colonna = resources.displayMetrics.widthPixels - (48 * densita).toInt()
-                val zoom = ZoomCodice(vista, minimo = (160 * densita).toInt(), massimo = colonna)
-                zoom.imposta((immagine.larghezza * DP_PER_PIXEL * densita).toInt())
-                vista.setOnTouchListener(zoom)
+                val z = ZoomCodice(vista, minimo = (160 * densita).toInt(), massimo = colonna)
+                z.imposta((immagine.larghezza * DP_PER_PIXEL * densita).toInt())
+                vista.setOnTouchListener(z)
+                zoom = z
                 // Un tocco sul codice lo copia, per incollarlo in un'app o in
                 // un sito che chiede il numero della tessera.
                 // Il base64 di un biglietto negli appunti non serve a nessuno.
@@ -351,6 +366,7 @@ class DettaglioActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.dettaglio, menu)
         vocePreferita = menu.findItem(R.id.preferita)
+        voceRuota = menu.findItem(R.id.ruota)
         voceModifica = menu.findItem(R.id.modifica)
         disegnaStella()
         tingiVoci()
@@ -408,6 +424,10 @@ class DettaglioActivity : AppCompatActivity() {
         }
         R.id.preferita -> {
             cambiaStella()
+            true
+        }
+        R.id.ruota -> {
+            zoom?.ruota()
             true
         }
         R.id.modifica -> {

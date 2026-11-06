@@ -47,6 +47,10 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
 /// Quale faccia si sta guardando: tornando dallo zoom si rimette questa, se no
 /// chi ingrandiva il retro si ritroverebbe davanti al fronte.
 @property (nonatomic, assign) NSInteger facciaMostrata;
+/// La rotazione corrente del codice: 0, 90, 180 o 270 gradi.
+@property (nonatomic, assign) CGFloat rotazione;
+/// Lo spostamento verticale del codice fatto col dito.
+@property (nonatomic, assign) CGFloat traslazioneY;
 @end
 
 @implementation OCDettaglioViewController
@@ -94,7 +98,13 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
                target:self
                action:@selector(cambiaStella)];
 
-    self.navigationItem.rightBarButtonItems = @[modifica, self.stella];
+    UIBarButtonItem *ruota = [[UIBarButtonItem alloc]
+        initWithImage:[UIImage systemImageNamed:@"rotate.right"]
+                style:UIBarButtonItemStylePlain
+               target:self
+               action:@selector(ruotaCodice)];
+
+    self.navigationItem.rightBarButtonItems = @[modifica, self.stella, ruota];
 
     [self costruisci];
 }
@@ -111,10 +121,21 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
     self.immagine.userInteractionEnabled = YES;
     [self.immagine addGestureRecognizer:
         [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pizzica:)]];
-    // Un tocco sul codice lo copia, per incollarlo in un'app o in un sito che
-    // chiede il numero della tessera.
-    [self.immagine addGestureRecognizer:
-        [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(copiaCodice)]];
+
+    UITapGestureRecognizer *doppioTocco = [[UITapGestureRecognizer alloc]
+        initWithTarget:self action:@selector(ruotaCodice)];
+    doppioTocco.numberOfTapsRequired = 2;
+    [self.immagine addGestureRecognizer:doppioTocco];
+
+    UITapGestureRecognizer *toccoSingolo = [[UITapGestureRecognizer alloc]
+        initWithTarget:self action:@selector(copiaCodice)];
+    [toccoSingolo requireGestureRecognizerToFail:doppioTocco];
+    [self.immagine addGestureRecognizer:toccoSingolo];
+
+    UIPanGestureRecognizer *trascinamento = [[UIPanGestureRecognizer alloc]
+        initWithTarget:self action:@selector(trascinaCodice:)];
+    trascinamento.maximumNumberOfTouches = 1;
+    [self.immagine addGestureRecognizer:trascinamento];
 
     // Il numero sta attaccato al codice, non in fondo allo schermo: si leggono
     // insieme, e alla cassa serve confrontarli a colpo d'occhio.
@@ -223,6 +244,29 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
     }
 }
 
+- (void)ruotaCodice
+{
+    self.rotazione = fmod(self.rotazione + 90, 360);
+    [UIView animateWithDuration:0.2 animations:^{
+        [self applicaTransform];
+    }];
+}
+
+- (void)applicaTransform
+{
+    CGAffineTransform t = CGAffineTransformMakeTranslation(0, self.traslazioneY);
+    t = CGAffineTransformRotate(t, self.rotazione * M_PI / 180);
+    self.immagine.transform = t;
+}
+
+- (void)trascinaCodice:(UIPanGestureRecognizer *)gesto
+{
+    CGPoint delta = [gesto translationInView:self.immagine.superview];
+    self.traslazioneY += delta.y;
+    [gesto setTranslation:CGPointZero inView:self.immagine.superview];
+    [self applicaTransform];
+}
+
 /// Le foto, una per pagina, con l'etichetta del lato e due frecce.
 - (UIView *)costruisciBloccoFoto
 {
@@ -312,6 +356,9 @@ static const CGFloat OCAltezzaMinimaCodice = 100;
 {
     [super viewWillDisappear:animato];
     [UIScreen mainScreen].brightness = self.luminositaPrecedente;
+    self.rotazione = 0;
+    self.traslazioneY = 0;
+    self.immagine.transform = CGAffineTransformIdentity;
 }
 
 - (void)viewDidLayoutSubviews
