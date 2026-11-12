@@ -186,3 +186,6 @@
 "compagne_desc" = "Mostra le carte collegate sotto il codice principale";
 "compagne_seleziona" = "Seleziona compagne";
 "nessuna_compagna" = "Nessuna carta compagna";
+"hack" = "Hack";
+"hack_desc" = "Opzioni per smanettoni";
+"due_colonne_desc" = "Mostra le carte su due colonne nella lista";
